@@ -1,8 +1,8 @@
 {
-  "name": "TODO",
+  "name": "io-onboarding-pa",
   "version": "0.0.1",
-  "description": "TODO",
-  "repository": "https://github.com/teamdigitale/TODO",
+  "description": "IO onboarding portal webapp for public administrations",
+  "repository": "https://github.com/teamdigitale/io-onboarding-pa",
   "author": "https://teamdigitale.governo.it",
   "license": "MIT",
   "scripts": {
