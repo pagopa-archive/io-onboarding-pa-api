@@ -1,0 +1,71 @@
+// https://dbdiagram.io
+
+Enum service_status {
+  TA  // Test API
+  TT  // Test token
+  AO  // Offline adoption (Adozione Offline)
+  AL  // Live (Attivazione Live)
+  TS  // Ended (Termine Servizio)
+}
+
+Enum user_type {
+  DE  // PA delegate (Delegato Ente)
+  RLE // PA manager  (Responsabile Legale)
+}
+
+Enum document_status {
+  SENT
+  RECEIVED
+}
+
+Enum agreement_status {
+  ACTIVE
+  PENDING
+}
+
+Enum document_type {
+   AGREEMENT
+   DELEGATION
+}
+
+//Users: both Marta and Luca
+Table User {
+  CF varchar [pk]
+  name varchar
+  surname varchar
+  type user_type
+}
+
+//Public Administrations
+Table PA {
+  ipa_code int [pk]
+  name varchar
+  PEC varchar
+  description varchar
+  registration_date datetime
+}
+
+//Describe the role of each user inside the PA
+Table PA_User {
+  CF varchar [ref: > User.CF]
+  ipa_code varchar [ref: > PA.ipa_code]
+  role user_type
+}
+
+Table Agreement {
+  id varchar [pk]
+  CF varchar [ref: > User.CF]
+  ipa_code varchar [ref: > PA.ipa_code]
+  date_of_submission datetime
+  status agreement_status
+}
+
+Table Document {
+  id varchar [pk]
+  agreement_id varchar [ref: > Agreement.id]
+  type document_type
+  sent_path varchar
+  sent_date datetime
+  received_path varchar
+  received_date datetime
+}
