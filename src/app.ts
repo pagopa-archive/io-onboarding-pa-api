@@ -10,7 +10,7 @@ const app = express();
 const timeout = 5000;
 
 const postgres = new Pool({
-  connectionString: "postgres://root:password@database/root"
+  connectionString: "postgres://postgres:password@database/postgres"
 });
 
 function createConnection(db: Pool): Promise<void> {
