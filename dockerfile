@@ -21,4 +21,4 @@ COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
 
 EXPOSE 3000
 
-CMD ["yarn", "start"]
+ENTRYPOINT yarn start
