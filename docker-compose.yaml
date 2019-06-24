@@ -4,7 +4,7 @@ services:
     container_name: backend
     build:
       context: ./
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     working_dir: /usr/src/app
     environment:
       POSTGRES_PASSWORD: password
