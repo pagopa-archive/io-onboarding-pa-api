@@ -1,7 +1,7 @@
 version: "2.2"
 services:
   backend:
-    container_name: express-server
+    container_name: backend
     build:
       context: ./
       dockerfile: Dockerfile
