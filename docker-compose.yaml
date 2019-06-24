@@ -1,0 +1,29 @@
+version: "2.2"
+services:
+  backend:
+    container_name: express-server
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    working_dir: /usr/src/app
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: root
+      POSTGRES_HOST: database
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - database
+
+  database:
+    container_name: postgresql
+    image: postgres:12-alpine
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: root
+    volumes:
+      - "./dbData:/var/lib/postgresql/data"
+    ports:
+      - "5432:5432"
