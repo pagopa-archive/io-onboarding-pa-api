@@ -1,13 +1,3 @@
-import app from "./app";
-import { log } from "./utils/logger";
+// TODO: write you code here
 
-const server = app.listen(app.get("port"), () => {
-  log.info(
-    "  App is running at http://localhost:%d in %s mode",
-    app.get("port"),
-    app.get("env")
-  );
-  log.info("  Press CTRL-C to stop\n");
-});
-
-export default server;
+process.stdout.write("Hello world");
