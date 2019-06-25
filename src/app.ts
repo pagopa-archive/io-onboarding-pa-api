@@ -1,5 +1,6 @@
 import * as bodyParser from "body-parser";
 import * as express from "express";
+import { Express } from "express";
 import { Pool } from "pg";
 
 import { log } from "./utils/logger";
@@ -25,29 +26,24 @@ function createConnection(db: Pool): Promise<void> {
   });
 }
 
-// tslint:disable-next-line:no-let
-let retries = 10;
-function tryToConnect(): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    while (retries) {
-      try {
-        log.info("Attempting to connect to database...");
-        await createConnection(postgres);
-        return resolve();
-      } catch (error) {
-        log.error(error);
-        retries--;
-        log.info("Retries left: %d", retries);
-        await new Promise(res => setTimeout(res, timeout));
-      }
+async function tryToConnect(): Promise<void> {
+  // tslint:disable-next-line:no-let
+  let retries = 10;
+  while (retries) {
+    try {
+      log.info("Attempting to connect to database...");
+      await createConnection(postgres);
+      log.info("Successfully connected to database.");
+      return;
+    } catch (error) {
+      log.error(error);
+      retries--;
+      log.info("Retries left: %d", retries);
+      await new Promise(res => setTimeout(res, timeout));
     }
-    reject();
-  });
+  }
+  return Promise.reject("Attempt to connect to database failed.");
 }
-
-tryToConnect()
-  .then(() => log.info("Connected to database!"))
-  .catch(() => log.error("Failed to connect to database."));
 
 // Express configuration
 app.set("port", process.env.PORT || 3000);
@@ -58,4 +54,11 @@ app.get("/", (_0, res) => {
   res.json({ text: "Hello world!" });
 });
 
-export default app;
+export default async function newApp(): Promise<Express> {
+  try {
+    await tryToConnect();
+    return app;
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
