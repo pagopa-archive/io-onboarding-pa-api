@@ -6,13 +6,15 @@ services:
       context: ./
       dockerfile: dockerfile
     environment:
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: postgres
-      POSTGRES_HOST: database
+      PGDATABASE: postgres
+      PGPASSWORD: password
+      PGUSER: postgres
+      PGHOST: database
     ports:
       - "3000:3000"
     depends_on:
       - database
+    restart: always
 
   database:
     container_name: postgresql

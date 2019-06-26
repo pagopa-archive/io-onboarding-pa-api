@@ -5,14 +5,7 @@ import { Pool } from "pg";
 
 import { log } from "./utils/logger";
 
-const dbParams = {
-  host: process.env.POSTGRES_HOST || "localhost",
-  password: process.env.POSTGRES_PASSWORD || "password",
-  user: process.env.POSTGRES_USER || "postgres"
-};
-const postgres = new Pool({
-  connectionString: `postgres://${dbParams.user}:${dbParams.password}@${dbParams.host}/postgres`
-});
+const postgres = new Pool();
 
 function createConnection(db: Pool): Promise<void> {
   return new Promise((resolve, reject) => {
