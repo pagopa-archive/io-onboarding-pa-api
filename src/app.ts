@@ -5,8 +5,6 @@ import { Pool } from "pg";
 
 import { log } from "./utils/logger";
 
-const timeout = 5000;
-
 const dbParams = {
   host: process.env.POSTGRES_HOST || "localhost",
   password: process.env.POSTGRES_PASSWORD || "password",
@@ -28,25 +26,6 @@ function createConnection(db: Pool): Promise<void> {
   });
 }
 
-async function tryToConnect(): Promise<void> {
-  // tslint:disable-next-line:no-let
-  let retries = 10;
-  while (retries) {
-    try {
-      log.info("Attempting to connect to database...");
-      await createConnection(postgres);
-      log.info("Successfully connected to database.");
-      return;
-    } catch (error) {
-      log.error(error);
-      retries--;
-      log.info("Retries left: %d", retries);
-      await new Promise(res => setTimeout(res, timeout));
-    }
-  }
-  return Promise.reject("Attempt to connect to database failed.");
-}
-
 export default async function newApp(): Promise<Express> {
   // Create Express server
   const app = express();
@@ -61,9 +40,10 @@ export default async function newApp(): Promise<Express> {
   });
 
   try {
-    await tryToConnect();
-    return app;
+    await createConnection(postgres);
   } catch (error) {
-    return Promise.reject(error);
+    log.error("Failed to connect to database. %s", error);
+    process.exit(1);
   }
+  return app;
 }
