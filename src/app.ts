@@ -5,9 +5,6 @@ import { Pool } from "pg";
 
 import { log } from "./utils/logger";
 
-// Create Express server
-const app = express();
-
 const timeout = 5000;
 
 const dbParams = {
@@ -50,16 +47,19 @@ async function tryToConnect(): Promise<void> {
   return Promise.reject("Attempt to connect to database failed.");
 }
 
-// Express configuration
-app.set("port", process.env.PORT || 3000);
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.get("/", (_0, res) => {
-  res.json({ text: "Hello world!" });
-});
-
 export default async function newApp(): Promise<Express> {
+  // Create Express server
+  const app = express();
+
+  // Express configuration
+  app.set("port", process.env.PORT || 3000);
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
+
+  app.get("/", (_0, res) => {
+    res.json({ text: "Hello world!" });
+  });
+
   try {
     await tryToConnect();
     return app;
