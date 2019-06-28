@@ -6,7 +6,7 @@ services:
       context: ./
       dockerfile: dockerfile
     environment:
-      PGDATABASE: postgres
+      PGDATABASE: db
       PGPASSWORD: password
       PGUSER: postgres
       PGHOST: database
@@ -22,5 +22,6 @@ services:
     environment:
       POSTGRES_PASSWORD: password
       POSTGRES_USER: postgres
+      POSTGRES_DB: db
     ports:
       - "5432:5432"
