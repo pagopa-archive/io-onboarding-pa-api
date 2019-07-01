@@ -57,6 +57,9 @@ function asyncHandler(func: RequestHandler): RequestHandler {
     Promise.resolve(func(req, res, next)).catch(next);
 }
 
+const ipaElasticsearchEndpoint =
+  "https://elasticsearch.developers.italia.it/indicepa/_search";
+
 const getPublicAdministrationsHandler: RequestHandler = async (
   req: Request,
   res: Response
@@ -66,8 +69,6 @@ const getPublicAdministrationsHandler: RequestHandler = async (
     return res.status(400).json(validationErrors.array());
   }
   const searchString = req.query.search;
-  const requestUrl =
-    "https://elasticsearch.developers.italia.it/indicepa/_search";
   const requestBody = {
     query: {
       bool: {
@@ -97,7 +98,7 @@ const getPublicAdministrationsHandler: RequestHandler = async (
   };
   try {
     const searchResponse = await axios.post<IIpaSearchResponseBody>(
-      requestUrl,
+      ipaElasticsearchEndpoint,
       requestBody
     );
     const publicAdministrations = searchResponse.data.hits.hits
