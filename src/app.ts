@@ -1,4 +1,4 @@
-import axios from "axios";
+import { Client } from "@elastic/elasticsearch";
 import * as bodyParser from "body-parser";
 import * as express from "express";
 import {
@@ -13,10 +13,7 @@ import { Pool } from "pg";
 
 import { log } from "./utils/logger";
 
-import {
-  IIpaSearchResponseBody,
-  IIpaSearchResult
-} from "./types/PublicAdministration";
+import { IIpaSearchResult } from "./types/PublicAdministration";
 
 const postgres = new Pool();
 
@@ -57,8 +54,7 @@ function asyncHandler(func: RequestHandler): RequestHandler {
     Promise.resolve(func(req, res, next)).catch(next);
 }
 
-const ipaElasticsearchEndpoint =
-  "https://elasticsearch.developers.italia.it/indicepa/_search";
+const ipaElasticsearchEndpoint = "https://elasticsearch.developers.italia.it";
 
 const getPublicAdministrationsHandler: RequestHandler = async (
   req: Request,
@@ -69,42 +65,48 @@ const getPublicAdministrationsHandler: RequestHandler = async (
     return res.status(400).json(validationErrors.array());
   }
   const searchString = req.query.search;
-  const requestBody = {
-    query: {
-      bool: {
-        should: [
-          {
-            nested: {
-              path: "office",
-              query: {
-                multi_match: {
-                  fields: ["office.code", "office.description"],
-                  operator: "and",
-                  query: searchString
+
+  const searchParams = {
+    body: {
+      query: {
+        bool: {
+          should: [
+            {
+              nested: {
+                path: "office",
+                query: {
+                  multi_match: {
+                    fields: ["office.code", "office.description"],
+                    operator: "and",
+                    query: searchString
+                  }
                 }
               }
+            },
+            {
+              multi_match: {
+                fields: ["ipa", "description"],
+                operator: "and",
+                query: searchString
+              }
             }
-          },
-          {
-            multi_match: {
-              fields: ["ipa", "description"],
-              operator: "and",
-              query: searchString
-            }
-          }
-        ]
+          ]
+        }
       }
-    }
+    },
+    index: "indicepa"
   };
+
   try {
-    const searchResponse = await axios.post<IIpaSearchResponseBody>(
-      ipaElasticsearchEndpoint,
-      requestBody
-    );
-    const publicAdministrations = searchResponse.data.hits.hits
-      .map(hit => hit._source)
+    const client = new Client({ node: ipaElasticsearchEndpoint });
+    const searchResponse = await client.search(searchParams);
+    const publicAdministrations = searchResponse.body.hits.hits
+      .map((hit: { _source: IIpaSearchResult }) => hit._source)
       .reduce(
-        (previous: ReadonlyArray<IIpaSearchResult>, current) => [
+        (
+          previous: ReadonlyArray<IIpaSearchResult>,
+          current: IIpaSearchResult
+        ) => [
           ...previous,
           {
             description: current.description,
