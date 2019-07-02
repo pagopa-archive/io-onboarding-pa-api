@@ -40,6 +40,12 @@ export default async function newApp(): Promise<Express> {
 
   registerRoutes(app);
 
+  // tslint:disable-next-line:no-any
+  app.use((err: any, _1: Request, res: Response, _3: NextFunction) => {
+    log.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  });
+
   try {
     await createConnection(postgres);
   } catch (error) {
@@ -49,9 +55,15 @@ export default async function newApp(): Promise<Express> {
   return app;
 }
 
-function asyncHandler(func: RequestHandler): RequestHandler {
+type AsyncRequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => Promise<void>;
+
+function asyncHandler(func: AsyncRequestHandler): AsyncRequestHandler {
   return (req: Request, res: Response, next: NextFunction) =>
-    Promise.resolve(func(req, res, next)).catch(next);
+    func(req, res, next).catch(next);
 }
 
 const IPA_ELASTICHSEARCH_ENDPOINT =
