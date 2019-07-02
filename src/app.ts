@@ -40,10 +40,19 @@ export default async function newApp(): Promise<Express> {
 
   registerRoutes(app);
 
-  // tslint:disable-next-line:no-any
-  app.use((err: any, _1: Request, res: Response, _3: NextFunction) => {
-    log.error(err);
-    res.status(500).json({ message: "Internal server error" });
+  /**
+   * Use a custom error-handling middleware function.
+   * It intercepts the error forwarded to the `next()` function,
+   * logs it and sends to the client a generic error message
+   * if no response has been sent yet.
+   *
+   * @see: http://expressjs.com/en/guide/error-handling.html#writing-error-handlers
+   */
+  app.use((err: unknown, _1: Request, res: Response, _3: NextFunction) => {
+    log.error("%s", err);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   try {
@@ -61,6 +70,16 @@ type AsyncRequestHandler = (
   next: NextFunction
 ) => Promise<void>;
 
+/**
+ * Adds an error catching logic to an async middleware.
+ * It wraps the execution of the middleware in order to intercept the possible thrown error
+ * and to forward it to the error handler middleware through the `next()` function.
+ *
+ * @see: http://expressjs.com/en/guide/error-handling.html#catching-errors
+ *
+ * @param { AsyncRequestHandler } func The async middleware to add the error catching logic to.
+ * @return { AsyncRequestHandler } The async middleware with the error catching logic.
+ */
 function asyncHandler(func: AsyncRequestHandler): AsyncRequestHandler {
   return (req: Request, res: Response, next: NextFunction) =>
     func(req, res, next).catch(next);
