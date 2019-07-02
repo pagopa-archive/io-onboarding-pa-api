@@ -54,7 +54,8 @@ function asyncHandler(func: RequestHandler): RequestHandler {
     Promise.resolve(func(req, res, next)).catch(next);
 }
 
-const ipaElasticsearchEndpoint = "https://elasticsearch.developers.italia.it";
+const IPA_ELASTICHSEARCH_ENDPOINT =
+  "https://elasticsearch.developers.italia.it";
 
 const getPublicAdministrationsHandler: RequestHandler = async (
   req: Request,
@@ -98,7 +99,7 @@ const getPublicAdministrationsHandler: RequestHandler = async (
   };
 
   try {
-    const client = new Client({ node: ipaElasticsearchEndpoint });
+    const client = new Client({ node: IPA_ELASTICHSEARCH_ENDPOINT });
     const searchResponse = await client.search(searchParams);
     const publicAdministrations = searchResponse.body.hits.hits
       .map((hit: { _source: IIpaSearchResult }) => hit._source)
