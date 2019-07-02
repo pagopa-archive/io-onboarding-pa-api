@@ -11,9 +11,9 @@ import {
 import { query, validationResult } from "express-validator";
 import { Pool } from "pg";
 
-import { log } from "./utils/logger";
-
+import { IPA_ELASTICSEARCH_ENDPOINT } from "./config";
 import { IIpaSearchResult } from "./types/PublicAdministration";
+import { log } from "./utils/logger";
 
 const postgres = new Pool();
 
@@ -85,9 +85,6 @@ function asyncHandler(func: AsyncRequestHandler): AsyncRequestHandler {
     func(req, res, next).catch(next);
 }
 
-const IPA_ELASTICHSEARCH_ENDPOINT =
-  "https://elasticsearch.developers.italia.it";
-
 const getPublicAdministrationsHandler: RequestHandler = async (
   req: Request,
   res: Response
@@ -130,7 +127,7 @@ const getPublicAdministrationsHandler: RequestHandler = async (
   };
 
   try {
-    const client = new Client({ node: IPA_ELASTICHSEARCH_ENDPOINT });
+    const client = new Client({ node: IPA_ELASTICSEARCH_ENDPOINT });
     const searchResponse = await client.search(searchParams);
     const publicAdministrations = searchResponse.body.hits.hits
       .map((hit: { _source: IIpaSearchResult }) => hit._source)
