@@ -30,7 +30,7 @@ Enum document_type {
 
 //Users: both Marta and Luca
 Table User {
-  CF varchar [pk]
+  FC varchar [pk]
   name varchar
   surname varchar
   type user_type
@@ -47,14 +47,14 @@ Table PA {
 
 //Describe the role of each user inside the PA
 Table PA_User {
-  CF varchar [ref: > User.CF]
+  FC varchar [ref: > User.FC]
   ipa_code varchar [ref: > PA.ipa_code]
   role user_type
 }
 
 Table Agreement {
   id varchar [pk]
-  CF varchar [ref: > User.CF]
+  FC varchar [ref: > User.FC]
   ipa_code varchar [ref: > PA.ipa_code]
   date_of_submission datetime
   status agreement_status
