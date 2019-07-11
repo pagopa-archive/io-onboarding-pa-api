@@ -9,25 +9,11 @@ import {
   Response
 } from "express";
 import { query, validationResult } from "express-validator";
-import { Pool } from "pg";
 
 import { IPA_ELASTICSEARCH_ENDPOINT } from "./config";
+import db from "./database/db";
 import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
-
-const postgres = new Pool();
-
-function createConnection(db: Pool): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.connect((errorConnect, _2, done) => {
-      if (errorConnect) {
-        return reject(errorConnect);
-      }
-      resolve();
-      done();
-    });
-  });
-}
 
 export default async function newApp(): Promise<Express> {
   // Create Express server
@@ -56,7 +42,7 @@ export default async function newApp(): Promise<Express> {
   });
 
   try {
-    await createConnection(postgres);
+    await db.authenticate();
   } catch (error) {
     log.error("Failed to connect to database. %s", error);
     process.exit(1);

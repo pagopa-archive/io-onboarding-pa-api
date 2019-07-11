@@ -11,6 +11,7 @@
     "postversion": "git push && git push --tags",
     "test": "jest",
     "lint": "tslint --project .",
+    "prestart": "npx sequelize db:migrate",
     "start": "node dist/index.js"
   },
   "devDependencies": {
