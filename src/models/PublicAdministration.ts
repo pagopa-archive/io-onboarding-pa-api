@@ -12,7 +12,8 @@ export class PublicAdministration extends Model {
   public name!: string;
   public pec!: string;
   public description!: string;
-  public readonly registrationDate!: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   public addUser!: BelongsToManyAddAssociationMixin<User, string>;
 
@@ -39,11 +40,6 @@ PublicAdministration.init(
       allowNull: false,
       field: "PEC",
       type: new DataTypes.STRING()
-    },
-    registrationDate: {
-      allowNull: false,
-      defaultValue: NOW,
-      type: new DataTypes.DATE()
     }
   },
   {

@@ -27,11 +27,6 @@ export default {
         field: "PEC",
         type: new DataTypes.STRING()
       },
-      registrationDate: {
-        allowNull: false,
-        defaultValue: NOW,
-        type: new DataTypes.DATE()
-      },
       updatedAt: new DataTypes.DATE()
     });
   },

@@ -10,6 +10,8 @@ export class User extends Model {
   public fc!: string; // PK
   public name!: string;
   public surname!: string;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 }
 
 User.init(
