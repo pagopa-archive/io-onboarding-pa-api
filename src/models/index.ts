@@ -1,8 +1,8 @@
-import { PaUser as PaUserModel } from "./PA_User";
-import { PublicAdministration as PublicAdministrationModel } from "./PublicAdministration";
-import { User as UserModel, UserType as UserTypeEnum } from "./User";
+import { Organization as OrganizationModel } from "./Organization";
+import { OrganizationUser as OrganizationUserModel } from "./OrganizationUser";
+import { User as UserModel, UserRole as UserRoleEnum } from "./User";
 
-export const PaUser = PaUserModel;
-export const PublicAdministration = PublicAdministrationModel;
+export const OrganizationUser = OrganizationUserModel;
+export const Organization = OrganizationModel;
 export const User = UserModel;
-export const UserType = UserTypeEnum;
+export const UserRole = UserRoleEnum;

@@ -1,32 +1,35 @@
 import { DataTypes, QueryInterface } from "sequelize";
+import { UserRole } from "../models/User";
 
 export default {
   up: (queryInterface: QueryInterface): Promise<void> => {
-    return queryInterface.createTable("User", {
+    return queryInterface.createTable("OrganizationsUsers", {
       createdAt: {
         allowNull: false,
         type: new DataTypes.DATE()
       },
-      deletedAt: new DataTypes.DATE(),
-      fc: {
+      organizationIpaCode: {
         allowNull: false,
-        field: "FC",
         primaryKey: true,
         type: new DataTypes.STRING()
       },
-      name: {
+      updatedAt: {
         allowNull: false,
+        type: new DataTypes.DATE()
+      },
+      userFiscalCode: {
+        allowNull: false,
+        primaryKey: true,
         type: new DataTypes.STRING()
       },
-      surname: {
+      userRole: {
         allowNull: false,
-        type: new DataTypes.STRING()
-      },
-      updatedAt: new DataTypes.DATE()
+        type: new DataTypes.ENUM(...Object.values(UserRole))
+      }
     });
   },
 
   down: (queryInterface: QueryInterface): Promise<void> => {
-    return queryInterface.dropTable("User");
+    return queryInterface.dropTable("OrganizationsUsers");
   }
 };

@@ -1,18 +1,14 @@
-import {
-  BelongsToManyAddAssociationMixin,
-  DataTypes,
-  Model,
-  NOW
-} from "sequelize";
+import { BelongsToManyAddAssociationMixin, DataTypes, Model } from "sequelize";
 import sequelize from "../database/db";
 import { User } from "./User";
 
-export class PublicAdministration extends Model {
+export class Organization extends Model {
   public ipaCode!: string; // PK
   public name!: string;
   public pec!: string;
   public description!: string;
   public readonly createdAt!: Date;
+  public readonly deletedAt!: Date;
   public readonly updatedAt!: Date;
 
   public addUser!: BelongsToManyAddAssociationMixin<User, string>;
@@ -20,15 +16,10 @@ export class PublicAdministration extends Model {
   public readonly users?: ReadonlyArray<User>;
 }
 
-PublicAdministration.init(
+Organization.init(
   {
-    description: {
-      allowNull: false,
-      type: new DataTypes.STRING()
-    },
     ipaCode: {
       allowNull: false,
-      field: "ipa_code",
       primaryKey: true,
       type: new DataTypes.STRING()
     },
@@ -38,7 +29,6 @@ PublicAdministration.init(
     },
     pec: {
       allowNull: false,
-      field: "PEC",
       type: new DataTypes.STRING()
     }
   },
@@ -46,7 +36,7 @@ PublicAdministration.init(
     modelName: "PublicAdministration",
     paranoid: true,
     sequelize,
-    tableName: "PA",
+    tableName: "Organizations",
     timestamps: true
   }
 );

@@ -1,33 +1,32 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../database/db";
 
-export enum UserType {
-  DE = "DE", // Public Administration delegate
-  RLE = "RLE" // Public Administration manager
+export enum UserRole {
+  DE = "delegate", // Organization delegate
+  RLE = "manager" // Organization manager
 }
 
 export class User extends Model {
-  public fc!: string; // PK
-  public name!: string;
-  public surname!: string;
+  public fiscalCode!: string; // PK
+  public firstName!: string;
+  public familyName!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
 User.init(
   {
-    fc: {
+    familyName: {
       allowNull: false,
-      field: "FC",
+      type: new DataTypes.STRING()
+    },
+    firstName: {
+      allowNull: false,
+      type: new DataTypes.STRING()
+    },
+    fiscalCode: {
+      allowNull: false,
       primaryKey: true,
-      type: new DataTypes.STRING()
-    },
-    name: {
-      allowNull: false,
-      type: new DataTypes.STRING()
-    },
-    surname: {
-      allowNull: false,
       type: new DataTypes.STRING()
     }
   },
@@ -35,7 +34,7 @@ User.init(
     modelName: "User",
     paranoid: true,
     sequelize,
-    tableName: "User",
+    tableName: "Users",
     timestamps: true
   }
 );
