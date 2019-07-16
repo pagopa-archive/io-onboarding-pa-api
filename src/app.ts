@@ -9,9 +9,11 @@ import {
   Response
 } from "express";
 import { query, validationResult } from "express-validator";
+import * as path from "path";
+import { Sequelize } from "sequelize";
 
 import { IPA_ELASTICSEARCH_ENDPOINT } from "./config";
-import db from "./database/db";
+import sequelize from "./database/db";
 import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
 
@@ -42,9 +44,14 @@ export default async function newApp(): Promise<Express> {
   });
 
   try {
-    await db.authenticate();
+    await require("umzug-sync").migrate({
+      SequelizeImport: Sequelize,
+      logging: (param: string) => log.info("%s", param),
+      migrationsDir: path.join("dist", "migrations"),
+      sequelize
+    });
   } catch (error) {
-    log.error("Failed to connect to database. %s", error);
+    log.error("Failed to apply migrations. %s", error);
     process.exit(1);
   }
   return app;
