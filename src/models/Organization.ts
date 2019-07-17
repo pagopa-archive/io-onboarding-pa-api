@@ -33,7 +33,7 @@ Organization.init(
     }
   },
   {
-    modelName: "PublicAdministration",
+    modelName: "Organization",
     paranoid: true,
     sequelize,
     tableName: "Organizations",
