@@ -2,8 +2,8 @@ import { DataTypes, Model } from "sequelize";
 import sequelize from "../database/db";
 
 export enum UserRole {
-  DE = "delegate", // Organization delegate
-  RLE = "manager" // Organization manager
+  ORG_DELEGATE = "ORG_DELEGATE", // Organization delegate
+  ORG_MANAGER = "ORG_MANAGER" // Organization manager
 }
 
 export class User extends Model {
