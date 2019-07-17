@@ -15,6 +15,7 @@ export function up(queryInterface: QueryInterface): Promise<void> {
        * This field will be set instead of deleting the entry from the database.
        * @see: https://docs.sequelizejs.com/manual/models-definition.html#configuration
        */
+      allowNull: true,
       type: new DataTypes.DATE()
     },
     ipaCode: {
