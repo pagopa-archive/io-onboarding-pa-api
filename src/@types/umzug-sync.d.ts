@@ -3,7 +3,7 @@ declare module "umzug-sync" {
 
   interface IConfiguration {
     sequelize: Sequelize;
-    SequelizeImport: Sequelize;
+    SequelizeImport: typeof Sequelize;
     migrationsDir: string;
     chdir?: string;
     logging?: (param: string) => void;

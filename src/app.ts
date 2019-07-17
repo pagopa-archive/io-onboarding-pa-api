@@ -11,6 +11,7 @@ import {
 import { query, validationResult } from "express-validator";
 import * as path from "path";
 import { Sequelize } from "sequelize";
+import * as usync from "umzug-sync";
 
 import { IPA_ELASTICSEARCH_ENDPOINT } from "./config";
 import sequelize from "./database/db";
@@ -44,7 +45,7 @@ export default async function newApp(): Promise<Express> {
   });
 
   try {
-    await require("umzug-sync").migrate({
+    await usync.migrate({
       SequelizeImport: Sequelize,
       logging: (param: string) => log.info("%s", param),
       migrationsDir: path.join("dist", "migrations"),
