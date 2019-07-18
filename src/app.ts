@@ -9,25 +9,23 @@ import {
   Response
 } from "express";
 import { query, validationResult } from "express-validator";
-import { Pool } from "pg";
+import * as path from "path";
+import { Sequelize } from "sequelize";
+import * as usync from "umzug-sync";
 
 import { IPA_ELASTICSEARCH_ENDPOINT } from "./config";
+import sequelize from "./database/db";
+import {
+  createAssociations as createOrganizationAssociations,
+  init as initOrganization
+} from "./models/Organization";
+import { init as initOrganizationUser } from "./models/OrganizationUser";
+import {
+  createAssociations as createUserAssociations,
+  init as initUser
+} from "./models/User";
 import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
-
-const postgres = new Pool();
-
-function createConnection(db: Pool): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.connect((errorConnect, _2, done) => {
-      if (errorConnect) {
-        return reject(errorConnect);
-      }
-      resolve();
-      done();
-    });
-  });
-}
 
 export default async function newApp(): Promise<Express> {
   // Create Express server
@@ -56,9 +54,16 @@ export default async function newApp(): Promise<Express> {
   });
 
   try {
-    await createConnection(postgres);
+    await usync.migrate({
+      SequelizeImport: Sequelize,
+      logging: (param: string) => log.info("%s", param),
+      migrationsDir: path.join("dist", "migrations"),
+      sequelize
+    });
+    initModels();
+    createModelAssociations(); // Models must be already initialized before calling this method
   } catch (error) {
-    log.error("Failed to connect to database. %s", error);
+    log.error("Failed to apply migrations. %s", error);
     process.exit(1);
   }
   return app;
@@ -165,4 +170,15 @@ function registerRoutes(app: Express): void {
     ],
     asyncHandler(getPublicAdministrationsHandler)
   );
+}
+
+function initModels(): void {
+  initOrganization();
+  initOrganizationUser();
+  initUser();
+}
+
+function createModelAssociations(): void {
+  createOrganizationAssociations();
+  createUserAssociations();
 }
