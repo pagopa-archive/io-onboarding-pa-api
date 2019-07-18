@@ -1,5 +1,6 @@
 import { BelongsToManyAddAssociationMixin, DataTypes, Model } from "sequelize";
 import sequelize from "../database/db";
+import { OrganizationUser } from "./OrganizationUser";
 import { User } from "./User";
 
 export class Organization extends Model {
@@ -16,27 +17,37 @@ export class Organization extends Model {
   public readonly users?: ReadonlyArray<User>;
 }
 
-Organization.init(
-  {
-    ipaCode: {
-      allowNull: false,
-      primaryKey: true,
-      type: new DataTypes.STRING()
+export function init(): void {
+  Organization.init(
+    {
+      ipaCode: {
+        allowNull: false,
+        primaryKey: true,
+        type: new DataTypes.STRING()
+      },
+      name: {
+        allowNull: false,
+        type: new DataTypes.STRING()
+      },
+      pec: {
+        allowNull: false,
+        type: new DataTypes.STRING()
+      }
     },
-    name: {
-      allowNull: false,
-      type: new DataTypes.STRING()
-    },
-    pec: {
-      allowNull: false,
-      type: new DataTypes.STRING()
+    {
+      modelName: "Organization",
+      paranoid: true,
+      sequelize,
+      tableName: "Organizations",
+      timestamps: true
     }
-  },
-  {
-    modelName: "Organization",
-    paranoid: true,
-    sequelize,
-    tableName: "Organizations",
-    timestamps: true
-  }
-);
+  );
+}
+
+export function createAssociations(): void {
+  Organization.belongsToMany(User, {
+    foreignKey: { name: "ipaCode", field: "organizationIpaCode" },
+    otherKey: { name: "fiscalCode", field: "userFiscalCode" },
+    through: OrganizationUser
+  });
+}

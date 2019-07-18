@@ -15,6 +15,15 @@ import * as usync from "umzug-sync";
 
 import { IPA_ELASTICSEARCH_ENDPOINT } from "./config";
 import sequelize from "./database/db";
+import {
+  createAssociations as createOrganizationAssociations,
+  init as initOrganization
+} from "./models/Organization";
+import { init as initOrganizationUser } from "./models/OrganizationUser";
+import {
+  createAssociations as createUserAssociations,
+  init as initUser
+} from "./models/User";
 import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
 
@@ -51,6 +60,8 @@ export default async function newApp(): Promise<Express> {
       migrationsDir: path.join("dist", "migrations"),
       sequelize
     });
+    initModels();
+    createModelAssociations(); // Models must be already initialized before calling this method
   } catch (error) {
     log.error("Failed to apply migrations. %s", error);
     process.exit(1);
@@ -159,4 +170,15 @@ function registerRoutes(app: Express): void {
     ],
     asyncHandler(getPublicAdministrationsHandler)
   );
+}
+
+function initModels(): void {
+  initOrganization();
+  initOrganizationUser();
+  initUser();
+}
+
+function createModelAssociations(): void {
+  createOrganizationAssociations();
+  createUserAssociations();
 }
