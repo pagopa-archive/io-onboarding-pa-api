@@ -9,6 +9,8 @@ import {
   Response
 } from "express";
 import { query, validationResult } from "express-validator";
+import * as fs from "fs";
+import * as passport from "passport";
 import * as path from "path";
 import { Sequelize } from "sequelize";
 import * as usync from "umzug-sync";
@@ -24,8 +26,25 @@ import {
   createAssociations as createUserAssociations,
   init as initUser
 } from "./models/User";
+import loadSpidStrategy from "./strategies/spidStrategy";
 import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
+
+// Private key used in SAML authentication to a SPID IDP.
+const samlKey = () => {
+  return readFile(
+    process.env.SAML_KEY_PATH || "./certs/key.pem",
+    "SAML private key"
+  );
+};
+
+// Public certificate used in SAML authentication to a SPID IDP.
+const samlCert = () => {
+  return readFile(
+    process.env.SAML_CERT_PATH || "./certs/cert.pem",
+    "SAML certificate"
+  );
+};
 
 export default async function newApp(): Promise<Express> {
   // Create Express server
@@ -36,7 +55,52 @@ export default async function newApp(): Promise<Express> {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
+  app.use(passport.initialize());
+
   registerRoutes(app);
+
+  // SAML settings.
+  const SAML_CALLBACK_URL =
+    process.env.SAML_CALLBACK_URL ||
+    "http://io-onboarding-backend:3000/assertion-consumer-service";
+  const SAML_ISSUER = process.env.SAML_ISSUER || "https://spid.agid.gov.it/cd";
+  const DEFAULT_SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX = "2";
+  const SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX: number = parseInt(
+    process.env.SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX ||
+      DEFAULT_SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX,
+    10
+  );
+  const DEFAULT_SAML_ACCEPTED_CLOCK_SKEW_MS = "-1";
+  const SAML_ACCEPTED_CLOCK_SKEW_MS = parseInt(
+    process.env.SAML_ACCEPTED_CLOCK_SKEW_MS ||
+      DEFAULT_SAML_ACCEPTED_CLOCK_SKEW_MS,
+    10
+  );
+  const DEFAULT_SPID_AUTOLOGIN = "";
+  const SPID_AUTOLOGIN = process.env.SPID_AUTOLOGIN || DEFAULT_SPID_AUTOLOGIN;
+  const DEFAULT_SPID_TESTENV_URL = "http://localhost:8088";
+  const SPID_TESTENV_URL =
+    process.env.SPID_TESTENV_URL || DEFAULT_SPID_TESTENV_URL;
+  const IDP_METADATA_URL =
+    "https://registry.spid.gov.it/metadata/idp/spid-entities-idps.xml";
+
+  try {
+    const newSpidStrategy = await loadSpidStrategy({
+      idpMetadataUrl: IDP_METADATA_URL,
+      samlAcceptedClockSkewMs: SAML_ACCEPTED_CLOCK_SKEW_MS,
+      samlAttributeConsumingServiceIndex: SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX,
+      samlCallbackUrl: SAML_CALLBACK_URL,
+      samlCert: samlCert(),
+      samlIssuer: SAML_ISSUER,
+      samlKey: samlKey(),
+      spidAutologin: SPID_AUTOLOGIN,
+      spidTestEnvUrl: SPID_TESTENV_URL
+    });
+    registerLoginRoute(app, newSpidStrategy);
+  } catch (error) {
+    log.error("Login route registration failed. %s", error);
+    process.exit(1);
+  }
 
   /**
    * Use a custom error-handling middleware function.
@@ -57,7 +121,7 @@ export default async function newApp(): Promise<Express> {
     await usync.migrate({
       SequelizeImport: Sequelize,
       logging: (param: string) => log.info("%s", param),
-      migrationsDir: path.join("dist", "migrations"),
+      migrationsDir: path.join("dist", "src", "migrations"),
       sequelize
     });
     initModels();
@@ -172,6 +236,36 @@ function registerRoutes(app: Express): void {
   );
 }
 
+/**
+ * Initializes SpidStrategy for passport and setup /login route.
+ */
+function registerLoginRoute(
+  app: Express,
+  newSpidStrategy: passport.Strategy
+): void {
+  // Add the strategy to authenticate the proxy to SPID.
+  passport.use("spid", newSpidStrategy);
+  const spidAuth = passport.authenticate("spid", { session: false });
+  app.get("/login", spidAuth);
+
+  app.post("/assertion-consumer-service", (req, res, next) => {
+    log.info("dentro assertion-consumer-service");
+    passport.authenticate("spid", async (err, user) => {
+      res.send();
+      if (err) {
+        // TODO: redirect to an error page and return
+        log.error("Spid login error: %s", err);
+      }
+      if (!user) {
+        // TODO: redirect to an error page and return
+        log.error("Error in SPID authentication: no user found");
+      }
+      // TODO: handle user data and create token
+      log.info("Spid login success: ", JSON.stringify(user, null, 4));
+    })(req, res, next);
+  });
+}
+
 function initModels(): void {
   initOrganization();
   initOrganizationUser();
@@ -181,4 +275,16 @@ function initModels(): void {
 function createModelAssociations(): void {
   createOrganizationAssociations();
   createUserAssociations();
+}
+
+/**
+ * Reads a file from the filesystem.
+ *
+ * @param filePath
+ * @param type The file type. The parameter is unsed only in logs
+ * @returns {string}
+ */
+function readFile(filePath: string, type: string): string {
+  log.info("Reading %s file from %s", type, filePath);
+  return fs.readFileSync(filePath, "utf-8");
 }
