@@ -10,10 +10,12 @@ services:
       PGPASSWORD: password
       PGUSER: postgres
       PGHOST: database
+      SPID_TESTENV_URL: http://spid-testenv2:8088
     ports:
       - "3000:3000"
     depends_on:
       - database
+      - spid-testenv2
     restart: always
     volumes:
       - "./certs:/usr/src/app/certs:delegated"
@@ -27,3 +29,11 @@ services:
       POSTGRES_DB: db
     ports:
       - "5432:5432"
+
+  spid-testenv2:
+    container_name: spid-testenv2
+    image: italia/spid-testenv2
+    ports:
+      - "8088:8088"
+    volumes:
+      - "./testenv2/conf:/app/conf"
