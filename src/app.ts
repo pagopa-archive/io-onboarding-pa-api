@@ -248,20 +248,35 @@ function registerLoginRoute(
   const spidAuth = passport.authenticate("spid", { session: false });
   app.get("/login", spidAuth);
 
+  app.get("/metadata", (_0, res) => {
+    const metadata = ((newSpidStrategy as unknown) as SpidStrategy).generateServiceProviderMetadata(
+      samlCert()
+    );
+    res.type("application/xml").send(metadata);
+  });
+
   app.post("/assertion-consumer-service", (req, res, next) => {
-    log.info("dentro assertion-consumer-service");
+    log.debug("dentro assertion-consumer-service");
     passport.authenticate("spid", async (err, user) => {
-      res.send();
       if (err) {
         // TODO: redirect to an error page and return
-        log.error("Spid login error: %s", err);
+        res.json(err.stack);
+        return log.error("Spid login error: %s", err);
       }
       if (!user) {
         // TODO: redirect to an error page and return
-        log.error("Error in SPID authentication: no user found");
+        res.send();
+        return log.error("Error in SPID authentication: no user found");
       }
       // TODO: handle user data and create token
-      log.info("Spid login success: ", JSON.stringify(user, null, 4));
+      log.debug("Spid login success: %s", JSON.stringify(user, null, 4));
+      res.json({
+        email: user.email,
+        familyName: user.familyName,
+        fiscalNumber: user.fiscalNumber,
+        mobilePhone: user.mobilePhone,
+        name: user.name
+      });
     })(req, res, next);
   });
 }
