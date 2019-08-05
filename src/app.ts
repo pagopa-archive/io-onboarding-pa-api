@@ -60,29 +60,29 @@ export default async function newApp(): Promise<Express> {
   registerRoutes(app);
 
   // SAML settings.
-  const SAML_CALLBACK_URL =
-    process.env.SAML_CALLBACK_URL ||
-    "http://io-onboarding-backend:3000/assertion-consumer-service";
-  const SAML_ISSUER = process.env.SAML_ISSUER || "https://spid.agid.gov.it/cd";
-  const DEFAULT_SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX = "2";
-  const SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX: number = parseInt(
-    process.env.SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX ||
-      DEFAULT_SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX,
-    10
+  const SAML_CALLBACK_URL = process.env.SAML_CALLBACK_URL;
+  const SAML_ISSUER = process.env.SAML_ISSUER;
+  const SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX: number = Number(
+    process.env.SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX
   );
-  const DEFAULT_SAML_ACCEPTED_CLOCK_SKEW_MS = "-1";
-  const SAML_ACCEPTED_CLOCK_SKEW_MS = parseInt(
-    process.env.SAML_ACCEPTED_CLOCK_SKEW_MS ||
-      DEFAULT_SAML_ACCEPTED_CLOCK_SKEW_MS,
-    10
+  const SAML_ACCEPTED_CLOCK_SKEW_MS = Number(
+    process.env.SAML_ACCEPTED_CLOCK_SKEW_MS
   );
-  const DEFAULT_SPID_AUTOLOGIN = "";
-  const SPID_AUTOLOGIN = process.env.SPID_AUTOLOGIN || DEFAULT_SPID_AUTOLOGIN;
-  const DEFAULT_SPID_TESTENV_URL = "http://localhost:8088";
-  const SPID_TESTENV_URL =
-    process.env.SPID_TESTENV_URL || DEFAULT_SPID_TESTENV_URL;
-  const IDP_METADATA_URL =
-    "https://registry.spid.gov.it/metadata/idp/spid-entities-idps.xml";
+  const SPID_AUTOLOGIN = process.env.SPID_AUTOLOGIN;
+  const SPID_TESTENV_URL = process.env.SPID_TESTENV_URL;
+  const IDP_METADATA_URL = process.env.IDP_METADATA_URL;
+
+  if (
+    !IDP_METADATA_URL ||
+    !SAML_ACCEPTED_CLOCK_SKEW_MS ||
+    !SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX ||
+    !SAML_CALLBACK_URL ||
+    !SAML_ISSUER ||
+    !SPID_TESTENV_URL
+  ) {
+    log.error("One or more required environmente variables are missing");
+    return process.exit(1);
+  }
 
   try {
     const newSpidStrategy = await loadSpidStrategy({
@@ -93,7 +93,7 @@ export default async function newApp(): Promise<Express> {
       samlCert: samlCert(),
       samlIssuer: SAML_ISSUER,
       samlKey: samlKey(),
-      spidAutologin: SPID_AUTOLOGIN,
+      spidAutologin: SPID_AUTOLOGIN || "",
       spidTestEnvUrl: SPID_TESTENV_URL
     });
     registerLoginRoute(app, newSpidStrategy);

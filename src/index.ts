@@ -1,5 +1,9 @@
+import * as dotenv from "dotenv";
 import newApp from "./app";
 import { log } from "./utils/logger";
+
+// Before running the app, loads all the environment variables from a .env files
+dotenv.config();
 
 newApp()
   .then(app => {
