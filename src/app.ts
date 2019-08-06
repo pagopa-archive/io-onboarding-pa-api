@@ -33,18 +33,16 @@ import { log } from "./utils/logger";
 
 // Private key used in SAML authentication to a SPID IDP.
 const samlKey = () => {
-  return readFile(
-    process.env.SAML_KEY_PATH || "./certs/key.pem",
-    "SAML private key"
-  );
+  const filePath = process.env.SAML_KEY_PATH || "./certs/key.pem";
+  log.info("Reading SAML private key file from %s", filePath);
+  return fs.readFileSync(filePath, "utf-8");
 };
 
 // Public certificate used in SAML authentication to a SPID IDP.
 const samlCert = () => {
-  return readFile(
-    process.env.SAML_CERT_PATH || "./certs/cert.pem",
-    "SAML certificate"
-  );
+  const filePath = process.env.SAML_CERT_PATH || "./certs/cert.pem";
+  log.info("Reading SAML certificate file from %s", filePath);
+  return fs.readFileSync(filePath, "utf-8");
 };
 
 export default async function newApp(): Promise<Express> {
@@ -254,7 +252,6 @@ function registerLoginRoute(app: Express, newSpidStrategy: SpidStrategy): void {
   });
 
   app.post("/assertion-consumer-service", (req, res, next) => {
-    log.debug("dentro assertion-consumer-service");
     passport.authenticate("spid", async (err, user) => {
       if (err) {
         // TODO: redirect to an error page and return
@@ -288,16 +285,4 @@ function initModels(): void {
 function createModelAssociations(): void {
   createOrganizationAssociations();
   createUserAssociations();
-}
-
-/**
- * Reads a file from the filesystem.
- *
- * @param filePath
- * @param type The file type. The parameter is unsed only in logs
- * @returns {string}
- */
-function readFile(filePath: string, type: string): string {
-  log.info("Reading %s file from %s", type, filePath);
-  return fs.readFileSync(filePath, "utf-8");
 }
