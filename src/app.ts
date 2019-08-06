@@ -9,6 +9,7 @@ import {
   Response
 } from "express";
 import { query, validationResult } from "express-validator";
+import { fromNullable } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import * as passport from "passport";
 import { Strategy } from "passport";
@@ -29,6 +30,7 @@ import {
 } from "./models/User";
 import loadSpidStrategy from "./strategies/spidStrategy";
 import { IIpaSearchResult } from "./types/PublicAdministration";
+import getErrorCodeFromResponse from "./utils/getErrorCodeFromResponse";
 import { log } from "./utils/logger";
 
 // Private key used in SAML authentication to a SPID IDP.
@@ -239,6 +241,18 @@ function registerRoutes(app: Express): void {
  * Initializes SpidStrategy for passport and setup /login route.
  */
 function registerLoginRoute(app: Express, newSpidStrategy: SpidStrategy): void {
+  const CLIENT_SPID_ERROR_REDIRECTION_URL =
+    process.env.CLIENT_SPID_ERROR_REDIRECTION_URL;
+  const CLIENT_SPID_SUCCESS_REDIRECTION_URL =
+    process.env.CLIENT_SPID_SUCCESS_REDIRECTION_URL;
+  if (
+    !CLIENT_SPID_ERROR_REDIRECTION_URL ||
+    !CLIENT_SPID_SUCCESS_REDIRECTION_URL
+  ) {
+    log.error("One or more required environmente variables are missing");
+    return process.exit(1);
+  }
+
   const SP_METADATA_FILENAME = "sp_metadata.xml";
   // Create sp metadata file if not existing yet
   if (!fs.existsSync(SP_METADATA_FILENAME)) {
@@ -271,14 +285,18 @@ function registerLoginRoute(app: Express, newSpidStrategy: SpidStrategy): void {
   app.post("/assertion-consumer-service", (req, res, next) => {
     passport.authenticate("spid", async (err, user) => {
       if (err) {
-        // TODO: redirect to an error page and return
-        res.json(err.stack);
-        return log.error("Spid login error: %s", err);
+        log.error("Error in SPID authentication: %s", err);
+        return res.redirect(
+          CLIENT_SPID_ERROR_REDIRECTION_URL +
+            fromNullable(err.statusXml)
+              .chain(statusXml => getErrorCodeFromResponse(statusXml))
+              .map(errorCode => `?errorCode=${errorCode}`)
+              .getOrElse("")
+        );
       }
       if (!user) {
-        // TODO: redirect to an error page and return
-        res.send();
-        return log.error("Error in SPID authentication: no user found");
+        log.error("Error in SPID authentication: no user found");
+        return res.redirect(CLIENT_SPID_SUCCESS_REDIRECTION_URL);
       }
       // TODO: handle user data and create token
       log.debug("Spid login success: %s", JSON.stringify(user, null, 4));

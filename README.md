@@ -41,16 +41,18 @@ A Linux/macOS environment is required at the moment.
 
 The table below describes all the Environment variables needed by the application.
 
-| Variable name                          | Description                                                            | type   |
-|----------------------------------------|------------------------------------------------------------------------|--------|
-| PGHOST                                 | The name of postgres server host to connect to                         | string |
-| PGPASSWORD                             | The password used to connect to postgres server                        | string |
-| PGUSER                                 | PostgreSQL user name to connect as                                     | string |
-| PGDATABASE                             | The database name                                                      | string |
-| SAML_ACCEPTED_CLOCK_SKEW_MS            | The value of the accepted clock skew in milliseconds                   | number |
-| SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX | The index in the attribute consumer list                               | number |
-| SAML_CALLBACK_URL                      | The absolute URL of the assertion consumer service endpoint            | string |
-| SAML_ISSUER                            | The issuer id for this Service Provider                                | string |
-| SPID_AUTOLOGIN                         | The user used in the autologin feature, omit this to disable autologin | string |
-| SPID_TESTENV_URL                       | The absolute URL of the test IDP server                                | string |
-| IDP_METADATA_URL                       | Url to download IDP metadata from                                      | string |
+| Variable name                          | Description                                                                       | type   |
+|----------------------------------------|-----------------------------------------------------------------------------------|--------|
+| PGHOST                                 | The name of postgres server host to connect to                                    | string |
+| PGPASSWORD                             | The password used to connect to postgres server                                   | string |
+| PGUSER                                 | PostgreSQL user name to connect as                                                | string |
+| PGDATABASE                             | The database name                                                                 | string |
+| CLIENT_SPID_ERROR_REDIRECTION_URL      | The path where the user will be redirected when en error occurs during SPID login | string |
+| CLIENT_SPID_SUCCESS_REDIRECTION_URL    | The path where the user will be redirected after a successful SPID login          | string |
+| SAML_ACCEPTED_CLOCK_SKEW_MS            | The value of the accepted clock skew in milliseconds                              | number |
+| SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX | The index in the attribute consumer list                                          | number |
+| SAML_CALLBACK_URL                      | The absolute URL of the assertion consumer service endpoint                       | string |
+| SAML_ISSUER                            | The issuer id for this Service Provider                                           | string |
+| SPID_AUTOLOGIN                         | The user used in the autologin feature, omit this to disable autologin            | string |
+| SPID_TESTENV_URL                       | The absolute URL of the test IDP server                                           | string |
+| IDP_METADATA_URL                       | Url to download IDP metadata from                                                 | string |
