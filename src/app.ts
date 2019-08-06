@@ -239,16 +239,33 @@ function registerRoutes(app: Express): void {
  * Initializes SpidStrategy for passport and setup /login route.
  */
 function registerLoginRoute(app: Express, newSpidStrategy: SpidStrategy): void {
+  const SP_METADATA_FILENAME = "sp_metadata.xml";
+  // Create sp metadata file if not existing yet
+  if (!fs.existsSync(SP_METADATA_FILENAME)) {
+    const metadata = newSpidStrategy.generateServiceProviderMetadata(
+      samlCert()
+    );
+    try {
+      fs.writeFileSync(SP_METADATA_FILENAME, metadata);
+      log.info("SP metadata file successfully written");
+    } catch (error) {
+      log.error("Error on SP metadata file writing: %s", error);
+      process.exit(1);
+    }
+  }
+
   // Add the strategy to authenticate the proxy to SPID.
   passport.use("spid", (newSpidStrategy as unknown) as Strategy);
   const spidAuth = passport.authenticate("spid", { session: false });
   app.get("/login", spidAuth);
 
   app.get("/metadata", (_0, res) => {
-    const metadata = ((newSpidStrategy as unknown) as SpidStrategy).generateServiceProviderMetadata(
-      samlCert()
-    );
-    res.type("application/xml").send(metadata);
+    try {
+      res.type("application/xml").send(fs.readFileSync(SP_METADATA_FILENAME));
+    } catch (error) {
+      log.error("Error on sp metadata file reading: %s", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   app.post("/assertion-consumer-service", (req, res, next) => {
