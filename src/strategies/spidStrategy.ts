@@ -118,7 +118,8 @@ const spidStrategy = async (spidStrategyConfiguration: {
       issuer: samlIssuer,
       organization: {
         URL: "https://io.italia.it",
-        displayName: "IO - l'app dei servizi pubblici BETA",
+        displayName:
+          "IO onboarding - il portale di onboarding degli enti del progetto IO",
         name:
           "Team per la Trasformazione Digitale - Presidenza Del Consiglio dei Ministri"
       },
