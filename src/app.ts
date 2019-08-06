@@ -11,6 +11,7 @@ import {
 import { query, validationResult } from "express-validator";
 import * as fs from "fs";
 import * as passport from "passport";
+import { Strategy } from "passport";
 import * as path from "path";
 import { Sequelize } from "sequelize";
 import * as usync from "umzug-sync";
@@ -85,7 +86,7 @@ export default async function newApp(): Promise<Express> {
   }
 
   try {
-    const newSpidStrategy = await loadSpidStrategy({
+    const newSpidStrategy: SpidStrategy = await loadSpidStrategy({
       idpMetadataUrl: IDP_METADATA_URL,
       samlAcceptedClockSkewMs: SAML_ACCEPTED_CLOCK_SKEW_MS,
       samlAttributeConsumingServiceIndex: SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX,
@@ -239,12 +240,9 @@ function registerRoutes(app: Express): void {
 /**
  * Initializes SpidStrategy for passport and setup /login route.
  */
-function registerLoginRoute(
-  app: Express,
-  newSpidStrategy: passport.Strategy
-): void {
+function registerLoginRoute(app: Express, newSpidStrategy: SpidStrategy): void {
   // Add the strategy to authenticate the proxy to SPID.
-  passport.use("spid", newSpidStrategy);
+  passport.use("spid", (newSpidStrategy as unknown) as Strategy);
   const spidAuth = passport.authenticate("spid", { session: false });
   app.get("/login", spidAuth);
 
