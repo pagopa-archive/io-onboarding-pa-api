@@ -1,9 +1,9 @@
-import * as dotenv from "dotenv";
+// Before running the app, loads all the environment variables from a .env files
+// @see https://github.com/motdotla/dotenv/tree/v6.1.0#how-do-i-use-dotenv-with-import
+import "./env";
+
 import newApp from "./app";
 import { log } from "./utils/logger";
-
-// Before running the app, loads all the environment variables from a .env files
-dotenv.config();
 
 newApp()
   .then(app => {
