@@ -6,16 +6,13 @@
   "author": "https://teamdigitale.governo.it",
   "license": "MIT",
   "scripts": {
-    "prebuild": "rimraf dist && npm-run-all generate:models:*",
-    "generate:models:io-functions": "rimraf generated/io-functions && mkdir -p generated/io-functions && gen-api-models --api-spec https://raw.githubusercontent.com/teamdigitale/io-functions/v0.64.0/api/public_api_v1.yaml --no-strict --out-dir generated/io-functions --request-types --response-decoders",
-    "generate:models:io-backend": "rimraf generated/io-backend && mkdir -p generated/io-backend && gen-api-models --api-spec https://raw.githubusercontent.com/teamdigitale/io-backend/v1.6.2/api_backend.yaml --out-dir generated/io-backend",
-    "generate:all-models": "npm-run-all generate:models:*",
+    "prebuild": "rimraf dist",
     "generate:test-certs": "./scripts/generate-test-certs.sh certs",
     "build": "tsc",
     "postversion": "git push && git push --tags",
     "test": "jest",
     "lint": "tslint --project .",
-    "start": "node dist/src/index.js"
+    "start": "node dist/index.js"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.27",

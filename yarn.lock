@@ -2367,7 +2367,7 @@ invert-kv@^2.0.0:
 
 "io-spid-commons@https://github.com/teamdigitale/io-spid-commons":
   version "0.0.1"
-  resolved "https://github.com/teamdigitale/io-spid-commons#efa8a08784ba602852c39e0d5d2046f42d6e3163"
+  resolved "https://github.com/teamdigitale/io-spid-commons#f9918ed744053de293920f95b42c3915e842c59f"
   dependencies:
     date-fns "^1.30.1"
     fp-ts "1.12.0"

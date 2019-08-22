@@ -1,9 +1,10 @@
+import { SpidLevel } from "io-spid-commons";
 import * as t from "io-ts";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
-//
-import { EmailAddress } from "../../generated/io-backend/EmailAddress";
-import { FiscalCode } from "../../generated/io-backend/FiscalCode";
-import { SpidLevel } from "../../generated/io-backend/SpidLevel";
+import {
+  EmailString,
+  FiscalCode,
+  NonEmptyString
+} from "italia-ts-commons/lib/strings";
 
 import { Issuer } from "./issuer";
 
@@ -11,7 +12,7 @@ import { Issuer } from "./issuer";
 export const SpidUser = t.intersection([
   t.interface({
     authnContextClassRef: SpidLevel,
-    email: EmailAddress,
+    email: EmailString,
     familyName: t.string,
     fiscalNumber: FiscalCode,
     getAssertionXml: t.Function,

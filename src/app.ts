@@ -135,7 +135,7 @@ export default async function newApp(): Promise<Express> {
     await usync.migrate({
       SequelizeImport: Sequelize,
       logging: (param: string) => log.info("%s", param),
-      migrationsDir: path.join("dist", "src", "migrations"),
+      migrationsDir: path.join("dist", "migrations"),
       sequelize
     });
     initModels();
