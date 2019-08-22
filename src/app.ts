@@ -11,7 +11,11 @@ import {
 import { query, validationResult } from "express-validator";
 import { fromNullable } from "fp-ts/lib/Option";
 import * as fs from "fs";
-import { SamlAttribute, SpidPassportBuilder } from "io-spid-commons";
+import {
+  getErrorCodeFromResponse,
+  SamlAttribute,
+  SpidPassportBuilder
+} from "io-spid-commons";
 import * as passport from "passport";
 import * as path from "path";
 import { Sequelize } from "sequelize";
@@ -29,7 +33,6 @@ import {
   init as initUser
 } from "./models/User";
 import { IIpaSearchResult } from "./types/PublicAdministration";
-import getErrorCodeFromResponse from "./utils/getErrorCodeFromResponse";
 import { log } from "./utils/logger";
 
 // Private key used in SAML authentication to a SPID IDP.
