@@ -1,6 +1,8 @@
-// Before running the app, loads all the environment variables from a .env files
+// Before running the app and importing any other module,
+// loads all the environment variables from a .env file
 // @see https://github.com/motdotla/dotenv/tree/v6.1.0#how-do-i-use-dotenv-with-import
-import "./env";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 import newApp from "./app";
 import { log } from "./utils/logger";
