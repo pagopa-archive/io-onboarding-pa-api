@@ -11,8 +11,8 @@ import {
 import { query, validationResult } from "express-validator";
 import { fromNullable } from "fp-ts/lib/Option";
 import * as fs from "fs";
+import { SamlAttribute, SpidPassportBuilder } from "io-spid-commons";
 import * as passport from "passport";
-import { Strategy } from "passport";
 import * as path from "path";
 import { Sequelize } from "sequelize";
 import * as usync from "umzug-sync";
@@ -28,7 +28,6 @@ import {
   createAssociations as createUserAssociations,
   init as initUser
 } from "./models/User";
-import loadSpidStrategy from "./strategies/spidStrategy";
 import { IIpaSearchResult } from "./types/PublicAdministration";
 import getErrorCodeFromResponse from "./utils/getErrorCodeFromResponse";
 import { log } from "./utils/logger";
@@ -86,8 +85,21 @@ export default async function newApp(): Promise<Express> {
   }
 
   try {
-    const newSpidStrategy: SpidStrategy = await loadSpidStrategy({
-      idpMetadataUrl: IDP_METADATA_URL,
+    const spidPassport = new SpidPassportBuilder(app, "/login", "/metadata", {
+      IDPMetadataUrl: IDP_METADATA_URL,
+      organization: {
+        URL: "https://io.italia.it",
+        displayName:
+          "IO onboarding - il portale di onboarding degli enti del progetto IO",
+        name:
+          "Team per la Trasformazione Digitale - Presidenza Del Consiglio dei Ministri"
+      },
+      requiredAttributes: [
+        SamlAttribute.NAME,
+        SamlAttribute.FAMILY_NAME,
+        SamlAttribute.EMAIL,
+        SamlAttribute.FISCAL_NUMBER
+      ],
       samlAcceptedClockSkewMs: SAML_ACCEPTED_CLOCK_SKEW_MS,
       samlAttributeConsumingServiceIndex: SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX,
       samlCallbackUrl: SAML_CALLBACK_URL,
@@ -97,7 +109,8 @@ export default async function newApp(): Promise<Express> {
       spidAutologin: SPID_AUTOLOGIN || "",
       spidTestEnvUrl: SPID_TESTENV_URL
     });
-    registerLoginRoute(app, newSpidStrategy);
+    await spidPassport.init();
+    registerLoginRoute(app);
   } catch (error) {
     log.error("Login route registration failed. %s", error);
     process.exit(1);
@@ -240,7 +253,7 @@ function registerRoutes(app: Express): void {
 /**
  * Initializes SpidStrategy for passport and setup /login route.
  */
-function registerLoginRoute(app: Express, newSpidStrategy: SpidStrategy): void {
+function registerLoginRoute(app: Express): void {
   const CLIENT_SPID_ERROR_REDIRECTION_URL =
     process.env.CLIENT_SPID_ERROR_REDIRECTION_URL;
   const CLIENT_SPID_SUCCESS_REDIRECTION_URL =
@@ -252,35 +265,6 @@ function registerLoginRoute(app: Express, newSpidStrategy: SpidStrategy): void {
     log.error("One or more required environmente variables are missing");
     return process.exit(1);
   }
-
-  const SP_METADATA_FILENAME = "sp_metadata.xml";
-  // Create sp metadata file if not existing yet
-  if (!fs.existsSync(SP_METADATA_FILENAME)) {
-    const metadata = newSpidStrategy.generateServiceProviderMetadata(
-      samlCert()
-    );
-    try {
-      fs.writeFileSync(SP_METADATA_FILENAME, metadata);
-      log.info("SP metadata file successfully written");
-    } catch (error) {
-      log.error("Error on SP metadata file writing: %s", error);
-      process.exit(1);
-    }
-  }
-
-  // Add the strategy to authenticate the proxy to SPID.
-  passport.use("spid", (newSpidStrategy as unknown) as Strategy);
-  const spidAuth = passport.authenticate("spid", { session: false });
-  app.get("/login", spidAuth);
-
-  app.get("/metadata", (_0, res) => {
-    try {
-      res.type("application/xml").send(fs.readFileSync(SP_METADATA_FILENAME));
-    } catch (error) {
-      log.error("Error on sp metadata file reading: %s", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   app.post("/assertion-consumer-service", (req, res, next) => {
     passport.authenticate("spid", async (err, user) => {

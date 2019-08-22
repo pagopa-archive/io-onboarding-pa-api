@@ -148,5 +148,21 @@
             "dateOfBirth": "1986-04-02",
             "gender": "M"
         }
+    },
+    "pippo": {
+        "attrs": {
+            "name": "Giuseppe",
+            "countyOfBirth": "Roma",
+            "gender": "M",
+            "fiscalNumber": "TINIT-PPPPPP00A01H501Y",
+            "email": "pippo@pappo.net",
+            "dateOfBirth": "1900-01-01",
+            "placeOfBirth": "Roma",
+            "familyName": "Pappo",
+            "address": "via di casa sua SNC",
+            "mobilePhone": "3330000000"
+        },
+        "pwd": "test",
+        "sp": null
     }
 }

@@ -16,7 +16,7 @@ A Linux/macOS environment is required at the moment.
 
 1. clone the project in a folder called `io-onboarding-backend`
 2. go to the project's folder
-3. run the command `yarn generate-test-certs to create SAML (SPID) certificates
+3. run the command `yarn generate-test-certs` to create SAML (SPID) certificates
 4. create a .env file and configure the values inside: `cp .env.example .env`
 5. run `docker-compose up -d` to start the containers
 6. edit your `/etc/hosts` file by adding:
