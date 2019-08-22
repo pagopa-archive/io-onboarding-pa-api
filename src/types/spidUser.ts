@@ -6,8 +6,6 @@ import {
   NonEmptyString
 } from "italia-ts-commons/lib/strings";
 
-import { Issuer } from "./issuer";
-
 // required attributes
 export const SpidUser = t.intersection([
   t.interface({
@@ -16,7 +14,9 @@ export const SpidUser = t.intersection([
     familyName: t.string,
     fiscalNumber: FiscalCode,
     getAssertionXml: t.Function,
-    issuer: Issuer,
+    issuer: t.interface({
+      _: t.string
+    }),
     mobilePhone: NonEmptyString,
     name: t.string
   }),
