@@ -1,9 +1,11 @@
 import { Request } from "express";
 import { Either, left, right } from "fp-ts/lib/Either";
-import { fromNullable, none, Option, some, tryCatch } from "fp-ts/lib/Option";
-import { isSpidL, SpidLevel } from "io-spid-commons";
-// tslint:disable-next-line:no-submodule-imports
-import { SpidLevelEnum } from "io-spid-commons/dist/types/spidLevel";
+import {
+  getAuthnContextFromResponse,
+  isSpidL,
+  SpidLevel,
+  SpidLevelEnum
+} from "io-spid-commons";
 import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { IResponseErrorValidation } from "italia-ts-commons/lib/responses";
@@ -12,7 +14,6 @@ import {
   FiscalCode,
   NonEmptyString
 } from "italia-ts-commons/lib/strings";
-import { DOMParser } from "xmldom";
 
 import { log } from "../utils/logger";
 import { withValidatedOrValidationError } from "../utils/responses";
@@ -131,26 +132,3 @@ export const withUserFromRequest = async <T>(
   f: (user: SpidLoggedUser) => Promise<T>
 ): Promise<IResponseErrorValidation | T> =>
   withValidatedOrValidationError(SpidLoggedUser.decode(req.user), f);
-
-/**
- * Extract AuthnContextClassRef from SAML response
- *
- * ie. for <saml2:AuthnContextClassRef>https://www.spid.gov.it/SpidL2</saml2:AuthnContextClassRef>
- * returns "https://www.spid.gov.it/SpidL2"
- */
-function getAuthnContextFromResponse(xml: string): Option<string> {
-  return fromNullable(xml)
-    .chain(xmlStr => tryCatch(() => new DOMParser().parseFromString(xmlStr)))
-    .chain(xmlResponse =>
-      xmlResponse
-        ? some(xmlResponse.getElementsByTagName("saml:AuthnContextClassRef"))
-        : none
-    )
-    .chain(responseAuthLevelEl =>
-      responseAuthLevelEl &&
-      responseAuthLevelEl[0] &&
-      responseAuthLevelEl[0].textContent
-        ? some(responseAuthLevelEl[0].textContent.trim())
-        : none
-    );
-}

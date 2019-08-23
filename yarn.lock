@@ -546,11 +546,6 @@
   resolved "https://registry.yarnpkg.com/@types/validator/-/validator-10.11.1.tgz#76e983ce155261838463b73728856cf8bc628d53"
   integrity sha512-bVhLqvb+5xUNWRFnuuecRVISTvsG6AdhrB2kb/tChgtuTTqARqlQ3rLhOPy8cINZEUB8PkR+goyWF6fWxg4iSw==
 
-"@types/xmldom@^0.1.27":
-  version "0.1.29"
-  resolved "https://registry.yarnpkg.com/@types/xmldom/-/xmldom-0.1.29.tgz#c4428b0ca86d3b881475726fd94980b38a27c381"
-  integrity sha1-xEKLDKhtO4gUdXJv2UmAs4onw4E=
-
 "@types/yargs@^12.0.2", "@types/yargs@^12.0.9":
   version "12.0.12"
   resolved "https://registry.yarnpkg.com/@types/yargs/-/yargs-12.0.12.tgz#45dd1d0638e8c8f153e87d296907659296873916"
@@ -2380,9 +2375,9 @@ invert-kv@^2.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-2.0.0.tgz#7393f5afa59ec9ff5f67a27620d11c226e3eec02"
   integrity sha512-wPVv/y/QQ/Uiirj/vh3oP+1Ww+AWehmi1g5fFWGPF6IpCBCDVrhgHRMvrLfdYcwDh3QJbGXDW4JAuzxElLSqKA==
 
-"io-spid-commons@https://github.com/teamdigitale/io-spid-commons#v0.0.2":
-  version "0.0.2"
-  resolved "https://github.com/teamdigitale/io-spid-commons#345c7fcbceb9ef8e4f44f55eb26ffba993fb95ac"
+"io-spid-commons@https://github.com/teamdigitale/io-spid-commons#v0.0.3":
+  version "0.0.3"
+  resolved "https://github.com/teamdigitale/io-spid-commons#644b5993bdd4708dc93f69eef304d63e5850c2b5"
   dependencies:
     date-fns "^1.30.1"
     fp-ts "1.12.0"

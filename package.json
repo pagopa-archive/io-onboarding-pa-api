@@ -25,7 +25,6 @@
     "@types/passport-http-bearer": "^1.0.33",
     "@types/pg": "^7.4.14",
     "@types/validator": "^10.11.1",
-    "@types/xmldom": "^0.1.27",
     "danger": "^8.0.0",
     "danger-plugin-digitalcitizenship": "*",
     "italia-tslint-rules": "*",
@@ -43,7 +42,7 @@
     "express": "^4.17.1",
     "express-validator": "^6.1.0",
     "fp-ts": "1.12.0",
-    "io-spid-commons": "https://github.com/teamdigitale/io-spid-commons#v0.0.2",
+    "io-spid-commons": "https://github.com/teamdigitale/io-spid-commons#v0.0.3",
     "io-ts": "1.8.5",
     "io-ts-types": "^0.4.7",
     "italia-ts-commons": "^5.1.5",
@@ -58,8 +57,7 @@
     "spid-passport": "git://github.com/teamdigitale/spid-passport.git#v1.1.7",
     "umzug-sync": "^1.0.0",
     "winston": "^3.2.1",
-    "x509": "^0.3.4",
-    "xmldom": "^0.1.27"
+    "x509": "^0.3.4"
   },
   "jest": {
     "testEnvironment": "node",
