@@ -2,6 +2,7 @@ import { Request } from "express";
 import { Either, left, right } from "fp-ts/lib/Either";
 import { fromNullable, none, Option, some, tryCatch } from "fp-ts/lib/Option";
 import { isSpidL, SpidLevel } from "io-spid-commons";
+// tslint:disable-next-line:no-submodule-imports
 import { SpidLevelEnum } from "io-spid-commons/dist/types/spidLevel";
 import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
