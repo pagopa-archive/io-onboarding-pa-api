@@ -108,7 +108,7 @@ export default class SessionStorage {
   ): Promise<Either<Error, User>> {
     try {
       const user = await User.findOne({
-        include: [{ as: "session", model: Session, where: { token } }]
+        include: [{ as: "sessions", model: Session, where: { token } }]
       });
       if (user === null) {
         return left<Error, User>(sessionNotFoundError);

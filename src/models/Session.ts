@@ -42,6 +42,7 @@ export function init(): void {
 
 export function createAssociations(): void {
   Session.belongsTo(User, {
+    as: "user",
     foreignKey: { name: "fiscalCode", field: "userFiscalCode" }
   });
 }

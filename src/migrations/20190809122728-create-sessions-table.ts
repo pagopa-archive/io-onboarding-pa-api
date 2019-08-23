@@ -3,13 +3,19 @@ import { DataTypes, QueryInterface } from "sequelize";
 export function up(queryInterface: QueryInterface): Promise<void> {
   return queryInterface.createTable("Sessions", {
     createdAt: {
+      /**
+       * Creation date of the entry.
+       * It represents the time when the user logs in.
+       */
       allowNull: false,
       type: new DataTypes.DATE()
     },
     deletedAt: {
       /**
        * Deletion date of the entry.
-       * This field will be set instead of deleting the entry from the database.
+       * It represents the moment since the token is not valid anymore
+       * because the user performed a logout.
+       * This field will be set instead of deleting the entry from the database,
        * @see: https://docs.sequelizejs.com/manual/models-definition.html#configuration
        */
       allowNull: true,
@@ -17,7 +23,9 @@ export function up(queryInterface: QueryInterface): Promise<void> {
     },
     expirationTime: {
       /**
-       * Session expiration time
+       * Session expiration time.
+       * It represents the moment since the token is not valid anymore
+       * regardless of weather the user has already logged out or not.
        */
       allowNull: false,
       type: new DataTypes.DATE()

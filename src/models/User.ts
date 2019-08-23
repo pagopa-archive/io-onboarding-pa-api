@@ -17,8 +17,12 @@ export class User extends Model {
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  public readonly session?: Session;
+  // An array of session associated to the user,
+  // its value will be populated only when explicitly requested in code
+  // according to the inclusion of the relation.
+  // @see: https://sequelize.org/master/manual/typescript.html#usage
   public readonly sessions?: ReadonlyArray<Session>;
+
   public createSession!: HasManyCreateAssociationMixin<Session>;
 }
 
@@ -60,6 +64,7 @@ export function createAssociations(): void {
     through: OrganizationUser
   });
   User.hasMany(Session, {
+    as: "sessions",
     foreignKey: { name: "fiscalCode", field: "userFiscalCode" }
   });
 }
