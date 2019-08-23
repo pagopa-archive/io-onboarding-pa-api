@@ -81,6 +81,9 @@ const CLIENT_SPID_SUCCESS_REDIRECTION_URL = getRequiredEnvVar(
 const CLIENT_SPID_LOGIN_REDIRECTION_URL = getRequiredEnvVar(
   "CLIENT_SPID_LOGIN_REDIRECTION_URL"
 );
+const TOKEN_DURATION_IN_SECONDS = Number(
+  getRequiredEnvVar("TOKEN_DURATION_IN_SECONDS")
+);
 
 export default async function newApp(): Promise<Express> {
   // Create Express server
@@ -271,6 +274,7 @@ function registerLoginRoute(app: Express): void {
   // handling the related session token accordingly
   const authController = new AuthenticationController(
     new TokenService(),
+    TOKEN_DURATION_IN_SECONDS,
     (token: string) => ({
       href: CLIENT_SPID_SUCCESS_REDIRECTION_URL.replace("{token}", token)
     })

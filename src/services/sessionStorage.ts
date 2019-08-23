@@ -4,24 +4,15 @@ import { Session } from "../models/Session";
 import { User } from "../models/User";
 import { SpidLoggedUser, SpidUser } from "../types/spidUser";
 import { SessionToken } from "../types/token";
-import { getRequiredEnvVar } from "../utils/environment";
-import { log } from "../utils/logger";
 
 export const sessionNotFoundError = new Error("Session not found");
 
 export default class SessionStorage {
   public static async set(
     user: SpidUser,
-    sessionToken: SessionToken
+    sessionToken: SessionToken,
+    tokenDurationInSeconds: number
   ): Promise<Either<Error, boolean>> {
-    const TOKEN_DURATION_IN_SECONDS = Number(
-      getRequiredEnvVar("TOKEN_DURATION_IN_SECONDS")
-    );
-    if (!TOKEN_DURATION_IN_SECONDS) {
-      log.error("TOKEN_DURATION_IN_SECONDS environment variable is missing");
-      return process.exit(1);
-    }
-
     try {
       const [loggerUser, _] = await User.findOrCreate({
         defaults: {
@@ -32,7 +23,7 @@ export default class SessionStorage {
         where: { fiscalCode: user.fiscalNumber }
       });
       await loggerUser.createSession({
-        expirationTime: new Date(Date.now() + TOKEN_DURATION_IN_SECONDS),
+        expirationTime: new Date(Date.now() + tokenDurationInSeconds * 1000),
         token: sessionToken
       });
     } catch (error) {

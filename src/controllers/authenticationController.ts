@@ -29,6 +29,7 @@ import { withCatchAsInternalError } from "../utils/responses";
 export default class AuthenticationController {
   constructor(
     private readonly tokenService: TokenService,
+    private readonly tokenDurationInSeconds: number,
     private readonly getClientProfileRedirectionUrl: (
       token: string
     ) => UrlFromString
@@ -62,7 +63,11 @@ export default class AuthenticationController {
     const spidUser = errorOrUser.value;
     const sessionToken = this.tokenService.getNewToken() as SessionToken;
 
-    const errorOrResponse = await SessionStorage.set(spidUser, sessionToken);
+    const errorOrResponse = await SessionStorage.set(
+      spidUser,
+      sessionToken,
+      this.tokenDurationInSeconds
+    );
 
     if (isLeft(errorOrResponse)) {
       const error = errorOrResponse.value;
