@@ -9,11 +9,7 @@ import {
 import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { IResponseErrorValidation } from "italia-ts-commons/lib/responses";
-import {
-  EmailString,
-  FiscalCode,
-  NonEmptyString
-} from "italia-ts-commons/lib/strings";
+import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 
 import { log } from "../utils/logger";
 import { withValidatedOrValidationError } from "../utils/responses";
@@ -29,8 +25,7 @@ export const SpidLoggedUser = t.intersection([
     name: t.string,
     sessionToken: SessionToken,
     spidEmail: EmailString,
-    spidLevel: SpidLevel,
-    spidMobilePhone: NonEmptyString
+    spidLevel: SpidLevel
   }),
   t.partial({
     nameId: t.string,
@@ -53,7 +48,6 @@ export const SpidUser = t.intersection([
     issuer: t.interface({
       _: t.string
     }),
-    mobilePhone: NonEmptyString,
     name: t.string
   }),
   t.partial({
