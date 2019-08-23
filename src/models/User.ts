@@ -1,7 +1,8 @@
-import { DataTypes, Model } from "sequelize";
+import { DataTypes, HasManyCreateAssociationMixin, Model } from "sequelize";
 import sequelize from "../database/db";
 import { Organization } from "./Organization";
 import { OrganizationUser } from "./OrganizationUser";
+import { Session } from "./Session";
 
 export enum UserRole {
   ORG_DELEGATE = "ORG_DELEGATE", // Organization delegate
@@ -9,16 +10,25 @@ export enum UserRole {
 }
 
 export class User extends Model {
+  public email!: string;
   public fiscalCode!: string; // PK
   public firstName!: string;
   public familyName!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  public readonly session?: Session;
+  public readonly sessions?: ReadonlyArray<Session>;
+  public createSession!: HasManyCreateAssociationMixin<Session>;
 }
 
 export function init(): void {
   User.init(
     {
+      email: {
+        allowNull: false,
+        type: new DataTypes.STRING()
+      },
       familyName: {
         allowNull: false,
         type: new DataTypes.STRING()
@@ -48,5 +58,8 @@ export function createAssociations(): void {
     foreignKey: { name: "fiscalCode", field: "userFiscalCode" },
     otherKey: { name: "ipaCode", field: "organizationIpaCode" },
     through: OrganizationUser
+  });
+  User.hasMany(Session, {
+    foreignKey: { name: "fiscalCode", field: "userFiscalCode" }
   });
 }

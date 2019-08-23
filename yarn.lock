@@ -486,6 +486,21 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.14.1.tgz#8701cd760acc20beba5ffe0b7a1b879f39cb8c41"
   integrity sha512-Rymt08vh1GaW4vYB6QP61/5m/CFLGnFZP++bJpWbiNxceNa6RBipDmb413jvtSf/R1gg5a/jQVl2jY4XVRscEA==
 
+"@types/passport-http-bearer@^1.0.33":
+  version "1.0.33"
+  resolved "https://registry.yarnpkg.com/@types/passport-http-bearer/-/passport-http-bearer-1.0.33.tgz#68d6df93db17a2abf58925efbfdeb3b7c2e0fdf5"
+  integrity sha512-S9VqrOx5GTcMNujuL2wXUwRCbYwNDSyaIv0B8rDAuWz8E2aM7oFCfEuNbNwV0SsVul0CcK4ftsKf63ETSprt1w==
+  dependencies:
+    "@types/express" "*"
+    "@types/passport" "*"
+
+"@types/passport@*":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@types/passport/-/passport-1.0.0.tgz#747fa127a747a145ff279f3df3e07c425e5ff297"
+  integrity sha512-R2FXqM+AgsMIym0PuKj08Ybx+GR6d2rU3b1/8OcHolJ+4ga2pRPX105wboV6hq1AJvMo2frQzYKdqXS5+4cyMw==
+  dependencies:
+    "@types/express" "*"
+
 "@types/passport@^0.4.0":
   version "0.4.7"
   resolved "https://registry.yarnpkg.com/@types/passport/-/passport-0.4.7.tgz#2b7f29bf61df91cf77023b3777e940b613d4b4d8"
@@ -4221,6 +4236,13 @@ pascalcase@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/pascalcase/-/pascalcase-0.1.1.tgz#b363e55e8006ca6fe21784d2db22bd15d7917f14"
   integrity sha1-s2PlXoAGym/iF4TS2yK9FdeRfxQ=
+
+passport-http-bearer@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/passport-http-bearer/-/passport-http-bearer-1.0.1.tgz#147469ea3669e2a84c6167ef99dbb77e1f0098a8"
+  integrity sha1-FHRp6jZp4qhMYWfvmdu3fh8AmKg=
+  dependencies:
+    passport-strategy "1.x.x"
 
 passport-saml@^0.33.0:
   version "0.33.0"

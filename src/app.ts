@@ -29,11 +29,20 @@ import {
 } from "./models/Organization";
 import { init as initOrganizationUser } from "./models/OrganizationUser";
 import {
+  createAssociations as createSessionAssociations,
+  init as initSession
+} from "./models/Session";
+import {
   createAssociations as createUserAssociations,
   init as initUser
 } from "./models/User";
 import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
+
+import AuthenticationController from "./controllers/authenticationController";
+import TokenService from "./services/tokenService";
+import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
+import { toExpressHandler } from "./utils/express";
 
 // Private key used in SAML authentication to a SPID IDP.
 const samlKey = () => {
@@ -49,6 +58,9 @@ const samlCert = () => {
   return fs.readFileSync(filePath, "utf-8");
 };
 
+const oneOrMoreEnvVariablesMissing =
+  "One or more required environmente variables are missing:\n";
+
 export default async function newApp(): Promise<Express> {
   // Create Express server
   const app = express();
@@ -58,6 +70,13 @@ export default async function newApp(): Promise<Express> {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
+  const API_BASE_PATH = process.env.API_BASE_PATH;
+  if (API_BASE_PATH === undefined) {
+    log.error(oneOrMoreEnvVariablesMissing + "API_BASE_PATH");
+    return process.exit(1);
+  }
+
+  passport.use(bearerTokenStrategy(API_BASE_PATH));
   app.use(passport.initialize());
 
   registerRoutes(app);
@@ -83,7 +102,15 @@ export default async function newApp(): Promise<Express> {
     !SAML_ISSUER ||
     !SPID_TESTENV_URL
   ) {
-    log.error("One or more required environmente variables are missing");
+    log.error(
+      oneOrMoreEnvVariablesMissing +
+        "IDP_METADATA_URL\n" +
+        "SAML_ACCEPTED_CLOCK_SKEW_MS\n" +
+        "SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX\n" +
+        "SAML_CALLBACK_URL\n" +
+        "SAML_ISSUER\n" +
+        "SPID_TESTENV_URL"
+    );
     return process.exit(1);
   }
 
@@ -254,7 +281,7 @@ function registerRoutes(app: Express): void {
 }
 
 /**
- * Initializes SpidStrategy for passport and setup /login route.
+ * Setup SPID authentication routes.
  */
 function registerLoginRoute(app: Express): void {
   const CLIENT_SPID_ERROR_REDIRECTION_URL =
@@ -265,9 +292,20 @@ function registerLoginRoute(app: Express): void {
     !CLIENT_SPID_ERROR_REDIRECTION_URL ||
     !CLIENT_SPID_SUCCESS_REDIRECTION_URL
   ) {
-    log.error("One or more required environmente variables are missing");
+    log.error(
+      oneOrMoreEnvVariablesMissing +
+        "CLIENT_SPID_ERROR_REDIRECTION_URL\n" +
+        "CLIENT_SPID_SUCCESS_REDIRECTION_URL"
+    );
     return process.exit(1);
   }
+
+  const authController = new AuthenticationController(
+    new TokenService(),
+    (token: string) => ({
+      href: CLIENT_SPID_SUCCESS_REDIRECTION_URL.replace("{token}", token)
+    })
+  );
 
   app.post("/assertion-consumer-service", (req, res, next) => {
     passport.authenticate("spid", async (err, user) => {
@@ -285,26 +323,31 @@ function registerLoginRoute(app: Express): void {
         log.error("Error in SPID authentication: no user found");
         return res.redirect(CLIENT_SPID_SUCCESS_REDIRECTION_URL);
       }
-      // TODO: handle user data and create token
-      log.debug("Spid login success: %s", JSON.stringify(user, null, 4));
-      res.json({
-        email: user.email,
-        familyName: user.familyName,
-        fiscalNumber: user.fiscalNumber,
-        mobilePhone: user.mobilePhone,
-        name: user.name
-      });
+      const response = await authController.acs(user);
+      response.apply(res);
     })(req, res, next);
   });
+
+  const bearerTokenAuth = passport.authenticate("bearer", { session: false });
+
+  app.post(
+    "/logout",
+    bearerTokenAuth,
+    toExpressHandler(authController.logout, authController)
+  );
+
+  app.post("/slo", toExpressHandler(authController.slo, authController));
 }
 
 function initModels(): void {
   initOrganization();
   initOrganizationUser();
   initUser();
+  initSession();
 }
 
 function createModelAssociations(): void {
   createOrganizationAssociations();
   createUserAssociations();
+  createSessionAssociations();
 }

@@ -7,7 +7,6 @@
     "moduleResolution": "node",
     "strict": true,
     "noImplicitAny": true,
-    "declaration": true,
     "sourceMap": true
   },
   "lib": [],
