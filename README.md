@@ -56,3 +56,5 @@ The table below describes all the Environment variables needed by the applicatio
 | SPID_AUTOLOGIN                         | The user used in the autologin feature, omit this to disable autologin            | string |
 | SPID_TESTENV_URL                       | The absolute URL of the test IDP server                                           | string |
 | IDP_METADATA_URL                       | Url to download IDP metadata from                                                 | string |
+| TOKEN_DURATION_IN_SECONDS              | The number of seconds a session token is considered valid                         | int    |
+| API_BASE_PATH                          | The root path for the api endpoints                                               | string |
