@@ -9,6 +9,14 @@ import {
   Response
 } from "express";
 import { query, validationResult } from "express-validator";
+import { fromNullable } from "fp-ts/lib/Option";
+import * as fs from "fs";
+import {
+  getErrorCodeFromResponse,
+  SamlAttribute,
+  SpidPassportBuilder
+} from "io-spid-commons";
+import * as passport from "passport";
 import * as path from "path";
 import { Sequelize } from "sequelize";
 import * as usync from "umzug-sync";
@@ -27,6 +35,20 @@ import {
 import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
 
+// Private key used in SAML authentication to a SPID IDP.
+const samlKey = () => {
+  const filePath = process.env.SAML_KEY_PATH || "./certs/key.pem";
+  log.info("Reading SAML private key file from %s", filePath);
+  return fs.readFileSync(filePath, "utf-8");
+};
+
+// Public certificate used in SAML authentication to a SPID IDP.
+const samlCert = () => {
+  const filePath = process.env.SAML_CERT_PATH || "./certs/cert.pem";
+  log.info("Reading SAML certificate file from %s", filePath);
+  return fs.readFileSync(filePath, "utf-8");
+};
+
 export default async function newApp(): Promise<Express> {
   // Create Express server
   const app = express();
@@ -36,7 +58,66 @@ export default async function newApp(): Promise<Express> {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
+  app.use(passport.initialize());
+
   registerRoutes(app);
+
+  // SAML settings.
+  const SAML_CALLBACK_URL = process.env.SAML_CALLBACK_URL;
+  const SAML_ISSUER = process.env.SAML_ISSUER;
+  const SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX: number = Number(
+    process.env.SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX
+  );
+  const SAML_ACCEPTED_CLOCK_SKEW_MS = Number(
+    process.env.SAML_ACCEPTED_CLOCK_SKEW_MS
+  );
+  const SPID_AUTOLOGIN = process.env.SPID_AUTOLOGIN;
+  const SPID_TESTENV_URL = process.env.SPID_TESTENV_URL;
+  const IDP_METADATA_URL = process.env.IDP_METADATA_URL;
+
+  if (
+    !IDP_METADATA_URL ||
+    !SAML_ACCEPTED_CLOCK_SKEW_MS ||
+    !SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX ||
+    !SAML_CALLBACK_URL ||
+    !SAML_ISSUER ||
+    !SPID_TESTENV_URL
+  ) {
+    log.error("One or more required environmente variables are missing");
+    return process.exit(1);
+  }
+
+  try {
+    const spidPassport = new SpidPassportBuilder(app, "/login", "/metadata", {
+      IDPMetadataUrl: IDP_METADATA_URL,
+      organization: {
+        URL: "https://io.italia.it",
+        displayName:
+          "IO onboarding - il portale di onboarding degli enti del progetto IO",
+        name:
+          "Team per la Trasformazione Digitale - Presidenza Del Consiglio dei Ministri"
+      },
+      requiredAttributes: [
+        SamlAttribute.NAME,
+        SamlAttribute.FAMILY_NAME,
+        SamlAttribute.EMAIL,
+        SamlAttribute.FISCAL_NUMBER
+      ],
+      samlAcceptedClockSkewMs: SAML_ACCEPTED_CLOCK_SKEW_MS,
+      samlAttributeConsumingServiceIndex: SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX,
+      samlCallbackUrl: SAML_CALLBACK_URL,
+      samlCert: samlCert(),
+      samlIssuer: SAML_ISSUER,
+      samlKey: samlKey(),
+      spidAutologin: SPID_AUTOLOGIN || "",
+      spidTestEnvUrl: SPID_TESTENV_URL
+    });
+    await spidPassport.init();
+    registerLoginRoute(app);
+  } catch (error) {
+    log.error("Login route registration failed. %s", error);
+    process.exit(1);
+  }
 
   /**
    * Use a custom error-handling middleware function.
@@ -170,6 +251,51 @@ function registerRoutes(app: Express): void {
     ],
     asyncHandler(getPublicAdministrationsHandler)
   );
+}
+
+/**
+ * Initializes SpidStrategy for passport and setup /login route.
+ */
+function registerLoginRoute(app: Express): void {
+  const CLIENT_SPID_ERROR_REDIRECTION_URL =
+    process.env.CLIENT_SPID_ERROR_REDIRECTION_URL;
+  const CLIENT_SPID_SUCCESS_REDIRECTION_URL =
+    process.env.CLIENT_SPID_SUCCESS_REDIRECTION_URL;
+  if (
+    !CLIENT_SPID_ERROR_REDIRECTION_URL ||
+    !CLIENT_SPID_SUCCESS_REDIRECTION_URL
+  ) {
+    log.error("One or more required environmente variables are missing");
+    return process.exit(1);
+  }
+
+  app.post("/assertion-consumer-service", (req, res, next) => {
+    passport.authenticate("spid", async (err, user) => {
+      if (err) {
+        log.error("Error in SPID authentication: %s", err);
+        return res.redirect(
+          CLIENT_SPID_ERROR_REDIRECTION_URL +
+            fromNullable(err.statusXml)
+              .chain(statusXml => getErrorCodeFromResponse(statusXml))
+              .map(errorCode => `?errorCode=${errorCode}`)
+              .getOrElse("")
+        );
+      }
+      if (!user) {
+        log.error("Error in SPID authentication: no user found");
+        return res.redirect(CLIENT_SPID_SUCCESS_REDIRECTION_URL);
+      }
+      // TODO: handle user data and create token
+      log.debug("Spid login success: %s", JSON.stringify(user, null, 4));
+      res.json({
+        email: user.email,
+        familyName: user.familyName,
+        fiscalNumber: user.fiscalNumber,
+        mobilePhone: user.mobilePhone,
+        name: user.name
+      });
+    })(req, res, next);
+  });
 }
 
 function initModels(): void {
