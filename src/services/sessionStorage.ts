@@ -4,6 +4,7 @@ import { Session } from "../models/Session";
 import { User } from "../models/User";
 import { SpidLoggedUser, SpidUser } from "../types/spidUser";
 import { SessionToken } from "../types/token";
+import { getRequiredEnvVar } from "../utils/environment";
 import { log } from "../utils/logger";
 
 export const sessionNotFoundError = new Error("Session not found");
@@ -14,7 +15,7 @@ export default class SessionStorage {
     sessionToken: SessionToken
   ): Promise<Either<Error, boolean>> {
     const TOKEN_DURATION_IN_SECONDS = Number(
-      process.env.TOKEN_DURATION_IN_SECONDS
+      getRequiredEnvVar("TOKEN_DURATION_IN_SECONDS")
     );
     if (!TOKEN_DURATION_IN_SECONDS) {
       log.error("TOKEN_DURATION_IN_SECONDS environment variable is missing");

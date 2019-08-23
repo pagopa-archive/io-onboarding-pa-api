@@ -42,6 +42,7 @@ import { log } from "./utils/logger";
 import AuthenticationController from "./controllers/authenticationController";
 import TokenService from "./services/tokenService";
 import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
+import { getRequiredEnvVar } from "./utils/environment";
 import { toExpressHandler } from "./utils/express";
 
 // Private key used in SAML authentication to a SPID IDP.
@@ -58,8 +59,25 @@ const samlCert = () => {
   return fs.readFileSync(filePath, "utf-8");
 };
 
-const oneOrMoreEnvVariablesMissing =
-  "One or more required environmente variables are missing:\n";
+const API_BASE_PATH = getRequiredEnvVar("API_BASE_PATH");
+// SAML settings.
+const SAML_CALLBACK_URL = getRequiredEnvVar("SAML_CALLBACK_URL");
+const SAML_ISSUER = getRequiredEnvVar("SAML_ISSUER");
+const SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX: number = Number(
+  getRequiredEnvVar("SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX")
+);
+const SAML_ACCEPTED_CLOCK_SKEW_MS = Number(
+  getRequiredEnvVar("SAML_ACCEPTED_CLOCK_SKEW_MS")
+);
+const SPID_AUTOLOGIN = process.env.SPID_AUTOLOGIN;
+const SPID_TESTENV_URL = getRequiredEnvVar("SPID_TESTENV_URL");
+const IDP_METADATA_URL = getRequiredEnvVar("IDP_METADATA_URL");
+const CLIENT_SPID_ERROR_REDIRECTION_URL = getRequiredEnvVar(
+  "CLIENT_SPID_ERROR_REDIRECTION_URL"
+);
+const CLIENT_SPID_SUCCESS_REDIRECTION_URL = getRequiredEnvVar(
+  "CLIENT_SPID_SUCCESS_REDIRECTION_URL"
+);
 
 export default async function newApp(): Promise<Express> {
   // Create Express server
@@ -70,49 +88,10 @@ export default async function newApp(): Promise<Express> {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
-  const API_BASE_PATH = process.env.API_BASE_PATH;
-  if (API_BASE_PATH === undefined) {
-    log.error(oneOrMoreEnvVariablesMissing + "API_BASE_PATH");
-    return process.exit(1);
-  }
-
   passport.use(bearerTokenStrategy(API_BASE_PATH));
   app.use(passport.initialize());
 
   registerRoutes(app);
-
-  // SAML settings.
-  const SAML_CALLBACK_URL = process.env.SAML_CALLBACK_URL;
-  const SAML_ISSUER = process.env.SAML_ISSUER;
-  const SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX: number = Number(
-    process.env.SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX
-  );
-  const SAML_ACCEPTED_CLOCK_SKEW_MS = Number(
-    process.env.SAML_ACCEPTED_CLOCK_SKEW_MS
-  );
-  const SPID_AUTOLOGIN = process.env.SPID_AUTOLOGIN;
-  const SPID_TESTENV_URL = process.env.SPID_TESTENV_URL;
-  const IDP_METADATA_URL = process.env.IDP_METADATA_URL;
-
-  if (
-    !IDP_METADATA_URL ||
-    !SAML_ACCEPTED_CLOCK_SKEW_MS ||
-    !SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX ||
-    !SAML_CALLBACK_URL ||
-    !SAML_ISSUER ||
-    !SPID_TESTENV_URL
-  ) {
-    log.error(
-      oneOrMoreEnvVariablesMissing +
-        "IDP_METADATA_URL\n" +
-        "SAML_ACCEPTED_CLOCK_SKEW_MS\n" +
-        "SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX\n" +
-        "SAML_CALLBACK_URL\n" +
-        "SAML_ISSUER\n" +
-        "SPID_TESTENV_URL"
-    );
-    return process.exit(1);
-  }
 
   try {
     const spidPassport = new SpidPassportBuilder(app, "/login", "/metadata", {
@@ -284,22 +263,6 @@ function registerRoutes(app: Express): void {
  * Setup SPID authentication routes.
  */
 function registerLoginRoute(app: Express): void {
-  const CLIENT_SPID_ERROR_REDIRECTION_URL =
-    process.env.CLIENT_SPID_ERROR_REDIRECTION_URL;
-  const CLIENT_SPID_SUCCESS_REDIRECTION_URL =
-    process.env.CLIENT_SPID_SUCCESS_REDIRECTION_URL;
-  if (
-    !CLIENT_SPID_ERROR_REDIRECTION_URL ||
-    !CLIENT_SPID_SUCCESS_REDIRECTION_URL
-  ) {
-    log.error(
-      oneOrMoreEnvVariablesMissing +
-        "CLIENT_SPID_ERROR_REDIRECTION_URL\n" +
-        "CLIENT_SPID_SUCCESS_REDIRECTION_URL"
-    );
-    return process.exit(1);
-  }
-
   const authController = new AuthenticationController(
     new TokenService(),
     (token: string) => ({
