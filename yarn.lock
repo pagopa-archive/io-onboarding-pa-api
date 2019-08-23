@@ -2365,9 +2365,9 @@ invert-kv@^2.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-2.0.0.tgz#7393f5afa59ec9ff5f67a27620d11c226e3eec02"
   integrity sha512-wPVv/y/QQ/Uiirj/vh3oP+1Ww+AWehmi1g5fFWGPF6IpCBCDVrhgHRMvrLfdYcwDh3QJbGXDW4JAuzxElLSqKA==
 
-"io-spid-commons@https://github.com/teamdigitale/io-spid-commons":
-  version "0.0.1"
-  resolved "https://github.com/teamdigitale/io-spid-commons#8d80415da01b840289e61a256af50100df9e72da"
+"io-spid-commons@https://github.com/teamdigitale/io-spid-commons#v0.0.2":
+  version "0.0.2"
+  resolved "https://github.com/teamdigitale/io-spid-commons#345c7fcbceb9ef8e4f44f55eb26ffba993fb95ac"
   dependencies:
     date-fns "^1.30.1"
     fp-ts "1.12.0"
