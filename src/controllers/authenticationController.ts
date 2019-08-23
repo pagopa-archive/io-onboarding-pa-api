@@ -36,6 +36,9 @@ export default class AuthenticationController {
 
   /**
    * The Assertion consumer service.
+   * It validates the assertion got by the IdP server,
+   * then creates a token and store a new session for the user
+   * and returns the response to be sent to the client
    */
   public async acs(
     // tslint:disable-next-line:no-any
@@ -77,7 +80,7 @@ export default class AuthenticationController {
     return ResponsePermanentRedirect(urlWithToken);
   }
   /**
-   * Retrieves the logout url from the IDP.
+   * Deletes the user session, so that its token can not be used anymore
    */
   public async logout(
     req: Request

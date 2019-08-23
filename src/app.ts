@@ -78,6 +78,9 @@ const CLIENT_SPID_ERROR_REDIRECTION_URL = getRequiredEnvVar(
 const CLIENT_SPID_SUCCESS_REDIRECTION_URL = getRequiredEnvVar(
   "CLIENT_SPID_SUCCESS_REDIRECTION_URL"
 );
+const CLIENT_SPID_LOGIN_REDIRECTION_URL = getRequiredEnvVar(
+  "CLIENT_SPID_LOGIN_REDIRECTION_URL"
+);
 
 export default async function newApp(): Promise<Express> {
   // Create Express server
@@ -263,6 +266,9 @@ function registerRoutes(app: Express): void {
  * Setup SPID authentication routes.
  */
 function registerLoginRoute(app: Express): void {
+  // Creates the authentication controller,
+  // which provides methods to log the user in and out,
+  // handling the related session token accordingly
   const authController = new AuthenticationController(
     new TokenService(),
     (token: string) => ({
@@ -270,8 +276,13 @@ function registerLoginRoute(app: Express): void {
     })
   );
 
+  /**
+   * Handle the SAML assertion got from the IdP server
+   */
   app.post("/assertion-consumer-service", (req, res, next) => {
     passport.authenticate("spid", async (err, user) => {
+      // If an error occurs then redirects the client to CLIENT_SPID_ERROR_REDIRECTION_URL
+      // appending the error code to the url as a parameter
       if (err) {
         log.error("Error in SPID authentication: %s", err);
         return res.redirect(
@@ -282,10 +293,13 @@ function registerLoginRoute(app: Express): void {
               .getOrElse("")
         );
       }
+      // If no assertion has been returned then redirects the client to CLIENT_SPID_LOGIN_REDIRECTION_URL
       if (!user) {
         log.error("Error in SPID authentication: no user found");
-        return res.redirect(CLIENT_SPID_SUCCESS_REDIRECTION_URL);
+        return res.redirect(CLIENT_SPID_LOGIN_REDIRECTION_URL);
       }
+      // The assertion is processed by the assertion consumer service
+      // and a response is sent to the client
       const response = await authController.acs(user);
       response.apply(res);
     })(req, res, next);
