@@ -11,8 +11,8 @@ import { SessionToken } from "../types/token";
 const bearerTokenStrategy = (APIBasePath: string) => {
   const options = {
     passReqToCallback: true,
-    realm: "Proxy API",
-    scope: "request"
+    realm: "",
+    scope: ""
   };
   return new passport.Strategy(options, (
     req: express.Request,
