@@ -1,4 +1,4 @@
-import { Either, isLeft, left, right } from "fp-ts/lib/Either";
+import { Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
 import { Op } from "sequelize";
 import { Session } from "../models/Session";
@@ -36,16 +36,17 @@ export default class SessionStorage {
   public static async getBySessionToken(
     token: SessionToken
   ): Promise<Either<Error, User>> {
-    const errorOrSession = await this.loadSessionBySessionToken(token);
-
-    if (isLeft(errorOrSession)) {
-      const error = errorOrSession.value;
-      return left(error);
+    try {
+      const user = await User.findOne({
+        include: [{ as: "sessions", model: Session, where: { token } }]
+      });
+      if (user === null) {
+        return left<Error, User>(sessionNotFoundError);
+      }
+      return right<Error, User>(user);
+    } catch (error) {
+      return left<Error, User>(error);
     }
-
-    const user = errorOrSession.value;
-
-    return right(user);
   }
 
   public static async del(
@@ -90,25 +91,6 @@ export default class SessionStorage {
       return right(userWithSessions.sessions);
     } catch (error) {
       return left(error);
-    }
-  }
-
-  /**
-   * Return a Session for this token.
-   */
-  private static async loadSessionBySessionToken(
-    token: SessionToken
-  ): Promise<Either<Error, User>> {
-    try {
-      const user = await User.findOne({
-        include: [{ as: "sessions", model: Session, where: { token } }]
-      });
-      if (user === null) {
-        return left<Error, User>(sessionNotFoundError);
-      }
-      return right<Error, User>(user);
-    } catch (error) {
-      return left<Error, User>(error);
     }
   }
 }
