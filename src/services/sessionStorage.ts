@@ -33,9 +33,6 @@ export default class SessionStorage {
     return none;
   }
 
-  /**
-   * {@inheritDoc}
-   */
   public static async getBySessionToken(
     token: SessionToken
   ): Promise<Either<Error, User>> {
@@ -51,9 +48,6 @@ export default class SessionStorage {
     return right(user);
   }
 
-  /**
-   * {@inheritDoc}
-   */
   public static async del(
     sessionToken: SessionToken
   ): Promise<Either<Error, boolean>> {
