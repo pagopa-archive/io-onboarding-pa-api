@@ -54,6 +54,8 @@ The table below describes all the Environment variables needed by the applicatio
 | SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX | The index in the attribute consumer list                                          | number |
 | SAML_CALLBACK_URL                      | The absolute URL of the assertion consumer service endpoint                       | string |
 | SAML_ISSUER                            | The issuer id for this Service Provider                                           | string |
+| SAML_CERT_PATH                         | The path of the public certificate used in SAML authentication to a SPID IdP.     | string |
+| SAML_KEY_PATH                          | The path of the private key used in SAML authentication to a SPID IdP.            | string |
 | SPID_AUTOLOGIN                         | The user used in the autologin feature, omit this to disable autologin            | string |
 | SPID_TESTENV_URL                       | The absolute URL of the test IDP server                                           | string |
 | IDP_METADATA_URL                       | Url to download IDP metadata from                                                 | string |
