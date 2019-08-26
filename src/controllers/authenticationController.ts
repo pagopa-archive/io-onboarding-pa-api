@@ -22,8 +22,8 @@ import { UrlFromString } from "italia-ts-commons/lib/url";
 import SessionStorage from "../services/sessionStorage";
 import TokenService from "../services/tokenService";
 import { SuccessResponse } from "../types/commons";
-import { validateSpidUser, withUserFromRequest } from "../types/spidUser";
 import { SessionToken } from "../types/token";
+import { validateSpidUser, withUserFromRequest } from "../types/user";
 import { log } from "../utils/logger";
 import { withCatchAsInternalError } from "../utils/responses";
 
@@ -91,7 +91,9 @@ export default class AuthenticationController {
   > {
     return withUserFromRequest(req, user =>
       withCatchAsInternalError(async () => {
-        const errorOrResponse = await SessionStorage.del(user.sessionToken);
+        const errorOrResponse = await SessionStorage.del(
+          user.sessions[0].token
+        );
 
         if (isLeft(errorOrResponse)) {
           const error = errorOrResponse.value;

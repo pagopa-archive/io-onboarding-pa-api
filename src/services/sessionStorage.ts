@@ -3,8 +3,8 @@ import { none, Option, some } from "fp-ts/lib/Option";
 import { Op } from "sequelize";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
-import { SpidLoggedUser, SpidUser } from "../types/spidUser";
 import { SessionToken } from "../types/token";
+import { LoggedUser, SpidUser } from "../types/user";
 
 export const sessionNotFoundError = new Error("Session not found");
 
@@ -43,7 +43,7 @@ export default class SessionStorage {
       if (user === null) {
         return left<Error, User>(sessionNotFoundError);
       }
-      return right<Error, User>(user);
+      return right<Error, User>(user.get({ plain: true }) as User);
     } catch (error) {
       return left<Error, User>(error);
     }
@@ -65,7 +65,7 @@ export default class SessionStorage {
   }
 
   public static async listUserActiveSessions(
-    user: SpidLoggedUser
+    user: LoggedUser
   ): Promise<Either<Error, ReadonlyArray<Session>>> {
     try {
       const userWithSessions = await User.findOne({

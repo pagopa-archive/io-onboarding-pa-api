@@ -7,6 +7,7 @@ import {
   SpidLevelEnum
 } from "io-spid-commons";
 import * as t from "io-ts";
+import { UTCISODateFromString } from "italia-ts-commons/lib/dates";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { IResponseErrorValidation } from "italia-ts-commons/lib/responses";
 import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
@@ -14,30 +15,19 @@ import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 import { log } from "../utils/logger";
 import { withValidatedOrValidationError } from "../utils/responses";
 
-import { SessionToken } from "./token";
+import { Session } from "./session";
 
-// required attributes
-export const SpidLoggedUser = t.intersection([
-  t.interface({
-    createdAt: t.number,
-    familyName: t.string,
-    fiscalCode: FiscalCode,
-    name: t.string,
-    sessionToken: SessionToken,
-    spidEmail: EmailString,
-    spidLevel: SpidLevel
-  }),
-  t.partial({
-    nameId: t.string,
-    nameIdFormat: t.string,
-    sessionIndex: t.string,
-    spidIdp: t.string
-  })
-]);
+export const LoggedUser = t.interface({
+  createdAt: UTCISODateFromString,
+  email: EmailString,
+  familyName: t.string,
+  firstName: t.string,
+  fiscalCode: FiscalCode,
+  sessions: t.readonlyArray(Session, "array of SessionToken")
+});
 
-export type SpidLoggedUser = t.TypeOf<typeof SpidLoggedUser>;
+export type LoggedUser = t.TypeOf<typeof LoggedUser>;
 
-// required attributes
 export const SpidUser = t.intersection([
   t.interface({
     authnContextClassRef: SpidLevel,
@@ -62,7 +52,6 @@ export type SpidUser = t.TypeOf<typeof SpidUser>;
 /**
  * Validates a SPID User extracted from a SAML response.
  */
-// tslint:disable-next-line:no-any
 export function validateSpidUser(value: unknown): Either<string, SpidUser> {
   if (typeof value !== "object") {
     return left("User is not an object");
@@ -151,6 +140,6 @@ export function validateSpidUser(value: unknown): Either<string, SpidUser> {
 
 export const withUserFromRequest = async <T>(
   req: Request,
-  f: (user: SpidLoggedUser) => Promise<T>
+  f: (user: LoggedUser) => Promise<T>
 ): Promise<IResponseErrorValidation | T> =>
-  withValidatedOrValidationError(SpidLoggedUser.decode(req.user), f);
+  withValidatedOrValidationError(LoggedUser.decode(req.user), f);
