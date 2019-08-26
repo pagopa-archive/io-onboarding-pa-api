@@ -64,7 +64,7 @@ export default class SessionStorage {
     }
   }
 
-  public static async listUserSessions(
+  public static async listUserActiveSessions(
     user: SpidLoggedUser
   ): Promise<Either<Error, ReadonlyArray<Session>>> {
     try {
