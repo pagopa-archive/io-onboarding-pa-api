@@ -85,10 +85,10 @@ export default class SessionStorage {
           fiscalCode: user.fiscalCode
         }
       });
-      if (!userWithSessions || !Array.isArray(userWithSessions.sessions)) {
-        return right([]);
+      if (!userWithSessions) {
+        return left(new Error("User not found"));
       }
-      return right(userWithSessions.sessions);
+      return right(userWithSessions.sessions ? userWithSessions.sessions : []);
     } catch (error) {
       return left(error);
     }
