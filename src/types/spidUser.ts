@@ -63,20 +63,30 @@ export type SpidUser = t.TypeOf<typeof SpidUser>;
  * Validates a SPID User extracted from a SAML response.
  */
 // tslint:disable-next-line:no-any
-export function validateSpidUser(value: any): Either<string, SpidUser> {
+export function validateSpidUser(value: unknown): Either<string, SpidUser> {
+  if (typeof value !== "object") {
+    return left("User is not an object");
+  }
+  if (!value) {
+    return left("User is null");
+  }
   if (!value.hasOwnProperty("fiscalNumber")) {
     return left("Cannot decode a user without a fiscalNumber");
   }
 
   // Remove the international prefix from fiscal number.
   const FISCAL_NUMBER_INTERNATIONAL_PREFIX = "TINIT-";
-  const fiscalNumberWithoutPrefix = value.fiscalNumber.replace(
-    FISCAL_NUMBER_INTERNATIONAL_PREFIX,
-    ""
-  );
+  const fiscalNumberWithoutPrefix = (value as {
+    fiscalNumber: string;
+  }).fiscalNumber.replace(FISCAL_NUMBER_INTERNATIONAL_PREFIX, "");
 
+  if (!value.hasOwnProperty("getAssertionXml")) {
+    return left("Cannot decode a user object without getAssertionXml property");
+  }
   const maybeAuthnContextClassRef = getAuthnContextFromResponse(
-    value.getAssertionXml()
+    (value as {
+      getAssertionXml: () => string;
+    }).getAssertionXml()
   );
 
   // Set SPID level to a default (SPID_L2) if the expected value is not available
@@ -102,13 +112,31 @@ export function validateSpidUser(value: any): Either<string, SpidUser> {
     authnContextClassRef
   };
 
-  // Log the invalid SPID level to audit IDP responses.
-  if (!isSpidL(valueWithDefaultSPIDLevel.authnContextClassRef)) {
-    log.warn(
-      "Response from IDP: %s doesn't contain a valid SPID level: %s",
-      value.issuer._,
-      value.authnContextClassRef
-    );
+  if (
+    value.hasOwnProperty("issuer") &&
+    value.hasOwnProperty("authnContextClassRef")
+  ) {
+    const issuer = (value as { issuer: unknown }).issuer;
+
+    const issuerName =
+      typeof issuer === "object" &&
+      issuer !== null &&
+      issuer.hasOwnProperty("_")
+        ? (issuer as { _: unknown })._
+        : undefined;
+    const originalAuthnContextClassRef = value.hasOwnProperty(
+      "authContextClassRef"
+    )
+      ? (value as { authContextClassRef: unknown }).authContextClassRef
+      : undefined;
+    // Log the invalid SPID level to audit IDP responses.
+    if (!isSpidL(valueWithDefaultSPIDLevel.authnContextClassRef)) {
+      log.warn(
+        "Response from IDP: %s doesn't contain a valid SPID level: %s",
+        issuerName,
+        originalAuthnContextClassRef
+      );
+    }
   }
 
   const result = SpidUser.decode(valueWithDefaultSPIDLevel);
