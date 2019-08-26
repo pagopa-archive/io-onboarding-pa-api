@@ -6,6 +6,7 @@
 
 import { Request } from "express";
 import { isLeft } from "fp-ts/lib/Either";
+import { isSome } from "fp-ts/lib/Option";
 import {
   IResponseErrorInternal,
   IResponseErrorValidation,
@@ -63,22 +64,16 @@ export default class AuthenticationController {
     const spidUser = errorOrUser.value;
     const sessionToken = this.tokenService.getNewToken() as SessionToken;
 
-    const errorOrResponse = await SessionStorage.set(
+    const errorOption = await SessionStorage.set(
       spidUser,
       sessionToken,
       this.tokenDurationInSeconds
     );
 
-    if (isLeft(errorOrResponse)) {
-      const error = errorOrResponse.value;
+    if (isSome(errorOption)) {
+      const error = errorOption.value;
       log.error("Error storing the user in the session: %s", error.message);
       return ResponseErrorInternal(error.message);
-    }
-    const response = errorOrResponse.value;
-
-    if (!response) {
-      log.error("Error storing the user in the session");
-      return ResponseErrorInternal("Error creating the user session");
     }
     const urlWithToken = this.getClientProfileRedirectionUrl(sessionToken);
 

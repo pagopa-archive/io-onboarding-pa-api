@@ -1,4 +1,5 @@
 import { Either, isLeft, left, right } from "fp-ts/lib/Either";
+import { none, Option, some } from "fp-ts/lib/Option";
 import { Op } from "sequelize";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
@@ -12,7 +13,7 @@ export default class SessionStorage {
     user: SpidUser,
     sessionToken: SessionToken,
     tokenDurationInSeconds: number
-  ): Promise<Either<Error, boolean>> {
+  ): Promise<Option<Error>> {
     try {
       const [loggerUser, _] = await User.findOrCreate({
         defaults: {
@@ -27,11 +28,9 @@ export default class SessionStorage {
         token: sessionToken
       });
     } catch (error) {
-      return left<Error, boolean>(
-        new Error("Error creating session for the user")
-      );
+      return some<Error>(new Error("Error creating session for the user"));
     }
-    return right<Error, boolean>(true);
+    return none;
   }
 
   /**
