@@ -64,14 +64,14 @@ export default class AuthenticationController {
     const spidUser = errorOrUser.value;
     const sessionToken = this.tokenService.getNewToken() as SessionToken;
 
-    const errorOption = await SessionStorage.set(
+    const maybeOption = await SessionStorage.set(
       spidUser,
       sessionToken,
       this.tokenDurationInSeconds
     );
 
-    if (isSome(errorOption)) {
-      const error = errorOption.value;
+    if (isSome(maybeOption)) {
+      const error = maybeOption.value;
       log.error("Error storing the user in the session: %s", error.message);
       return ResponseErrorInternal(error.message);
     }

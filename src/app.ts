@@ -280,9 +280,7 @@ function registerLoginRoute(app: Express): void {
     })
   );
 
-  /**
-   * Handle the SAML assertion got from the IdP server
-   */
+  // Handle the SAML assertion got from the IdP server
   app.post("/assertion-consumer-service", (req, res, next) => {
     passport.authenticate("spid", async (err, user) => {
       // If an error occurs then redirects the client to CLIENT_SPID_ERROR_REDIRECTION_URL
