@@ -35,17 +35,20 @@ export default class SessionStorage {
 
   public static async getBySessionToken(
     token: SessionToken
-  ): Promise<Either<Error, User>> {
+  ): Promise<Either<Error, LoggedUser>> {
     try {
       const user = await User.findOne({
-        include: [{ as: "sessions", model: Session, where: { token } }]
+        include: [{ as: "session", model: Session, where: { token } }]
       });
       if (user === null) {
-        return left<Error, User>(sessionNotFoundError);
+        return left<Error, LoggedUser>(sessionNotFoundError);
       }
-      return right<Error, User>(user.get({ plain: true }) as User);
+      const loggedUserOrError = LoggedUser.decode(user.get({ plain: true }));
+      return loggedUserOrError.isRight()
+        ? right(loggedUserOrError.value)
+        : left(new Error("User is not a valid object"));
     } catch (error) {
-      return left<Error, User>(error);
+      return left<Error, LoggedUser>(error);
     }
   }
 
@@ -53,7 +56,7 @@ export default class SessionStorage {
     sessionToken: SessionToken
   ): Promise<Either<Error, boolean>> {
     try {
-      const session = await Session.findOne({ where: { token: sessionToken } });
+      const session = await Session.findByPk(sessionToken);
       if (!session) {
         return left<Error, boolean>(sessionNotFoundError);
       }

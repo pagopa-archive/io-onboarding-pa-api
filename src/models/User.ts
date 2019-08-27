@@ -23,6 +23,12 @@ export class User extends Model {
   // @see: https://sequelize.org/master/manual/typescript.html#usage
   public readonly sessions?: ReadonlyArray<Session>;
 
+  // A single session associated to the user,
+  // its value will be populated only when explicitly requested in code
+  // according to the inclusion of the relation.
+  // @see: https://sequelize.org/master/manual/typescript.html#usage
+  public readonly session?: Session;
+
   public createSession!: HasManyCreateAssociationMixin<Session>;
 }
 
@@ -65,6 +71,10 @@ export function createAssociations(): void {
   });
   User.hasMany(Session, {
     as: "sessions",
+    foreignKey: { name: "fiscalCode", field: "userFiscalCode" }
+  });
+  User.hasOne(Session, {
+    as: "session",
     foreignKey: { name: "fiscalCode", field: "userFiscalCode" }
   });
 }

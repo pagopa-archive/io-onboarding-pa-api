@@ -91,9 +91,7 @@ export default class AuthenticationController {
   > {
     return withUserFromRequest(req, user =>
       withCatchAsInternalError(async () => {
-        const errorOrResponse = await SessionStorage.del(
-          user.sessions[0].token
-        );
+        const errorOrResponse = await SessionStorage.del(user.session.token);
 
         if (isLeft(errorOrResponse)) {
           const error = errorOrResponse.value;

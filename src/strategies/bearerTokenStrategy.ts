@@ -30,7 +30,13 @@ const bearerTokenStrategy = (APIBasePath: string) => {
         errorOrUser => {
           errorOrUser.fold(
             () => done(undefined, false),
-            user => done(undefined, user)
+            user =>
+              done(
+                undefined,
+                user.session.expirationTime.valueOf() > Date.now()
+                  ? user
+                  : false
+              )
           );
         },
         () => {
