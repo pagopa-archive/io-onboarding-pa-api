@@ -29,6 +29,7 @@ import { withCatchAsInternalError } from "../utils/responses";
 
 export default class AuthenticationController {
   constructor(
+    private readonly sessionStorage: SessionStorage,
     private readonly tokenService: TokenService,
     private readonly tokenDurationInSeconds: number,
     private readonly getClientProfileRedirectionUrl: (
@@ -64,14 +65,14 @@ export default class AuthenticationController {
     const spidUser = errorOrUser.value;
     const sessionToken = this.tokenService.getNewToken() as SessionToken;
 
-    const maybeOption = await SessionStorage.set(
+    const maybeError = await this.sessionStorage.set(
       spidUser,
       sessionToken,
       this.tokenDurationInSeconds
     );
 
-    if (isSome(maybeOption)) {
-      const error = maybeOption.value;
+    if (isSome(maybeError)) {
+      const error = maybeError.value;
       log.error("Error storing the user in the session: %s", error.message);
       return ResponseErrorInternal(error.message);
     }
@@ -91,7 +92,7 @@ export default class AuthenticationController {
   > {
     return withUserFromRequest(req, user =>
       withCatchAsInternalError(async () => {
-        const maybeError = await SessionStorage.del(user.session.token);
+        const maybeError = await this.sessionStorage.del(user.session.token);
 
         if (isSome(maybeError)) {
           const error = maybeError.value;

@@ -9,7 +9,7 @@ import { LoggedUser, SpidUser } from "../types/user";
 export const sessionNotFoundError = new Error("Session not found");
 
 export default class SessionStorage {
-  public static async set(
+  public async set(
     user: SpidUser,
     sessionToken: SessionToken,
     tokenDurationInSeconds: number
@@ -33,7 +33,7 @@ export default class SessionStorage {
     return none;
   }
 
-  public static async getBySessionToken(
+  public async getBySessionToken(
     token: SessionToken
   ): Promise<Either<Error, LoggedUser>> {
     try {
@@ -52,7 +52,7 @@ export default class SessionStorage {
     }
   }
 
-  public static async del(sessionToken: SessionToken): Promise<Option<Error>> {
+  public async del(sessionToken: SessionToken): Promise<Option<Error>> {
     try {
       const session = await Session.findByPk(sessionToken);
       if (!session) {
@@ -65,7 +65,7 @@ export default class SessionStorage {
     }
   }
 
-  public static async listUserActiveSessions(
+  public async listUserActiveSessions(
     user: LoggedUser
   ): Promise<Either<Error, ReadonlyArray<Session>>> {
     try {

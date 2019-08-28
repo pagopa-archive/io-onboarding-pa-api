@@ -40,6 +40,7 @@ import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
 
 import AuthenticationController from "./controllers/authenticationController";
+import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
 import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
 import { getRequiredEnvVar } from "./utils/environment";
@@ -273,6 +274,7 @@ function registerLoginRoute(app: Express): void {
   // which provides methods to log the user in and out,
   // handling the related session token accordingly
   const authController = new AuthenticationController(
+    new SessionStorage(),
     new TokenService(),
     TOKEN_DURATION_IN_SECONDS,
     (token: string) => ({

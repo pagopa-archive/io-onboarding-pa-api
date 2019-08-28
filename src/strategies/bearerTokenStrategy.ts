@@ -26,7 +26,7 @@ const bearerTokenStrategy = (APIBasePath: string) => {
       path === "/logout" || // We need to use this strategy with the SessionToken also for `/logout` path
       path.startsWith(APIBasePath)
     ) {
-      SessionStorage.getBySessionToken(token as SessionToken).then(
+      new SessionStorage().getBySessionToken(token as SessionToken).then(
         errorOrUser => {
           errorOrUser.fold(
             () => done(undefined, false),
