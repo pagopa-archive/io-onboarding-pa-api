@@ -91,17 +91,11 @@ export default class AuthenticationController {
   > {
     return withUserFromRequest(req, user =>
       withCatchAsInternalError(async () => {
-        const errorOrResponse = await SessionStorage.del(user.session.token);
+        const maybeError = await SessionStorage.del(user.session.token);
 
-        if (isLeft(errorOrResponse)) {
-          const error = errorOrResponse.value;
+        if (isSome(maybeError)) {
+          const error = maybeError.value;
           return ResponseErrorInternal(error.message);
-        }
-
-        const response = errorOrResponse.value;
-
-        if (!response) {
-          return ResponseErrorInternal("Error destroying the user session");
         }
 
         return ResponseSuccessJson({ message: "ok" });

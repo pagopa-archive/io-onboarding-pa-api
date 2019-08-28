@@ -52,18 +52,16 @@ export default class SessionStorage {
     }
   }
 
-  public static async del(
-    sessionToken: SessionToken
-  ): Promise<Either<Error, boolean>> {
+  public static async del(sessionToken: SessionToken): Promise<Option<Error>> {
     try {
       const session = await Session.findByPk(sessionToken);
       if (!session) {
-        return left<Error, boolean>(sessionNotFoundError);
+        return some(sessionNotFoundError);
       }
       await session.destroy();
-      return right<Error, boolean>(true);
+      return none;
     } catch (error) {
-      return left<Error, boolean>(new Error("Error deleting the token"));
+      return some(new Error("Error destroying the user session"));
     }
   }
 
