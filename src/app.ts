@@ -302,7 +302,7 @@ function registerLoginRoute(app: Express): void {
       }
       // The assertion is processed by the assertion consumer service
       // and a response is sent to the client
-      const response = await authController.acs(user, res);
+      const response = await authController.acs(user);
       response.apply(res);
     })(req, res, next);
   });

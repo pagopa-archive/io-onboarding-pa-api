@@ -125,7 +125,7 @@ describe("AuthenticationController#acs", () => {
     mockSet.mockReturnValue(Promise.resolve(none));
     mockGetNewToken.mockReturnValueOnce(mockSessionToken);
 
-    const response = await controller.acs(validUserPayload, res);
+    const response = await controller.acs(validUserPayload);
     response.apply(res);
 
     expect(controller).toBeTruthy();
@@ -147,7 +147,7 @@ describe("AuthenticationController#acs", () => {
   it("should fail if userPayload is invalid", async () => {
     const res = mockRes();
 
-    const response = await controller.acs(invalidUserPayload, res);
+    const response = await controller.acs(invalidUserPayload);
     response.apply(res);
 
     expect(controller).toBeTruthy();
@@ -162,7 +162,7 @@ describe("AuthenticationController#acs", () => {
     mockSet.mockReturnValue(Promise.resolve(some(new Error(errorString))));
     const res = mockRes();
 
-    const response = await controller.acs(validUserPayload, res);
+    const response = await controller.acs(validUserPayload);
     response.apply(res);
 
     expect(controller).toBeTruthy();

@@ -42,9 +42,7 @@ export default class AuthenticationController {
    * and returns the response to be sent to the client
    */
   public async acs(
-    // tslint:disable-next-line:no-any
-    userPayload: unknown,
-    res: Response
+    userPayload: unknown
   ): Promise<
     | IResponseErrorInternal
     | IResponseErrorValidation
@@ -75,13 +73,20 @@ export default class AuthenticationController {
       log.error("Error storing the user in the session: %s", error.message);
       return ResponseErrorInternal(error.message);
     }
-    res.cookie("sessionToken", sessionToken, {
-      maxAge: this.tokenDurationInSeconds
-    });
 
-    return ResponsePermanentRedirect({
+    const redirectResponse = ResponsePermanentRedirect({
       href: this.clientSpidAccessRedirectionUrl
     });
+
+    const withCookie = (res: Response) =>
+      res.cookie("sessionToken", sessionToken, {
+        maxAge: this.tokenDurationInSeconds * 1000 // Express requires a value in ms
+      });
+
+    return {
+      ...redirectResponse,
+      apply: res => redirectResponse.apply(withCookie(res))
+    };
   }
   /**
    * Deletes the user session, so that its token can not be used anymore
