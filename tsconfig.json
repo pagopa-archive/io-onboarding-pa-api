@@ -7,7 +7,6 @@
     "moduleResolution": "node",
     "strict": true,
     "noImplicitAny": true,
-    "declaration": true,
     "sourceMap": true
   },
   "lib": [],
@@ -16,6 +15,7 @@
   ],
   "exclude": [
     "node_modules",
-    "src/**/__tests__/*"
+    "src/**/__tests__/*",
+    "src/**/__mocks__/*"
   ]
 }

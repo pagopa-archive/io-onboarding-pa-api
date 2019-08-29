@@ -47,12 +47,17 @@ The table below describes all the Environment variables needed by the applicatio
 | PGPASSWORD                             | The password used to connect to postgres server                                   | string |
 | PGUSER                                 | PostgreSQL user name to connect as                                                | string |
 | PGDATABASE                             | The database name                                                                 | string |
+| CLIENT_SPID_LOGIN_REDIRECTION_URL      | The path where the user will be redirected to perform a SPID login                | string |
 | CLIENT_SPID_ERROR_REDIRECTION_URL      | The path where the user will be redirected when en error occurs during SPID login | string |
 | CLIENT_SPID_SUCCESS_REDIRECTION_URL    | The path where the user will be redirected after a successful SPID login          | string |
 | SAML_ACCEPTED_CLOCK_SKEW_MS            | The value of the accepted clock skew in milliseconds                              | number |
 | SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX | The index in the attribute consumer list                                          | number |
 | SAML_CALLBACK_URL                      | The absolute URL of the assertion consumer service endpoint                       | string |
 | SAML_ISSUER                            | The issuer id for this Service Provider                                           | string |
+| SAML_CERT_PATH                         | The path of the public certificate used in SAML authentication to a SPID IdP.     | string |
+| SAML_KEY_PATH                          | The path of the private key used in SAML authentication to a SPID IdP.            | string |
 | SPID_AUTOLOGIN                         | The user used in the autologin feature, omit this to disable autologin            | string |
 | SPID_TESTENV_URL                       | The absolute URL of the test IDP server                                           | string |
 | IDP_METADATA_URL                       | Url to download IDP metadata from                                                 | string |
+| TOKEN_DURATION_IN_SECONDS              | The number of seconds a session token is considered valid                         | int    |
+| API_BASE_PATH                          | The root path for the api endpoints                                               | string |

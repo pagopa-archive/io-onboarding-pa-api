@@ -29,11 +29,22 @@ import {
 } from "./models/Organization";
 import { init as initOrganizationUser } from "./models/OrganizationUser";
 import {
+  createAssociations as createSessionAssociations,
+  init as initSession
+} from "./models/Session";
+import {
   createAssociations as createUserAssociations,
   init as initUser
 } from "./models/User";
 import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
+
+import AuthenticationController from "./controllers/authenticationController";
+import SessionStorage from "./services/sessionStorage";
+import TokenService from "./services/tokenService";
+import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
+import { getRequiredEnvVar } from "./utils/environment";
+import { toExpressHandler } from "./utils/express";
 
 // Private key used in SAML authentication to a SPID IDP.
 const samlKey = () => {
@@ -49,6 +60,32 @@ const samlCert = () => {
   return fs.readFileSync(filePath, "utf-8");
 };
 
+const API_BASE_PATH = getRequiredEnvVar("API_BASE_PATH");
+// SAML settings.
+const SAML_CALLBACK_URL = getRequiredEnvVar("SAML_CALLBACK_URL");
+const SAML_ISSUER = getRequiredEnvVar("SAML_ISSUER");
+const SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX: number = Number(
+  getRequiredEnvVar("SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX")
+);
+const SAML_ACCEPTED_CLOCK_SKEW_MS = Number(
+  getRequiredEnvVar("SAML_ACCEPTED_CLOCK_SKEW_MS")
+);
+const SPID_AUTOLOGIN = process.env.SPID_AUTOLOGIN;
+const SPID_TESTENV_URL = getRequiredEnvVar("SPID_TESTENV_URL");
+const IDP_METADATA_URL = getRequiredEnvVar("IDP_METADATA_URL");
+const CLIENT_SPID_ERROR_REDIRECTION_URL = getRequiredEnvVar(
+  "CLIENT_SPID_ERROR_REDIRECTION_URL"
+);
+const CLIENT_SPID_SUCCESS_REDIRECTION_URL = getRequiredEnvVar(
+  "CLIENT_SPID_SUCCESS_REDIRECTION_URL"
+);
+const CLIENT_SPID_LOGIN_REDIRECTION_URL = getRequiredEnvVar(
+  "CLIENT_SPID_LOGIN_REDIRECTION_URL"
+);
+const TOKEN_DURATION_IN_SECONDS = Number(
+  getRequiredEnvVar("TOKEN_DURATION_IN_SECONDS")
+);
+
 export default async function newApp(): Promise<Express> {
   // Create Express server
   const app = express();
@@ -58,34 +95,10 @@ export default async function newApp(): Promise<Express> {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
+  passport.use(bearerTokenStrategy(API_BASE_PATH));
   app.use(passport.initialize());
 
   registerRoutes(app);
-
-  // SAML settings.
-  const SAML_CALLBACK_URL = process.env.SAML_CALLBACK_URL;
-  const SAML_ISSUER = process.env.SAML_ISSUER;
-  const SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX: number = Number(
-    process.env.SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX
-  );
-  const SAML_ACCEPTED_CLOCK_SKEW_MS = Number(
-    process.env.SAML_ACCEPTED_CLOCK_SKEW_MS
-  );
-  const SPID_AUTOLOGIN = process.env.SPID_AUTOLOGIN;
-  const SPID_TESTENV_URL = process.env.SPID_TESTENV_URL;
-  const IDP_METADATA_URL = process.env.IDP_METADATA_URL;
-
-  if (
-    !IDP_METADATA_URL ||
-    !SAML_ACCEPTED_CLOCK_SKEW_MS ||
-    !SAML_ATTRIBUTE_CONSUMING_SERVICE_INDEX ||
-    !SAML_CALLBACK_URL ||
-    !SAML_ISSUER ||
-    !SPID_TESTENV_URL
-  ) {
-    log.error("One or more required environmente variables are missing");
-    return process.exit(1);
-  }
 
   try {
     const spidPassport = new SpidPassportBuilder(app, "/login", "/metadata", {
@@ -254,23 +267,26 @@ function registerRoutes(app: Express): void {
 }
 
 /**
- * Initializes SpidStrategy for passport and setup /login route.
+ * Setup SPID authentication routes.
  */
 function registerLoginRoute(app: Express): void {
-  const CLIENT_SPID_ERROR_REDIRECTION_URL =
-    process.env.CLIENT_SPID_ERROR_REDIRECTION_URL;
-  const CLIENT_SPID_SUCCESS_REDIRECTION_URL =
-    process.env.CLIENT_SPID_SUCCESS_REDIRECTION_URL;
-  if (
-    !CLIENT_SPID_ERROR_REDIRECTION_URL ||
-    !CLIENT_SPID_SUCCESS_REDIRECTION_URL
-  ) {
-    log.error("One or more required environmente variables are missing");
-    return process.exit(1);
-  }
+  // Creates the authentication controller,
+  // which provides methods to log the user in and out,
+  // handling the related session token accordingly
+  const authController = new AuthenticationController(
+    new SessionStorage(),
+    new TokenService(),
+    TOKEN_DURATION_IN_SECONDS,
+    (token: string) => ({
+      href: CLIENT_SPID_SUCCESS_REDIRECTION_URL.replace("{token}", token)
+    })
+  );
 
+  // Handle the SAML assertion got from the IdP server
   app.post("/assertion-consumer-service", (req, res, next) => {
     passport.authenticate("spid", async (err, user) => {
+      // If an error occurs then redirects the client to CLIENT_SPID_ERROR_REDIRECTION_URL
+      // appending the error code to the url as a parameter
       if (err) {
         log.error("Error in SPID authentication: %s", err);
         return res.redirect(
@@ -281,30 +297,38 @@ function registerLoginRoute(app: Express): void {
               .getOrElse("")
         );
       }
+      // If no assertion has been returned then redirects the client to CLIENT_SPID_LOGIN_REDIRECTION_URL
       if (!user) {
         log.error("Error in SPID authentication: no user found");
-        return res.redirect(CLIENT_SPID_SUCCESS_REDIRECTION_URL);
+        return res.redirect(CLIENT_SPID_LOGIN_REDIRECTION_URL);
       }
-      // TODO: handle user data and create token
-      log.debug("Spid login success: %s", JSON.stringify(user, null, 4));
-      res.json({
-        email: user.email,
-        familyName: user.familyName,
-        fiscalNumber: user.fiscalNumber,
-        mobilePhone: user.mobilePhone,
-        name: user.name
-      });
+      // The assertion is processed by the assertion consumer service
+      // and a response is sent to the client
+      const response = await authController.acs(user);
+      response.apply(res);
     })(req, res, next);
   });
+
+  const bearerTokenAuth = passport.authenticate("bearer", { session: false });
+
+  app.post(
+    "/logout",
+    bearerTokenAuth,
+    toExpressHandler(authController.logout, authController)
+  );
+
+  app.post("/slo", toExpressHandler(authController.slo, authController));
 }
 
 function initModels(): void {
   initOrganization();
   initOrganizationUser();
   initUser();
+  initSession();
 }
 
 function createModelAssociations(): void {
   createOrganizationAssociations();
   createUserAssociations();
+  createSessionAssociations();
 }
