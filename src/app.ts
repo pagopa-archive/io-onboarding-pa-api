@@ -277,9 +277,7 @@ function registerLoginRoute(app: Express): void {
     new SessionStorage(),
     new TokenService(),
     TOKEN_DURATION_IN_SECONDS,
-    (token: string) => ({
-      href: CLIENT_SPID_SUCCESS_REDIRECTION_URL.replace("{token}", token)
-    })
+    CLIENT_SPID_SUCCESS_REDIRECTION_URL
   );
 
   // Handle the SAML assertion got from the IdP server
