@@ -4,7 +4,7 @@
  * the IDP.
  */
 
-import { Request } from "express";
+import { Request, Response } from "express";
 import { isLeft } from "fp-ts/lib/Either";
 import { isSome } from "fp-ts/lib/Option";
 import {
@@ -32,9 +32,7 @@ export default class AuthenticationController {
     private readonly sessionStorage: SessionStorage,
     private readonly tokenService: TokenService,
     private readonly tokenDurationInSeconds: number,
-    private readonly getClientProfileRedirectionUrl: (
-      token: string
-    ) => UrlFromString
+    private readonly clientSpidAccessRedirectionUrl: string
   ) {}
 
   /**
@@ -45,7 +43,8 @@ export default class AuthenticationController {
    */
   public async acs(
     // tslint:disable-next-line:no-any
-    userPayload: unknown
+    userPayload: unknown,
+    res: Response
   ): Promise<
     | IResponseErrorInternal
     | IResponseErrorValidation
@@ -76,9 +75,13 @@ export default class AuthenticationController {
       log.error("Error storing the user in the session: %s", error.message);
       return ResponseErrorInternal(error.message);
     }
-    const urlWithToken = this.getClientProfileRedirectionUrl(sessionToken);
+    res.cookie("sessionToken", sessionToken, {
+      maxAge: this.tokenDurationInSeconds
+    });
 
-    return ResponsePermanentRedirect(urlWithToken);
+    return ResponsePermanentRedirect({
+      href: this.clientSpidAccessRedirectionUrl
+    });
   }
   /**
    * Deletes the user session, so that its token can not be used anymore

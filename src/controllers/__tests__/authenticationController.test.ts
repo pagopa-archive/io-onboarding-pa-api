@@ -103,13 +103,7 @@ jest.mock("../../services/sessionStorage", () => ({
 const tokenService = new TokenService();
 const sessionStorage = new SessionStorage();
 
-const getClientProfileRedirectionUrl = (token: string): UrlFromString => {
-  const url = "/profile.html?token={token}".replace("{token}", token);
-
-  return {
-    href: url
-  };
-};
+const clientSpidAccessRedirectionUrl = "client_spid_access_redirection_url";
 
 let controller: AuthenticationController;
 beforeAll(async () => {
@@ -117,7 +111,7 @@ beforeAll(async () => {
     sessionStorage,
     tokenService,
     tokenDurationSecs,
-    getClientProfileRedirectionUrl
+    clientSpidAccessRedirectionUrl
   );
 });
 
@@ -131,13 +125,16 @@ describe("AuthenticationController#acs", () => {
     mockSet.mockReturnValue(Promise.resolve(none));
     mockGetNewToken.mockReturnValueOnce(mockSessionToken);
 
-    const response = await controller.acs(validUserPayload);
+    const response = await controller.acs(validUserPayload, res);
     response.apply(res);
 
     expect(controller).toBeTruthy();
+    expect(res.cookie).toHaveBeenCalledWith("sessionToken", mockSessionToken, {
+      maxAge: tokenDurationSecs
+    });
     expect(res.redirect).toHaveBeenCalledWith(
       301,
-      "/profile.html?token=" + mockSessionToken
+      clientSpidAccessRedirectionUrl
     );
     const validatedSpidUser = validateSpidUser(validUserPayload).value;
     expect(mockSet).toHaveBeenCalledWith(
@@ -150,10 +147,11 @@ describe("AuthenticationController#acs", () => {
   it("should fail if userPayload is invalid", async () => {
     const res = mockRes();
 
-    const response = await controller.acs(invalidUserPayload);
+    const response = await controller.acs(invalidUserPayload, res);
     response.apply(res);
 
     expect(controller).toBeTruthy();
+    expect(res.cookie).toHaveBeenCalledTimes(0);
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith(badRequestErrorResponse);
     expect(mockSet).not.toHaveBeenCalled();
@@ -164,10 +162,11 @@ describe("AuthenticationController#acs", () => {
     mockSet.mockReturnValue(Promise.resolve(some(new Error(errorString))));
     const res = mockRes();
 
-    const response = await controller.acs(validUserPayload);
+    const response = await controller.acs(validUserPayload, res);
     response.apply(res);
 
     expect(controller).toBeTruthy();
+    expect(res.cookie).toHaveBeenCalledTimes(0);
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
       ...anErrorResponse,

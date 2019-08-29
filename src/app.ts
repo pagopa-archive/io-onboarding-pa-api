@@ -277,9 +277,7 @@ function registerLoginRoute(app: Express): void {
     new SessionStorage(),
     new TokenService(),
     TOKEN_DURATION_IN_SECONDS,
-    (token: string) => ({
-      href: CLIENT_SPID_SUCCESS_REDIRECTION_URL.replace("{token}", token)
-    })
+    CLIENT_SPID_SUCCESS_REDIRECTION_URL
   );
 
   // Handle the SAML assertion got from the IdP server
@@ -304,7 +302,7 @@ function registerLoginRoute(app: Express): void {
       }
       // The assertion is processed by the assertion consumer service
       // and a response is sent to the client
-      const response = await authController.acs(user);
+      const response = await authController.acs(user, res);
       response.apply(res);
     })(req, res, next);
   });
