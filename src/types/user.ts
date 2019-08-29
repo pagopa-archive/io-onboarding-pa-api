@@ -15,7 +15,7 @@ import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 import { log } from "../utils/logger";
 import { withValidatedOrValidationError } from "../utils/responses";
 
-import { OpenSession } from "./session";
+import { NotClosedSession } from "./session";
 
 export const LoggedUser = t.interface({
   createdAt: UTCISODateFromString,
@@ -23,7 +23,7 @@ export const LoggedUser = t.interface({
   familyName: t.string,
   firstName: t.string,
   fiscalCode: FiscalCode,
-  session: OpenSession
+  session: NotClosedSession
 });
 
 export type LoggedUser = t.TypeOf<typeof LoggedUser>;

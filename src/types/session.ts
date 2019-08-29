@@ -3,6 +3,9 @@ import { UTCISODateFromString } from "italia-ts-commons/lib/dates";
 import { FiscalCode } from "italia-ts-commons/lib/strings";
 import { SessionToken } from "./token";
 
+/**
+ * A session interface.
+ */
 const Session = t.interface({
   createdAt: UTCISODateFromString,
   deletedAt: t.union([UTCISODateFromString, t.null], "DeletionDate"),
@@ -13,20 +16,30 @@ const Session = t.interface({
 
 type Session = t.TypeOf<typeof Session>;
 
-export const OpenSession = t.intersection([
+/**
+ * A session which has not been closed by the user,
+ * i.e. a session the user has not performed a logout within
+ * regardless of whether it has expired or not.
+ */
+export const NotClosedSession = t.intersection([
   Session,
   t.interface({
     deletedAt: t.null
   })
 ]);
 
-export type OpenSession = t.TypeOf<typeof OpenSession>;
+export type NotClosedSession = t.TypeOf<typeof NotClosedSession>;
 
-export const CloseSession = t.intersection([
+/**
+ * A session which has been closed by the user,
+ * i.e. a session the user performed a logout within
+ * before its expiration.
+ */
+export const ClosedSession = t.intersection([
   Session,
   t.interface({
     deletedAt: UTCISODateFromString
   })
 ]);
 
-export type CloseSession = t.TypeOf<typeof CloseSession>;
+export type ClosedSession = t.TypeOf<typeof ClosedSession>;
