@@ -130,7 +130,7 @@ describe("AuthenticationController#acs", () => {
 
     expect(controller).toBeTruthy();
     expect(res.cookie).toHaveBeenCalledWith("sessionToken", mockSessionToken, {
-      maxAge: tokenDurationSecs
+      maxAge: tokenDurationSecs * 1000
     });
     expect(res.redirect).toHaveBeenCalledWith(
       301,
