@@ -17,6 +17,7 @@
   "devDependencies": {
     "@types/bluebird": "^3.5.27",
     "@types/dotenv": "^6.1.0",
+    "@types/event-stream": "^3.3.34",
     "@types/express": "^4.17.0",
     "@types/jest": "^24.0.13",
     "@types/node": "10.14.1",
@@ -38,7 +39,9 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "^7.1.0",
+    "csv-stream": "^0.2.0",
     "dotenv": "^6.1.0",
+    "event-stream": "^4.0.1",
     "express": "^4.17.1",
     "express-validator": "^6.1.0",
     "fp-ts": "1.12.0",
