@@ -22,6 +22,7 @@ async function populateIpaPublicAdministrationTable(): Promise<void> | never {
     const IpaPublicAdministrationCount = await IpaPublicAdministration.count();
     if (IpaPublicAdministrationCount === 0) {
       log.debug("Populating IpaPublicAdministration table...");
+      // tslint:disable-next-line:no-floating-promises
       upsertFromIpa();
     } else {
       log.debug("IpaPublicAdministration table already populated.");
@@ -36,6 +37,7 @@ async function populateIpaPublicAdministrationTable(): Promise<void> | never {
 
 newApp()
   .then(app => {
+    // tslint:disable-next-line:no-floating-promises
     populateIpaPublicAdministrationTable();
     app.listen(app.get("port"), () => {
       log.info(
@@ -52,6 +54,7 @@ schedule(
   "0 0 2 * * *", // running in container at 02:00 UTC
   () => {
     log.info("Updating public administrations from IPA...");
+    // tslint:disable-next-line:no-floating-promises
     upsertFromIpa();
   }
 ).start();
