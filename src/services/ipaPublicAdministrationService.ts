@@ -25,7 +25,9 @@ export function upsertFromIpa(): Promise<void> {
             return cb();
           }
           IpaPublicAdministrationModel.upsert(entry)
-            .then(cb)
+            .then(() => {
+              cb();
+            })
             .catch(error => {
               log.error(
                 "IpaPublicAdministration upsert failed for %s: %s",
