@@ -23,7 +23,7 @@ export function upsertFromIpa(): Promise<void> {
             // filter out entries without a validated CF
             return cb();
           }
-          if (!entry.Cf || entry.Cf.length < 2 || !entry.Cf.match(/^\d+$/)) {
+          if (!entry.Cf || !entry.Cf.match(/^\d{2,}$/)) {
             // filter out entries with bogus CF
             return cb();
           }
