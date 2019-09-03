@@ -54,7 +54,10 @@ schedule(
   "0 0 2 * * *", // running in container at 02:00 UTC
   () => {
     log.info("Updating public administrations from IPA...");
-    // tslint:disable-next-line:no-floating-promises
-    upsertFromIpa();
+    upsertFromIpa()
+      .then(() => log.info("Public administrations from IPA have been updated"))
+      .catch(error =>
+        log.error("Update of public administrations from IPA failed: %s", error)
+      );
   }
 ).start();
