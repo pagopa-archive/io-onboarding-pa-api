@@ -6,39 +6,11 @@ dotenv.config();
 
 import { schedule } from "node-cron";
 import newApp from "./app";
-import {
-  init as initIpaPublicAdministration,
-  IpaPublicAdministration
-} from "./models/IpaPublicAdministration";
 import { upsertFromIpa } from "./services/ipaPublicAdministrationService";
 import { log } from "./utils/logger";
 
-/**
- * Populates the table of Public Administrations from IPA if it's still empty
- */
-async function populateIpaPublicAdministrationTable(): Promise<void> | never {
-  try {
-    initIpaPublicAdministration();
-    const IpaPublicAdministrationCount = await IpaPublicAdministration.count();
-    if (IpaPublicAdministrationCount === 0) {
-      log.debug("Populating IpaPublicAdministration table...");
-      // tslint:disable-next-line:no-floating-promises
-      upsertFromIpa();
-    } else {
-      log.debug("IpaPublicAdministration table already populated.");
-    }
-  } catch (error) {
-    log.error(
-      "An error occurred counting entries in IpaPublicAdministration table."
-    );
-    return process.exit(1);
-  }
-}
-
 newApp()
   .then(app => {
-    // tslint:disable-next-line:no-floating-promises
-    populateIpaPublicAdministrationTable();
     app.listen(app.get("port"), () => {
       log.info(
         "  App is running at http://localhost:%d in %s mode",

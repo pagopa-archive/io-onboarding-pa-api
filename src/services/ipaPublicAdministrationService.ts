@@ -2,7 +2,10 @@ import { createStream } from "csv-stream";
 import * as es from "event-stream";
 import fetch from "node-fetch";
 import { INDICEPA_URL } from "../config";
-import { IpaPublicAdministration as IpaPublicAdministrationModel } from "../models/IpaPublicAdministration";
+import {
+  init as initIpaPublicAdministration,
+  IpaPublicAdministration as IpaPublicAdministrationModel
+} from "../models/IpaPublicAdministration";
 import { IIpaPublicAdministration } from "../types/PublicAdministration";
 import { log } from "../utils/logger";
 
@@ -42,4 +45,29 @@ export function upsertFromIpa(): Promise<void> {
         resolve();
       });
   });
+}
+
+/**
+ * Populates the table of Public Administrations from IPA if it's still empty
+ */
+export async function populateIpaPublicAdministrationTable():
+  | Promise<boolean>
+  | never {
+  try {
+    initIpaPublicAdministration();
+    const IpaPublicAdministrationCount = await IpaPublicAdministrationModel.count();
+    if (IpaPublicAdministrationCount === 0) {
+      log.debug("Populating IpaPublicAdministration table...");
+      await upsertFromIpa();
+      return true;
+    } else {
+      log.debug("IpaPublicAdministration table already populated.");
+      return false;
+    }
+  } catch (error) {
+    log.error(
+      "An error occurred counting entries in IpaPublicAdministration table."
+    );
+    return process.exit(1);
+  }
 }

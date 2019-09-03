@@ -8,10 +8,12 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "generate:test-certs": "./scripts/generate-test-certs.sh certs",
+    "prepare-db": "node dist/database/prepare.js",
     "build": "tsc",
     "postversion": "git push && git push --tags",
     "test": "jest",
     "lint": "tslint --project .",
+    "prestart": "yarn prepare-db",
     "start": "node dist/index.js"
   },
   "devDependencies": {

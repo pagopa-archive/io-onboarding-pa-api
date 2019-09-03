@@ -17,12 +17,8 @@ import {
   SpidPassportBuilder
 } from "io-spid-commons";
 import * as passport from "passport";
-import * as path from "path";
-import { Sequelize } from "sequelize";
-import * as usync from "umzug-sync";
 
 import { IPA_ELASTICSEARCH_ENDPOINT } from "./config";
-import sequelize from "./database/db";
 import {
   createAssociations as createOrganizationAssociations,
   init as initOrganization
@@ -146,20 +142,8 @@ export default async function newApp(): Promise<Express> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-
-  try {
-    await usync.migrate({
-      SequelizeImport: Sequelize,
-      logging: (param: string) => log.info("%s", param),
-      migrationsDir: path.join("dist", "migrations"),
-      sequelize
-    });
-    initModels();
-    createModelAssociations(); // Models must be already initialized before calling this method
-  } catch (error) {
-    log.error("Failed to apply migrations. %s", error);
-    process.exit(1);
-  }
+  initModels();
+  createModelAssociations(); // Models must be already initialized before calling this method
   return app;
 }
 
