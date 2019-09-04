@@ -128,6 +128,10 @@ export default async function newApp(): Promise<Express> {
     process.exit(1);
   }
 
+  app.get("/", (_0, res) => {
+    res.send("<h2>The server is up and running</h2>");
+  });
+
   /**
    * Use a custom error-handling middleware function.
    * It intercepts the error forwarded to the `next()` function,
