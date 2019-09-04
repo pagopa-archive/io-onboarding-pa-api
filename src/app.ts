@@ -129,7 +129,7 @@ export default async function newApp(): Promise<Express> {
   }
 
   app.get("/", (_0, res) => {
-    res.send("<h2>The server is up and running</h2>");
+    res.json({ message: "ok" });
   });
 
   /**
