@@ -1,0 +1,34 @@
+{
+    "pippo": {
+        "pwd": "test",
+        "attrs": {
+            "email": "pippo@pappo.net",
+            "address": "via di casa sua SNC",
+            "countyOfBirth": "Roma",
+            "dateOfBirth": "1900-01-01",
+            "fiscalNumber": "TINIT-PPPPPP00A01H501Y",
+            "placeOfBirth": "Roma",
+            "mobilePhone": "3330000000",
+            "name": "Giuseppe",
+            "gender": "M",
+            "familyName": "Pappo"
+        },
+        "sp": null
+    },
+    "pinco": {
+        "sp": null,
+        "attrs": {
+            "idCard": "XX0123456",
+            "ivaCode": "01234567890",
+            "name": "Pinco Pallino",
+            "fiscalNumber": "TINIT-QLSPCP80A01H501A",
+            "gender": "M",
+            "countyOfBirth": "Roma",
+            "dateOfBirth": "1980-01-01",
+            "email": "pinco.pallino.qualsiasi@email.it",
+            "placeOfBirth": "Roma",
+            "familyName": "Qualsiasi"
+        },
+        "pwd": "test"
+    }
+}

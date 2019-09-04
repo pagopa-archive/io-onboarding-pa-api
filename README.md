@@ -14,19 +14,37 @@ A Linux/macOS environment is required at the moment.
 
 ### Installation steps
 
+
+The project already contains some demo files which are used to configure and use a SPID test environment defined in `docker-compose.yaml` file,
+you can choose to run the app using the default configuration or change it and use your own. 
+
+#### Default configuration
 1. clone the project in a folder called `io-onboarding-backend`
 2. go to the project's folder
-3. run the command `yarn generate-test-certs` to create SAML (SPID) certificates
-4. create a .env file and configure the values inside: `cp .env.example .env`
-5. run `docker-compose up -d` to start the containers
-6. edit your `/etc/hosts` file by adding:
+3. edit your `/etc/hosts` file by adding:
     ```
     127.0.0.1    spid-testenv2
     127.0.0.1    io-onboarding-backend
     ```
-7. point your browser to [http://io-onboarding-backend:3000/metadata](http://io-onboarding-backend:3000/metadata) and copy the source of the
-    page to a new `testenv2/conf/sp_metadata.xml` file
-8. in the `testenv2/conf/sp_metadata.xml` file:
+4. create a .env file and configure the values inside: `cp .env.example .env`
+5. run `docker-compose up -d` to start the containers
+6. point your browser to [http://io-onboarding-backend:3000](http://io-onboarding-backend:3000)
+
+#### Custom configuration
+1. clone the project in a folder called `io-onboarding-backend`
+2. go to the project's folder
+3. delete the files `cert.pem` and `key.pem` from the `certs` folder
+4. run the command `yarn generate-test-certs` to create SAML (SPID) certificates
+5. create a .env file and configure the values inside: `cp .env.example .env`
+6. run `docker-compose up -d` to start the containers
+7. edit your `/etc/hosts` file by adding:
+    ```
+    127.0.0.1    spid-testenv2
+    127.0.0.1    io-onboarding-backend
+    ```
+8. point your browser to [http://io-onboarding-backend:3000/metadata](http://io-onboarding-backend:3000/metadata) 
+and replace the content of the `testenv2/conf/sp_metadata.xml` file with the source of the page.
+9. in the `testenv2/conf/sp_metadata.xml` file:
   - remove the `<EncryptionMethod>` elements
   - between the elements `<KeyDescriptor>` and `<NameIDFormat>` add the following element:
      ```
@@ -34,8 +52,8 @@ A Linux/macOS environment is required at the moment.
          Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
          Location="http://io-onboarding-backend:3000/spid/logout" /> 
     ``` 
-9. run `docker-compose restart` to restart the containers
-10. point your browser to [http://io-onboarding-backend:3000](http://io-onboarding-backend:3000)
+10. run `docker-compose restart` to restart the containers
+11. point your browser to [http://io-onboarding-backend:3000](http://io-onboarding-backend:3000)
 
 ### Environment variables
 
