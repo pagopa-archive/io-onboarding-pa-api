@@ -19,6 +19,7 @@ services:
     restart: always
     volumes:
       - "./certs:/usr/src/app/certs:delegated"
+      - "./.env:/usr/src/app/.env"
 
   database:
     container_name: postgresql

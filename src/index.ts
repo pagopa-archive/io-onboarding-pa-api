@@ -4,7 +4,9 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
+import { schedule } from "node-cron";
 import newApp from "./app";
+import { upsertFromIpa } from "./services/ipaPublicAdministrationService";
 import { log } from "./utils/logger";
 
 newApp()
@@ -19,3 +21,15 @@ newApp()
     });
   })
   .catch(error => log.error("Error loading app: %s", error));
+
+schedule(
+  "0 0 2 * * *", // running in container at 02:00 UTC
+  () => {
+    log.info("Updating public administrations from IPA...");
+    upsertFromIpa()
+      .then(() => log.info("Public administrations from IPA have been updated"))
+      .catch(error =>
+        log.error("Update of public administrations from IPA failed: %s", error)
+      );
+  }
+).start();
