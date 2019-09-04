@@ -128,6 +128,10 @@ export default async function newApp(): Promise<Express> {
     process.exit(1);
   }
 
+  app.get("/", (_0, res) => {
+    res.json({ message: "ok" });
+  });
+
   /**
    * Use a custom error-handling middleware function.
    * It intercepts the error forwarded to the `next()` function,
