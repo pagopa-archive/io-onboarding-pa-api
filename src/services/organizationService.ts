@@ -59,15 +59,15 @@ export async function findPublicAdministrationsByName(
 /**
  * Updates the public administrations from IPA with the information coming from their registrations to IO
  *
- * @param publicAdminstrations The array of public administrations from IPA
+ * @param publicAdministrations The array of public administrations from IPA
  * @param organizations The array of already registered public administrations
  */
 function mergePublicAdministrationsAndOrganizations(
-  publicAdminstrations: ReadonlyArray<ISearchedOrganization>,
+  publicAdministrations: ReadonlyArray<ISearchedOrganization>,
   // tslint:disable-next-line:readonly-array
   organizations: ISearchedOrganization[]
 ): ReadonlyArray<ISearchedOrganization> {
-  return publicAdminstrations.reduce(
+  return publicAdministrations.reduce(
     (
       results: ReadonlyArray<ISearchedOrganization>,
       currentPublicAdministration: ISearchedOrganization

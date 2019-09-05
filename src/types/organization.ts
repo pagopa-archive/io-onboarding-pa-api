@@ -1,4 +1,4 @@
-import { Organization } from "../models/Organization";
+import { Organization, OrganizationScope } from "../models/Organization";
 import { IIpaPublicAdministration } from "./PublicAdministration";
 
 export interface ISearchedOrganization {
@@ -12,6 +12,7 @@ export interface ISearchedOrganization {
     phoneNumber: string | null;
   };
   pecs: ReadonlyArray<string>;
+  scope: OrganizationScope | null;
   selectedPec?: string;
 }
 
@@ -29,6 +30,7 @@ export function fromOrganizationModelToSearchedOrganization(
     },
     name: organizationModel.name,
     pecs: [organizationModel.pec],
+    scope: organizationModel.scope,
     selectedPec: organizationModel.pec
   };
 }
@@ -63,6 +65,7 @@ export function fromPublicAdministrationToSearchedOrganization(
       phoneNumber: null
     },
     name: pa.des_amm,
-    pecs
+    pecs,
+    scope: null
   };
 }

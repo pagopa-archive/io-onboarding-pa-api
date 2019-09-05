@@ -3,11 +3,17 @@ import sequelize from "../database/db";
 import { OrganizationUser } from "./OrganizationUser";
 import { User } from "./User";
 
+export enum OrganizationScope {
+  LOCAL = "LOCAL",
+  NATIONAL = "NATIONAL"
+}
+
 export class Organization extends Model {
   public fiscalCode!: string;
   public ipaCode!: string; // PK
   public name!: string;
   public pec!: string;
+  public scope!: OrganizationScope;
   public readonly createdAt!: Date;
   public readonly deletedAt!: Date;
   public readonly updatedAt!: Date;
@@ -37,6 +43,10 @@ export function init(): void {
       pec: {
         allowNull: false,
         type: new DataTypes.STRING()
+      },
+      scope: {
+        allowNull: false,
+        type: new DataTypes.ENUM(...Object.values(OrganizationScope))
       }
     },
     {
