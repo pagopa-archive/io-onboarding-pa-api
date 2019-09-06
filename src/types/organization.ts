@@ -38,23 +38,15 @@ export function fromOrganizationModelToSearchedOrganization(
 export function fromPublicAdministrationToSearchedOrganization(
   pa: IIpaPublicAdministration
 ): ISearchedOrganization {
-  // tslint:disable-next-line:readonly-array
-  const pecs: string[] = [];
-  if (pa.tipo_mail1 === "pec") {
-    pecs.push(pa.mail1);
-  }
-  if (pa.tipo_mail2 === "pec") {
-    pecs.push(pa.mail2);
-  }
-  if (pa.tipo_mail3 === "pec") {
-    pecs.push(pa.mail3);
-  }
-  if (pa.tipo_mail4 === "pec") {
-    pecs.push(pa.mail4);
-  }
-  if (pa.tipo_mail5 === "pec") {
-    pecs.push(pa.mail5);
-  }
+  const pecs = [
+    [pa.tipo_mail1, pa.mail1],
+    [pa.tipo_mail2, pa.mail2],
+    [pa.tipo_mail3, pa.mail3],
+    [pa.tipo_mail4, pa.mail4],
+    [pa.tipo_mail5, pa.mail5]
+  ]
+    .filter(([emailType, _]) => emailType === "pec")
+    .map(([_, pec]) => pec);
   return {
     fiscalCode: pa.Cf,
     ipaCode: pa.cod_amm,
