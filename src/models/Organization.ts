@@ -69,7 +69,7 @@ export function createAssociations(): void {
   Organization.belongsTo(User, {
     as: "legalRepresentative",
     foreignKey: {
-      field: "userFiscalCode",
+      field: "legalRepresentativeFiscalCode",
       name: "legalRepresentativeFiscalCode"
     }
   });
