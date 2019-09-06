@@ -64,20 +64,25 @@ export async function findPublicAdministrationsByName(
  */
 function mergePublicAdministrationsAndOrganizations(
   publicAdministrations: ReadonlyArray<ISearchedOrganization>,
-  // tslint:disable-next-line:readonly-array
-  organizations: ISearchedOrganization[]
+  organizations: ReadonlyArray<ISearchedOrganization>
 ): ReadonlyArray<ISearchedOrganization> {
   return publicAdministrations.reduce(
     (
       results: ReadonlyArray<ISearchedOrganization>,
       currentPublicAdministration: ISearchedOrganization
     ) => {
-      const organizationIndex = organizations.findIndex(
-        organization =>
-          organization.ipaCode === currentPublicAdministration.ipaCode
+      const organizationsHash = organizations.reduce(
+        (hash, currentOrganization) => ({
+          ...hash,
+          [currentOrganization.ipaCode]: currentOrganization
+        }),
+        {} as { [key: string]: ISearchedOrganization }
       );
-      if (organizationIndex !== -1) {
-        return [...results, ...organizations.splice(organizationIndex, 1)];
+      if (organizationsHash[currentPublicAdministration.ipaCode]) {
+        return [
+          ...results,
+          organizationsHash[currentPublicAdministration.ipaCode]
+        ];
       }
       return [...results, currentPublicAdministration];
     },
