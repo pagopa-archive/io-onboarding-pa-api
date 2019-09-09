@@ -1,4 +1,5 @@
-import { Op } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
+import sequelize from "../database/db";
 import { IpaPublicAdministration } from "../models/IpaPublicAdministration";
 import { Organization } from "../models/Organization";
 import { User } from "../models/User";
@@ -23,6 +24,21 @@ export async function findPublicAdministrationsByName(
         word ? words.concat(word) : words,
       []
     );
+  const publicAdministrations: ReadonlyArray<
+    IpaPublicAdministration
+  > = await sequelize.query(
+    `
+      SELECT *
+      FROM "${IpaPublicAdministration.tableName}"
+      WHERE _search @@ plainto_tsquery('italian', :query);
+    `,
+    {
+      mapToModel: true,
+      model: IpaPublicAdministration,
+      replacements: { query: `%${descriptionWords.join("%")}%` },
+      type: QueryTypes.SELECT
+    }
+  );
   const organizations = await Organization.findAll({
     include: [
       {
@@ -31,15 +47,8 @@ export async function findPublicAdministrationsByName(
       }
     ],
     where: {
-      name: {
-        [Op.iLike]: `%${descriptionWords.join("%")}%`
-      }
-    }
-  });
-  const publicAdministrations = await IpaPublicAdministration.findAll({
-    where: {
-      des_amm: {
-        [Op.iLike]: `%${descriptionWords.join("%")}%`
+      ipaCode: {
+        [Op.in]: publicAdministrations.map(_ => _.cod_amm)
       }
     }
   });
