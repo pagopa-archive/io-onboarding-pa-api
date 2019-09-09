@@ -197,6 +197,8 @@ function registerRoutes(app: Express): void {
         .withMessage("a value is required")
         .isLength({ min: 3 })
         .withMessage("value must have at least 3 characters")
+        .matches(/^[0-9A-Za-z ]*$/)
+        .withMessage("value can contain only letters, numbers and spaces")
     ],
     asyncHandler(getPublicAdministrationsHandler)
   );
