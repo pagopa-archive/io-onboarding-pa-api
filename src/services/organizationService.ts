@@ -88,9 +88,17 @@ function mergePublicAdministrationsAndOrganizations(
         {} as { [key: string]: ISearchedOrganization }
       );
       if (organizationsHash[currentPublicAdministration.ipaCode]) {
+        const currentOrganization =
+          organizationsHash[currentPublicAdministration.ipaCode];
+
         return [
           ...results,
-          organizationsHash[currentPublicAdministration.ipaCode]
+          {
+            ...currentOrganization,
+            selectedPecIndex: currentPublicAdministration.pecs.indexOf(
+              currentOrganization.pecs[0]
+            )
+          }
         ];
       }
       return [...results, currentPublicAdministration];

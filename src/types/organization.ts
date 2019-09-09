@@ -13,7 +13,7 @@ export interface ISearchedOrganization {
   };
   pecs: ReadonlyArray<string>;
   scope: OrganizationScope | null;
-  selectedPec?: string;
+  selectedPecIndex?: number | null;
 }
 
 export function fromOrganizationModelToSearchedOrganization(
@@ -31,7 +31,7 @@ export function fromOrganizationModelToSearchedOrganization(
     name: organizationModel.name,
     pecs: [organizationModel.pec],
     scope: organizationModel.scope,
-    selectedPec: organizationModel.pec
+    selectedPecIndex: 0
   };
 }
 
