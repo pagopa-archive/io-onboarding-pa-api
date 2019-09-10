@@ -13,7 +13,7 @@ export interface ISearchedOrganization {
   };
   pecs: ReadonlyArray<string>;
   scope: OrganizationScope | null;
-  selectedPecIndex?: number | null;
+  selectedPecIndex: number | null;
 }
 
 export function fromOrganizationModelToSearchedOrganization(
@@ -58,6 +58,7 @@ export function fromPublicAdministrationToSearchedOrganization(
     },
     name: pa.des_amm,
     pecs,
-    scope: null
+    scope: null,
+    selectedPecIndex: null
   };
 }
