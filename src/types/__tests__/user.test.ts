@@ -3,7 +3,7 @@ import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/request";
 
 import { SessionToken } from "../token";
-import { LoggedUser, SpidUser, validateSpidUser } from "../user";
+import { LoggedUser, SpidUser, UserRoleEnum, validateSpidUser } from "../user";
 
 const tokenDurationInSeconds = 300;
 
@@ -36,11 +36,12 @@ const mockedUser: LoggedUser = {
   familyName: "Garibaldi",
   firstName: "Giuseppe Maria",
   fiscalCode: aValidFiscalNumber,
+  role: UserRoleEnum.ORG_DELEGATE,
   session: {
     createdAt: new Date(),
     deletedAt: null,
+    email: aValidEmailAddress,
     expirationTime: new Date(Date.now() + tokenDurationInSeconds * 1000),
-    fiscalCode: aValidFiscalNumber,
     token: "HexToKen" as SessionToken
   }
 };

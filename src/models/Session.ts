@@ -7,7 +7,7 @@ export class Session extends Model {
   public readonly updatedAt!: Date;
   public readonly expirationTime!: Date;
   public readonly token!: string;
-  public readonly userFiscalCode!: string;
+  public readonly userEmail!: string;
 }
 
 export function init(): void {
@@ -22,9 +22,9 @@ export function init(): void {
         primaryKey: true,
         type: new DataTypes.STRING()
       },
-      userFiscalCode: {
+      userEmail: {
         references: {
-          key: "fiscalCode",
+          key: "email",
           model: "User"
         },
         type: new DataTypes.STRING()
@@ -43,6 +43,6 @@ export function init(): void {
 export function createAssociations(): void {
   Session.belongsTo(User, {
     as: "user",
-    foreignKey: { name: "fiscalCode", field: "userFiscalCode" }
+    foreignKey: { name: "email", field: "userEmail" }
   });
 }

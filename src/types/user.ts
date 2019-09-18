@@ -11,11 +11,22 @@ import { UTCISODateFromString } from "italia-ts-commons/lib/dates";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { IResponseErrorValidation } from "italia-ts-commons/lib/responses";
 import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
+import { enumType } from "italia-ts-commons/lib/types";
 
 import { log } from "../utils/logger";
 import { withValidatedOrValidationError } from "../utils/responses";
 
 import { NotClosedSession } from "./session";
+
+export enum UserRoleEnum {
+  ORG_DELEGATE = "ORG_DELEGATE", // Organization delegate
+  ORG_MANAGER = "ORG_MANAGER", // Organization manager
+  DEVELOPER = "DEVELOPER",
+  ADMIN = "ADMIN,"
+}
+
+export type UserRole = t.TypeOf<typeof UserRole>;
+export const UserRole = enumType<UserRoleEnum>(UserRoleEnum, "UserRole");
 
 export const LoggedUser = t.interface({
   createdAt: UTCISODateFromString,
@@ -23,6 +34,7 @@ export const LoggedUser = t.interface({
   familyName: t.string,
   firstName: t.string,
   fiscalCode: FiscalCode,
+  role: UserRole,
   session: NotClosedSession
 });
 
