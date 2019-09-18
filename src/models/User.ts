@@ -14,6 +14,7 @@ export class User extends Model {
   public fiscalCode!: string; // PK
   public firstName!: string;
   public familyName!: string;
+  public phoneNumber!: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -50,6 +51,10 @@ export function init(): void {
       fiscalCode: {
         allowNull: false,
         primaryKey: true,
+        type: new DataTypes.STRING()
+      },
+      phoneNumber: {
+        allowNull: true,
         type: new DataTypes.STRING()
       }
     },
