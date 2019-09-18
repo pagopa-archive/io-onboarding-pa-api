@@ -55,6 +55,15 @@ and replace the content of the `testenv2/conf/sp_metadata.xml` file with the sou
 10. run `docker-compose restart` to restart the containers
 11. point your browser to [http://io-onboarding-backend:3000](http://io-onboarding-backend:3000)
 
+### SPID test login
+All the available SPID test users with their login credentials and attributes are listed in the page [http://spid-testenv2:8088/users](http://spid-testenv2:8088/users), you can add more if needed. 
+There are two default available users whose login credentials are respectively the following:
+  - username `pippo` and password `test`
+  - username `pinco` and password `test`
+
+In order to perform a SPID test login, point your browser to [http://io-onboarding-backend:3000/login?entityID=xx_testenv2&authLevel=SpidL2](http://io-onboarding-backend:3000/login?entityID=xx_testenv2&authLevel=SpidL2) and use the login credentials of one of the SPID test users. 
+ 
+
 ### Environment variables
 
 The table below describes all the Environment variables needed by the application.
