@@ -1,9 +1,3 @@
-export interface IIpaSearchResult {
-  ipa: string;
-  description: string;
-  pec: string;
-}
-
 // tslint:disable-next-line: interface-name
 export interface IIpaPublicAdministration {
   cod_amm: string;

@@ -1,4 +1,3 @@
-import { Client } from "@elastic/elasticsearch";
 import * as bodyParser from "body-parser";
 import * as express from "express";
 import {
@@ -18,7 +17,7 @@ import {
 } from "io-spid-commons";
 import * as passport from "passport";
 
-import { IPA_ELASTICSEARCH_ENDPOINT } from "./config";
+import { init as initIpaPublicAdministration } from "./models/IpaPublicAdministration";
 import {
   createAssociations as createOrganizationAssociations,
   init as initOrganization
@@ -32,10 +31,10 @@ import {
   createAssociations as createUserAssociations,
   init as initUser
 } from "./models/User";
-import { IIpaSearchResult } from "./types/PublicAdministration";
 import { log } from "./utils/logger";
 
 import AuthenticationController from "./controllers/authenticationController";
+import { findPublicAdministrationsByName } from "./services/organizationService";
 import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
 import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
@@ -180,62 +179,11 @@ const getPublicAdministrationsHandler: RequestHandler = async (
   if (!validationErrors.isEmpty()) {
     return res.status(400).json(validationErrors.array());
   }
-  const searchString = req.query.search;
-
-  const searchParams = {
-    body: {
-      query: {
-        bool: {
-          should: [
-            {
-              nested: {
-                path: "office",
-                query: {
-                  multi_match: {
-                    fields: ["office.code", "office.description"],
-                    operator: "and",
-                    query: searchString
-                  }
-                }
-              }
-            },
-            {
-              multi_match: {
-                fields: ["ipa", "description"],
-                operator: "and",
-                query: searchString
-              }
-            }
-          ]
-        }
-      }
-    },
-    index: "indicepa"
-  };
-
   try {
-    const client = new Client({ node: IPA_ELASTICSEARCH_ENDPOINT });
-    const searchResponse = await client.search(searchParams);
-    const publicAdministrations = searchResponse.body.hits.hits
-      .map((hit: { _source: IIpaSearchResult }) => hit._source)
-      .reduce(
-        (
-          previous: ReadonlyArray<IIpaSearchResult>,
-          current: IIpaSearchResult
-        ) => [
-          ...previous,
-          {
-            description: current.description,
-            ipa: current.ipa,
-            pec: current.pec
-          }
-        ],
-        []
-      );
-    return res.json(publicAdministrations);
+    res.json(await findPublicAdministrationsByName(req.query.search));
   } catch (error) {
     log.error(error);
-    return res.status(500).end(error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -249,6 +197,8 @@ function registerRoutes(app: Express): void {
         .withMessage("a value is required")
         .isLength({ min: 3 })
         .withMessage("value must have at least 3 characters")
+        .matches(/^[0-9A-Za-z ]*$/)
+        .withMessage("value can contain only letters, numbers and spaces")
     ],
     asyncHandler(getPublicAdministrationsHandler)
   );
@@ -307,6 +257,7 @@ function registerLoginRoute(app: Express): void {
 }
 
 function initModels(): void {
+  initIpaPublicAdministration();
   initOrganization();
   initOrganizationUser();
   initUser();
