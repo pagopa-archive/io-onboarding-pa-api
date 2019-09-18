@@ -124,8 +124,8 @@ components:
           },
           "name": "Comune di Gioiosa Marea",
           "pecs": [
-            "protocollo@pec.comunegioiosamarea.it",
-            "affarigenerali@pec.comunegioiosamarea.it"
+            "indirizzo00@email.pec.it",
+            "indirizzo01@email.pec.it"
           ],
           "scope": null,
           "selectedPecIndex": null
@@ -141,10 +141,10 @@ components:
           },
           "name": "Comune di Gioiosa Jonica",
           "pecs": [
-            "affarigenerali.gioiosa@asmepec.it",
-            "tecnico.gioiosa@asmepec.it",
-            "ragioneria.gioiosa@asmepec.it",
-            "vigili.gioiosa@asmepec.it"
+            "indirizzo10@email.pec.it",
+            "indirizzo11@email.pec.it",
+            "indirizzo12@email.pec.it",
+            "indirizzo13@email.pec.it",
           ],
           "scope": null,
           "selectedPecIndex": null
@@ -160,8 +160,8 @@ components:
           },
           "name": "Comune di Marina di Gioiosa Ionica",
           "pecs": [
-            "protocollo.marinadigioiosa@asmepec.it",
-            "ragioneria.marinadigioiosa@asmepec.it"
+            "indirizzo20@email.pec.it",
+            "indirizzo21@email.pec.it",
           ],
           "scope": null,
           "selectedPecIndex": null
