@@ -103,6 +103,14 @@ export function validateSpidUser(value: unknown): Either<string, SpidUser> {
     authnContextClassRef
   );
 
+  if (
+    authnContextClassRef === SpidLevelEnum["https://www.spid.gov.it/SpidL1"]
+  ) {
+    return left(
+      `Insufficient SPID authorization level: ${authnContextClassRef}`
+    );
+  }
+
   const valueWithoutPrefix = {
     ...value,
     fiscalNumber: fiscalNumberWithoutPrefix
