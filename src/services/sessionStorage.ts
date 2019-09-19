@@ -83,7 +83,7 @@ export default class SessionStorage {
           }
         ],
         where: {
-          fiscalCode: user.fiscalCode
+          email: user.email
         }
       });
       if (!userWithSessions) {
