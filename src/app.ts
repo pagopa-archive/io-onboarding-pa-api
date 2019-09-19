@@ -1,4 +1,5 @@
 import * as bodyParser from "body-parser";
+import * as cors from "cors";
 import * as express from "express";
 import {
   Express,
@@ -89,6 +90,11 @@ export default async function newApp(): Promise<Express> {
   app.set("port", process.env.PORT || 3000);
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(
+    cors({
+      origin: getRequiredEnvVar("CLIENT_DOMAIN")
+    })
+  );
 
   passport.use(bearerTokenStrategy(API_BASE_PATH));
   app.use(passport.initialize());
