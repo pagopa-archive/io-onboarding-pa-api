@@ -1,5 +1,5 @@
 import { DataTypes, QueryInterface } from "sequelize";
-import { UserRole } from "../models/User";
+import { UserRoleEnum } from "../types/user";
 
 export function up(queryInterface: QueryInterface): Promise<void> {
   return queryInterface.createTable("OrganizationsUsers", {
@@ -23,7 +23,7 @@ export function up(queryInterface: QueryInterface): Promise<void> {
     },
     userRole: {
       allowNull: false,
-      type: new DataTypes.ENUM(...Object.values(UserRole))
+      type: new DataTypes.ENUM(...Object.values(UserRoleEnum))
     }
   });
 }

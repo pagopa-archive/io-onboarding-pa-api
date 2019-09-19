@@ -1,4 +1,9 @@
-import { BelongsToManyAddAssociationMixin, DataTypes, Model } from "sequelize";
+import {
+  BelongsToManyAddAssociationMixin,
+  BelongsToSetAssociationMixin,
+  DataTypes,
+  Model
+} from "sequelize";
 import sequelize from "../database/db";
 import { OrganizationUser } from "./OrganizationUser";
 import { User } from "./User";
@@ -19,6 +24,7 @@ export class Organization extends Model {
   public readonly updatedAt!: Date;
 
   public addUser!: BelongsToManyAddAssociationMixin<User, string>;
+  public setLegalRepresentative!: BelongsToSetAssociationMixin<User, string>;
 
   public readonly legalRepresentative!: User;
   public readonly users?: ReadonlyArray<User>;
@@ -34,6 +40,10 @@ export function init(): void {
       ipaCode: {
         allowNull: false,
         primaryKey: true,
+        type: new DataTypes.STRING()
+      },
+      legalRepresentativeEmail: {
+        allowNull: true,
         type: new DataTypes.STRING()
       },
       name: {
@@ -63,14 +73,14 @@ export function createAssociations(): void {
   Organization.belongsToMany(User, {
     as: "users",
     foreignKey: { name: "ipaCode", field: "organizationIpaCode" },
-    otherKey: { name: "fiscalCode", field: "userFiscalCode" },
+    otherKey: { name: "email", field: "userEmail" },
     through: OrganizationUser
   });
   Organization.belongsTo(User, {
     as: "legalRepresentative",
     foreignKey: {
-      field: "legalRepresentativeFiscalCode",
-      name: "legalRepresentativeFiscalCode"
+      field: "legalRepresentativeEmail",
+      name: "legalRepresentativeEmail"
     }
   });
 }

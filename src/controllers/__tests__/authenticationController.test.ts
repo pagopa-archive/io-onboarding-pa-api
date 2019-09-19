@@ -3,14 +3,13 @@
 import { none, some } from "fp-ts/lib/Option";
 import { SpidLevelEnum } from "io-spid-commons";
 import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
-import { UrlFromString } from "italia-ts-commons/lib/url";
 
 import mockReq from "../../__mocks__/request";
 import mockRes from "../../__mocks__/response";
 import SessionStorage from "../../services/sessionStorage";
 import TokenService from "../../services/tokenService";
 import { SessionToken } from "../../types/token";
-import { LoggedUser, validateSpidUser } from "../../types/user";
+import { LoggedUser, UserRoleEnum, validateSpidUser } from "../../types/user";
 import AuthenticationController from "../authenticationController";
 
 const aTimestamp = 1518010929530;
@@ -30,11 +29,12 @@ const mockedLoggedUser: LoggedUser = {
   familyName: "Garibaldi",
   firstName: "Giuseppe",
   fiscalCode: aValidFiscalCode,
+  role: UserRoleEnum.ORG_DELEGATE,
   session: {
     createdAt: new Date(aTimestamp),
     deletedAt: null,
+    email: aValidEmailAddress,
     expirationTime: new Date(aTimestamp + tokenDurationSecs * 1000),
-    fiscalCode: aValidFiscalCode,
     token: mockSessionToken
   }
 };
