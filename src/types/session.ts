@@ -1,6 +1,6 @@
 import * as t from "io-ts";
 import { UTCISODateFromString } from "italia-ts-commons/lib/dates";
-import { FiscalCode } from "italia-ts-commons/lib/strings";
+import { EmailString } from "italia-ts-commons/lib/strings";
 import { SessionToken } from "./token";
 
 /**
@@ -9,8 +9,8 @@ import { SessionToken } from "./token";
 const Session = t.interface({
   createdAt: UTCISODateFromString,
   deletedAt: t.union([UTCISODateFromString, t.null], "DeletionDate"),
+  email: EmailString,
   expirationTime: UTCISODateFromString,
-  fiscalCode: FiscalCode,
   token: SessionToken
 });
 

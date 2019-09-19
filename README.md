@@ -74,6 +74,7 @@ The table below describes all the Environment variables needed by the applicatio
 | PGPASSWORD                             | The password used to connect to postgres server                                   | string |
 | PGUSER                                 | PostgreSQL user name to connect as                                                | string |
 | PGDATABASE                             | The database name                                                                 | string |
+| CLIENT_DOMAIN                          | The client domain, which will be CORS-enabled                                     | string |
 | CLIENT_SPID_LOGIN_REDIRECTION_URL      | The path where the user will be redirected to perform a SPID login                | string |
 | CLIENT_SPID_ERROR_REDIRECTION_URL      | The path where the user will be redirected when en error occurs during SPID login | string |
 | CLIENT_SPID_SUCCESS_REDIRECTION_URL    | The path where the user will be redirected after a successful SPID login          | string |

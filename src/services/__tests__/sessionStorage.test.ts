@@ -1,6 +1,7 @@
 import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 import * as SequelizeMock from "sequelize-mock";
 import { SessionToken } from "../../types/token";
+import { LoggedUser, UserRoleEnum } from "../../types/user";
 import TokenService from "../tokenService";
 
 const dbMock = new SequelizeMock();
@@ -15,16 +16,16 @@ const dbErrorString = "db error";
 const mockedSession1 = {
   createdAt: new Date(),
   deletedAt: null,
+  email: anEmail,
   expirationTime: new Date(Date.now() + 3600000),
-  fiscalCode: aFiscalCode,
   token: aValidToken
 };
 
 const mockedSession2 = {
   createdAt: new Date(),
   deletedAt: null,
+  email: anEmail,
   expirationTime: new Date(Date.now() + 3600000),
-  fiscalCode: aFiscalCode,
   token: aValidToken
 };
 
@@ -32,7 +33,8 @@ const mockedUserAttributes = {
   email: anEmail,
   familyName: "Colombo",
   firstName: "Cristoforo",
-  fiscalCode: aFiscalCode
+  fiscalCode: aFiscalCode,
+  role: UserRoleEnum.ORG_DELEGATE
 };
 
 const mockedUserModel = dbMock.define("user", mockedUserAttributes);
@@ -81,8 +83,8 @@ mockedUserModel.$queryInterface.$useHandler(
 const mockedSessionModel = dbMock.define("session", {
   createdAt: new Date(),
   deletedAt: null,
+  email: anEmail,
   expirationTime: new Date(Date.now() + 3600000),
-  fiscalCode: aFiscalCode,
   token: aValidToken
 });
 
@@ -93,7 +95,6 @@ jest.mock("../../models/Session", () => () => ({
   Session: mockedSessionModel
 }));
 
-import { LoggedUser } from "../../types/user";
 import SessionStorage from "../sessionStorage";
 
 const sessionStorage = new SessionStorage();

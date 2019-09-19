@@ -1,15 +1,15 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../database/db";
-import { UserRole } from "./User";
+import { UserRoleEnum } from "../types/user";
 
 export class OrganizationUser extends Model {
-  public userRole!: UserRole;
+  public userRole!: UserRoleEnum;
 }
 
 export function init(): void {
   OrganizationUser.init(
     {
-      userRole: new DataTypes.ENUM(...Object.values(UserRole))
+      userRole: new DataTypes.ENUM(...Object.values(UserRoleEnum))
     },
     {
       modelName: "OrganizationUser",

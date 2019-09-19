@@ -1,13 +1,9 @@
 import { DataTypes, HasManyCreateAssociationMixin, Model } from "sequelize";
 import sequelize from "../database/db";
+import { UserRoleEnum } from "../types/user";
 import { Organization } from "./Organization";
 import { OrganizationUser } from "./OrganizationUser";
 import { Session } from "./Session";
-
-export enum UserRole {
-  ORG_DELEGATE = "ORG_DELEGATE", // Organization delegate
-  ORG_MANAGER = "ORG_MANAGER" // Organization manager
-}
 
 export class User extends Model {
   public email!: string;
@@ -15,6 +11,7 @@ export class User extends Model {
   public firstName!: string;
   public familyName!: string;
   public phoneNumber!: string | null;
+  public role!: UserRoleEnum;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -38,6 +35,7 @@ export function init(): void {
     {
       email: {
         allowNull: false,
+        primaryKey: true,
         type: new DataTypes.STRING()
       },
       familyName: {
@@ -50,12 +48,15 @@ export function init(): void {
       },
       fiscalCode: {
         allowNull: false,
-        primaryKey: true,
         type: new DataTypes.STRING()
       },
       phoneNumber: {
         allowNull: true,
         type: new DataTypes.STRING()
+      },
+      role: {
+        allowNull: false,
+        type: new DataTypes.ENUM(...Object.values(UserRoleEnum))
       }
     },
     {
@@ -70,16 +71,16 @@ export function init(): void {
 
 export function createAssociations(): void {
   User.belongsToMany(Organization, {
-    foreignKey: { name: "fiscalCode", field: "userFiscalCode" },
+    foreignKey: { name: "email", field: "userEmail" },
     otherKey: { name: "ipaCode", field: "organizationIpaCode" },
     through: OrganizationUser
   });
   User.hasMany(Session, {
     as: "sessions",
-    foreignKey: { name: "fiscalCode", field: "userFiscalCode" }
+    foreignKey: { name: "email", field: "userEmail" }
   });
   User.hasOne(Session, {
     as: "session",
-    foreignKey: { name: "fiscalCode", field: "userFiscalCode" }
+    foreignKey: { name: "email", field: "userEmail" }
   });
 }
