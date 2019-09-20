@@ -32,6 +32,7 @@ export default class AuthenticationController {
     private readonly sessionStorage: SessionStorage,
     private readonly tokenService: TokenService,
     private readonly tokenDurationInSeconds: number,
+    private readonly clientSpidErrorRedirectionUrl: string,
     private readonly clientSpidAccessRedirectionUrl: string
   ) {}
 
@@ -71,7 +72,9 @@ export default class AuthenticationController {
     if (isSome(maybeError)) {
       const error = maybeError.value;
       log.error("Error storing the user in the session: %s", error.message);
-      return ResponseErrorInternal(error.message);
+      return ResponsePermanentRedirect({
+        href: this.clientSpidErrorRedirectionUrl
+      });
     }
 
     const redirectResponse = ResponsePermanentRedirect({

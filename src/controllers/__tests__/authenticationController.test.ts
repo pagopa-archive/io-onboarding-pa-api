@@ -103,7 +103,10 @@ jest.mock("../../services/sessionStorage", () => ({
 const tokenService = new TokenService();
 const sessionStorage = new SessionStorage();
 
-const clientSpidAccessRedirectionUrl = "client_spid_access_redirection_url";
+const clientSpidSuccessfulAccessRedirectionUrl =
+  "client_spid_successful_access_redirection_url";
+const clientSpidFailingAccessRedirectionUrl =
+  "client_spid_failing_access_redirection_url";
 
 let controller: AuthenticationController;
 beforeAll(async () => {
@@ -111,7 +114,8 @@ beforeAll(async () => {
     sessionStorage,
     tokenService,
     tokenDurationSecs,
-    clientSpidAccessRedirectionUrl
+    clientSpidFailingAccessRedirectionUrl,
+    clientSpidSuccessfulAccessRedirectionUrl
   );
 });
 
@@ -134,7 +138,7 @@ describe("AuthenticationController#acs", () => {
     });
     expect(res.redirect).toHaveBeenCalledWith(
       301,
-      clientSpidAccessRedirectionUrl
+      clientSpidSuccessfulAccessRedirectionUrl
     );
     const validatedSpidUser = validateSpidUser(validUserPayload).value;
     expect(mockSet).toHaveBeenCalledWith(
@@ -157,7 +161,7 @@ describe("AuthenticationController#acs", () => {
     expect(mockSet).not.toHaveBeenCalled();
   });
 
-  it("should fail if db returns an error", async () => {
+  it("should redirect to the client error page if db returns an error", async () => {
     const errorString = "db error";
     mockSet.mockReturnValue(Promise.resolve(some(new Error(errorString))));
     const res = mockRes();
@@ -167,11 +171,10 @@ describe("AuthenticationController#acs", () => {
 
     expect(controller).toBeTruthy();
     expect(res.cookie).toHaveBeenCalledTimes(0);
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({
-      ...anErrorResponse,
-      detail: errorString
-    });
+    expect(res.redirect).toHaveBeenCalledWith(
+      301,
+      clientSpidFailingAccessRedirectionUrl
+    );
   });
 });
 
