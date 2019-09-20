@@ -231,6 +231,7 @@ function registerLoginRoute(app: Express): void {
     new SessionStorage(),
     new TokenService(),
     TOKEN_DURATION_IN_SECONDS,
+    CLIENT_SPID_ERROR_REDIRECTION_URL,
     CLIENT_SPID_SUCCESS_REDIRECTION_URL
   );
 
