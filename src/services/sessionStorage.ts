@@ -4,7 +4,7 @@ import { Op } from "sequelize";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
 import { SessionToken } from "../types/token";
-import { LoggedUser, SpidUser } from "../types/user";
+import { LoggedUser, SpidUser, UserRoleEnum } from "../types/user";
 
 export const sessionNotFoundError = new Error("Session not found");
 
@@ -17,18 +17,19 @@ export default class SessionStorage {
     try {
       const [loggerUser, _] = await User.findOrCreate({
         defaults: {
-          email: user.email,
           familyName: user.familyName,
-          firstName: user.name
+          firstName: user.name,
+          fiscalCode: user.fiscalNumber,
+          role: UserRoleEnum.ORG_DELEGATE
         },
-        where: { fiscalCode: user.fiscalNumber }
+        where: { email: user.email }
       });
       await loggerUser.createSession({
         expirationTime: new Date(Date.now() + tokenDurationInSeconds * 1000),
         token: sessionToken
       });
     } catch (error) {
-      return some<Error>(new Error("Error creating session for the user"));
+      return some<Error>(error);
     }
     return none;
   }
