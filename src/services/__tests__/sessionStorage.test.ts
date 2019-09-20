@@ -1,7 +1,9 @@
+import { isNone, isSome } from "fp-ts/lib/Option";
+import { SpidLevelEnum } from "io-spid-commons";
 import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 import * as SequelizeMock from "sequelize-mock";
 import { SessionToken } from "../../types/token";
-import { LoggedUser, UserRoleEnum } from "../../types/user";
+import { LoggedUser, SpidUser, UserRoleEnum } from "../../types/user";
 import TokenService from "../tokenService";
 
 const dbMock = new SequelizeMock();
@@ -29,15 +31,32 @@ const mockedSession2 = {
   token: aValidToken
 };
 
-const mockedUserAttributes = {
+const mockedSpidUser: SpidUser = {
+  authnContextClassRef: SpidLevelEnum["https://www.spid.gov.it/SpidL2"],
   email: anEmail,
-  familyName: "Colombo",
-  firstName: "Cristoforo",
-  fiscalCode: aFiscalCode,
+  familyName: "Garibaldi",
+  fiscalNumber: aFiscalCode,
+  getAssertionXml: () => "",
+  issuer: { _: "onelogin_saml" },
+  name: "Giuseppe Maria"
+};
+
+const mockedUserAttributes = {
+  email: mockedSpidUser.email,
+  familyName: mockedSpidUser.familyName,
+  firstName: mockedSpidUser.name,
+  fiscalCode: mockedSpidUser.fiscalNumber,
   role: UserRoleEnum.ORG_DELEGATE
 };
 
-const mockedUserModel = dbMock.define("user", mockedUserAttributes);
+const mockedUserModel = dbMock.define("user", mockedUserAttributes, {
+  instanceMethods: {
+    createSession: (params: { expirationTime: number; token: SessionToken }) =>
+      params.token === aTokenThrowingError
+        ? Promise.reject(new Error("error"))
+        : Promise.resolve()
+  }
+});
 
 mockedUserModel.$queryInterface.$useHandler(
   // tslint:disable-next-line:no-any
@@ -75,6 +94,9 @@ mockedUserModel.$queryInterface.$useHandler(
         }
       }
       return null;
+    }
+    if (query === "findOrCreate") {
+      return [mockedUserModel.build(mockedUserAttributes), true];
     }
     return null;
   }
@@ -117,6 +139,22 @@ describe("Session storage", () => {
         aTokenThrowingError
       );
       expect(result.isLeft()).toBeTruthy();
+    });
+  });
+
+  describe("#set()", () => {
+    it("should return none if no error occurs", async () => {
+      const result = await sessionStorage.set(mockedSpidUser, aValidToken, 1);
+      expect(isNone(result)).toBeTruthy();
+    });
+
+    it("should return some error if an error occurs", async () => {
+      const result = await sessionStorage.set(
+        mockedSpidUser,
+        aTokenThrowingError,
+        300
+      );
+      expect(isSome(result)).toBeTruthy();
     });
   });
 });
