@@ -5,7 +5,6 @@ import { Session } from "../models/Session";
 import { User } from "../models/User";
 import { SessionToken } from "../types/token";
 import { LoggedUser, SpidUser, UserRoleEnum } from "../types/user";
-import { log } from "../utils/logger";
 
 export const sessionNotFoundError = new Error("Session not found");
 
@@ -30,8 +29,7 @@ export default class SessionStorage {
         token: sessionToken
       });
     } catch (error) {
-      log.error("Error creating session for the user: %s", error);
-      return some<Error>(new Error("Error creating session for the user"));
+      return some<Error>(error);
     }
     return none;
   }
