@@ -75,7 +75,7 @@ Finally, run `docker-compose restart` and start using the backend application wi
 
 ## Test the login with SPID
 
-The SPID test users available, their attributes and their credentials are listed in the page [http://localhost:8088/users](http://localhost:8088/users). If necessary, more users can be add as needed. 
+The SPID test users available, their attributes and their credentials are listed in the page [http://localhost:8088/users](http://localhost:8088/users). If necessary, more users can be added as needed. 
 
 Two users are created by default:
 
