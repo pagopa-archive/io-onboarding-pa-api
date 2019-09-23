@@ -57,6 +57,7 @@ It may be sometimes needed to modify the default SPID Service Provider certifica
 To create new certificates, run the command 
 
 ```shell
+rm certs/*
 yarn generate-test-certs
 ```
 
