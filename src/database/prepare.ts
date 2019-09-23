@@ -2,9 +2,11 @@
 // loads all the environment variables from a .env file
 // @see https://github.com/motdotla/dotenv/tree/v6.1.0#how-do-i-use-dotenv-with-import
 import * as dotenv from "dotenv";
-dotenv.config();
-
 import * as path from "path";
+dotenv.config({
+  path: path.resolve(process.cwd(), ".env.example")
+});
+
 import { Sequelize } from "sequelize";
 import * as usync from "umzug-sync";
 import { populateIpaPublicAdministrationTable } from "../services/ipaPublicAdministrationService";
