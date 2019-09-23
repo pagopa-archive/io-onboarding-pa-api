@@ -4,7 +4,7 @@ This repository contains the code of the backend application of the IO Public Ad
 
 ## What is IO?
 
-More informations about the IO can be found on the [Digital Transformation Team website](https://teamdigitale.governo.it/en/projects/digital-citizenship.htm)
+More informations about the IO can be found on the [Digital Transformation Team website](https://teamdigitale.governo.it/en/projects/digital-citizenship.htm).
 
 ## Test environment
 
