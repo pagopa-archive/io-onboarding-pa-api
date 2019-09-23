@@ -1,72 +1,94 @@
-# io-onboarding-pa
-This repository contains the code of the backend used by the onboarding portal for public administrations of the IO project.
+# IO PA Onboarding backend (API)
 
-## How to run the application
+This repository contains the code of the backend application of the IO Public Administrations onboarding portal.
+
+## What is IO?
+
+More informations about the IO can be found on the [Digital Transformation Team website](https://teamdigitale.governo.it/en/projects/digital-citizenship.htm).
+
+## Test environment
+
+The application can be either tested on the developer host machine (using development tools on the developer machine, such as *yarn*) or using Docker.
+
+Following paragraphs describe how to build and test the application locally, using *Docker*.
+
+### Tools
+
+For reference, the following tools are used to locally build and test the application:
+
+* [Docker](https://www.docker.com/)
+
+* [Docker Compose](https://github.com/docker/compose)
 
 ### Dependencies
 
-* [Docker](https://www.docker.com/) and [Docker Compose](https://github.com/docker/compose)
+A local SPID test environment is needed to fully test the application features. [spid-testenv2](https://github.com/italia/spid-testenv2) has been selected to achieve this goal.
 
-To fully simulate the SPID authentication process we use the images provided by the
-[spid-testenv2](https://github.com/italia/spid-testenv2) project.
+### Build steps
 
-A Linux/macOS environment is required at the moment.
+The *Dockerfile* and the `docker-compose.yaml` files used to build the application, are in the root of this repository.
 
-### Installation steps
+To build the application, run from the project root:
 
+```shell
+docker-compose up -d
+```
 
-The project already contains some demo files which are used to configure and use a SPID test environment defined in `docker-compose.yaml` file,
-you can choose to run the app using the default configuration or change it and use your own. 
+>NOTE: the *docker-compose.yaml* file sets some environment variables that could be used to adapt the application features to specific needs. Variable values can be modified editing the *.env.example* file in this repository. More info about variables can be found in the dedicated paragraph, below in the readme.
 
-#### Default configuration
-1. clone the project in a folder called `io-onboarding-backend`
-2. go to the project's folder
-3. edit your `/etc/hosts` file by adding:
-    ```
-    127.0.0.1    spid-testenv2
-    127.0.0.1    io-onboarding-backend
-    ```
-4. create a .env file and configure the values inside: `cp .env.example .env`
-5. run `docker-compose up -d` to start the containers
-6. point your browser to [http://io-onboarding-backend:3000](http://io-onboarding-backend:3000)
+Backend REST APIs can be now accessed at [http://localhost:3000](http://localhost:3000).
 
-#### Custom configuration
-1. clone the project in a folder called `io-onboarding-backend`
-2. go to the project's folder
-3. delete the files `cert.pem` and `key.pem` from the `certs` folder
-4. run the command `yarn generate-test-certs` to create SAML (SPID) certificates
-5. create a .env file and configure the values inside: `cp .env.example .env`
-6. run `docker-compose up -d` to start the containers
-7. edit your `/etc/hosts` file by adding:
-    ```
-    127.0.0.1    spid-testenv2
-    127.0.0.1    io-onboarding-backend
-    ```
-8. point your browser to [http://io-onboarding-backend:3000/metadata](http://io-onboarding-backend:3000/metadata) 
-and replace the content of the `testenv2/conf/sp_metadata.xml` file with the source of the page.
-9. in the `testenv2/conf/sp_metadata.xml` file:
-  - remove the `<EncryptionMethod>` elements
-  - between the elements `<KeyDescriptor>` and `<NameIDFormat>` add the following element:
-     ```
-     <SingleLogoutService 
-         Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-         Location="http://io-onboarding-backend:3000/spid/logout" /> 
-    ``` 
-10. run `docker-compose restart` to restart the containers
-11. point your browser to [http://io-onboarding-backend:3000](http://io-onboarding-backend:3000)
+To bring down the test environment and remove the containers use
 
-### SPID test login
-All the available SPID test users with their login credentials and attributes are listed in the page [http://spid-testenv2:8088/users](http://spid-testenv2:8088/users), you can add more if needed. 
-There are two default available users whose login credentials are respectively the following:
-  - username `pippo` and password `test`
-  - username `pinco` and password `test`
+```shell
+docker-compose down
+```
 
-In order to perform a SPID test login, point your browser to [http://io-onboarding-backend:3000/login?entityID=xx_testenv2&authLevel=SpidL2](http://io-onboarding-backend:3000/login?entityID=xx_testenv2&authLevel=SpidL2) and use the login credentials of one of the SPID test users. 
- 
+Sometimes, you may need to rebuild the software. To do so, make sure you re-build the backend container, typing:
 
-### Environment variables
+```shell
+docker-compose up --build
+```
 
-The table below describes all the Environment variables needed by the application.
+### Modify SPID Service Provider certificates
+
+It may be sometimes needed to modify the default SPID Service Provider certificates that come with the application.
+
+To create new certificates, run the command 
+
+```shell
+rm certs/*
+yarn generate-test-certs
+```
+
+Then, start the containers using *docker-compose* and point your browser to [http://localhost:3000/metadata](http://localhost:3000/metadata).
+You should now manually replace the content of the *testenv2/conf/sp_metadata.xml* file with the output of this page.
+
+To complete the configuration, remove from the *testenv2/conf/sp_metadata.xml* file the `<EncryptionMethod>` elements, and add between the elements `<KeyDescriptor>` and `<NameIDFormat>` the following tag:
+
+```xml
+<SingleLogoutService 
+   Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+   Location="http://localhost:3000/spid/logout" /> 
+```
+
+Finally, run `docker-compose restart` and start using the backend application with the new certificates.
+
+## Test the login with SPID
+
+The SPID test users available, their attributes and their credentials are listed in the page [http://localhost:8088/users](http://localhost:8088/users). If necessary, more users can be added as needed. 
+
+Two users are created by default:
+
+* *pippo* / *test*
+
+* *pinco* / *test*
+
+To validate SPID login functionalities, point your browser to [http://localhost:3000/login?entityID=xx_testenv2&authLevel=SpidL2](http://localhost:3000/login?entityID=xx_testenv2&authLevel=SpidL2) and use the login credentials of one of the SPID test users configured.
+
+## Environment variables
+
+The table lists the environment variables needed by the application, that may be further customized as needed.
 
 | Variable name                          | Description                                                                       | type   |
 |----------------------------------------|-----------------------------------------------------------------------------------|--------|
@@ -89,3 +111,9 @@ The table below describes all the Environment variables needed by the applicatio
 | IDP_METADATA_URL                       | Url to download IDP metadata from                                                 | string |
 | TOKEN_DURATION_IN_SECONDS              | The number of seconds a session token is considered valid                         | int    |
 | API_BASE_PATH                          | The root path for the api endpoints                                               | string |
+
+## Production deployments
+
+Each time a modification is merged in the repository, a corresponding Docker image is automatically created on [DockerHub](https://cloud.docker.com/u/teamdigitale/repository/docker/teamdigitale/io-onboarding-pa-api).
+
+The image is deployed on Kubernetes clusters using a dedicated helm-chart. More info about production deployments can be found [here](https://github.com/teamdigitale/io-infrastructure-post-config).
