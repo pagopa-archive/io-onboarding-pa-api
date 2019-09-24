@@ -35,7 +35,9 @@ import {
 import { log } from "./utils/logger";
 
 import AuthenticationController from "./controllers/authenticationController";
+import ProfileController from "./controllers/profileController";
 import { findPublicAdministrationsByName } from "./services/organizationService";
+import ProfileService from "./services/profileService";
 import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
 import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
@@ -204,6 +206,15 @@ const getPublicAdministrationsHandler: RequestHandler = async (
 };
 
 function registerRoutes(app: Express): void {
+  const bearerTokenAuth = passport.authenticate("bearer", { session: false });
+
+  const profileController = new ProfileController(new ProfileService());
+  app.put(
+    `${API_BASE_PATH}/profile`,
+    bearerTokenAuth,
+    toExpressHandler(profileController.editProfile, profileController)
+  );
+
   app.get(
     "/public-administrations",
     [
