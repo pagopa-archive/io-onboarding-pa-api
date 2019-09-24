@@ -35,7 +35,8 @@ export const LoggedUser = t.interface({
   firstName: t.string,
   fiscalCode: FiscalCode,
   role: UserRole,
-  session: NotClosedSession
+  session: NotClosedSession,
+  workEmail: t.union([EmailString, t.null], "NullableEmailString")
 });
 
 export type LoggedUser = t.TypeOf<typeof LoggedUser>;

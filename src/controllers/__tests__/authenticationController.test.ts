@@ -36,7 +36,8 @@ const mockedLoggedUser: LoggedUser = {
     email: aValidEmailAddress,
     expirationTime: new Date(aTimestamp + tokenDurationSecs * 1000),
     token: mockSessionToken
-  }
+  },
+  workEmail: null
 };
 
 // each field of validUserPayload is correctly set
