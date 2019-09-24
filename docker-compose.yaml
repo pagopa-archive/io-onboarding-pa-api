@@ -1,36 +1,36 @@
-version: "2.2"
+version: '3.2'
+
 services:
+
+  # IO PA Onboarding - backend
   backend:
     container_name: backend
+    image: teamdigitale/io-onboarding-pa-api
     build:
       context: ./
       dockerfile: Dockerfile
-    environment:
-      PGDATABASE: db
-      PGPASSWORD: password
-      PGUSER: postgres
-      PGHOST: database
-      SPID_TESTENV_URL: http://spid-testenv2:8088
+    env_file:
+      - .env.example
     ports:
       - "3000:3000"
-    depends_on:
-      - database
-      - spid-testenv2
     restart: always
     volumes:
       - "./certs:/usr/src/app/certs:delegated"
       - "./.env:/usr/src/app/.env"
+    depends_on:
+      - database
+      - spid-testenv2
 
+  # Postgres
   database:
     container_name: postgresql
     image: postgres:12-alpine
-    environment:
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: postgres
-      POSTGRES_DB: db
+    env_file:
+      - .env.example
     ports:
       - "5432:5432"
 
+  # SPID testenv 2
   spid-testenv2:
     container_name: spid-testenv2
     image: italia/spid-testenv2
