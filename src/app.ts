@@ -209,6 +209,13 @@ function registerRoutes(app: Express): void {
   const bearerTokenAuth = passport.authenticate("bearer", { session: false });
 
   const profileController = new ProfileController(new ProfileService());
+
+  app.get(
+    `${API_BASE_PATH}/profile`,
+    bearerTokenAuth,
+    toExpressHandler(profileController.getProfile, profileController)
+  );
+
   app.put(
     `${API_BASE_PATH}/profile`,
     bearerTokenAuth,

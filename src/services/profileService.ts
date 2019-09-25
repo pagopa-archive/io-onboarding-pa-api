@@ -22,6 +22,20 @@ import {
 
 export default class ProfileService {
   /**
+   * Returns the user profile information.
+   */
+  public async getProfile(
+    user: LoggedUser
+  ): Promise<IResponseErrorInternal | IResponseSuccessJson<UserProfile>> {
+    return withValidatedOrInternalError(
+      t.exact(UserProfile).decode(user),
+      updatedProfile => {
+        return ResponseSuccessJson(updatedProfile);
+      }
+    );
+  }
+
+  /**
    * Updates the working email of a user.
    */
   public async updateProfile(

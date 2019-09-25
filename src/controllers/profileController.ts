@@ -13,6 +13,22 @@ import { withValidatedOrValidationError } from "../utils/responses";
 
 export default class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
+
+  /**
+   * Returns the user profile information.
+   */
+  public getProfile(
+    req: express.Request
+  ): Promise<
+    | IResponseSuccessJson<UserProfile>
+    | IResponseErrorValidation
+    | IResponseErrorInternal
+  > {
+    return withUserFromRequest(req, async user =>
+      this.profileService.getProfile(user)
+    );
+  }
+
   /**
    * Edits the user information
    */
