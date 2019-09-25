@@ -186,7 +186,17 @@ const getPublicAdministrationsHandler: RequestHandler = async (
     return res.status(400).json(validationErrors.array());
   }
   try {
-    res.json(await findPublicAdministrationsByName(req.query.search));
+    const searchedPublicAdministrations = await findPublicAdministrationsByName(
+      req.query.search
+    );
+    res.json(
+      searchedPublicAdministrations.map(searchedPublicAdministration => {
+        return {
+          ...searchedPublicAdministration,
+          link: `/public-administrations/${searchedPublicAdministration.ipaCode}`
+        };
+      })
+    );
   } catch (error) {
     log.error(error);
     res.status(500).json({ message: "Internal server error" });

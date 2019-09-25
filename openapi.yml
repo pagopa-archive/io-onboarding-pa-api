@@ -1,0 +1,179 @@
+openapi: "3.0.0"
+info:
+  title: "IO onboarding PA API"
+  description: "The backend used by the onboarding portal for public administrations of the IO project."
+  version: "0.0.1"
+servers:
+  - url: https://api.pa-onboarding.dev.io.italia.it/
+    description: Development environment
+  - url: https://api.pa-onboarding.io.italia.it/
+    description: Production environment
+paths:
+  /login:
+    get:
+      parameters:
+        - name: entityID
+          in: query
+          required: true
+          description: "**IdP Provider ID**. *Example: `posteid`*. The id of the SPID IdP to perform the login through. *Note: Also a fake IdP provider is available, whose id is `xx_testenv2`*."
+          schema:
+            type: string
+            enum: ["lepidaid", "infocertid", "sielteid", "namirialid", "timid", "arubaid", "posteid", "intesaid", "spiditalia", "xx_testenv2"]
+        - name: authLevel
+          in: query
+          required: true
+          description: "**SPID level**. *Example: `SpidL2`*. The security level of SPID authentication."
+          schema:
+            type: string
+            enum: ["SpidL1", "SpidL2", "SpidL3"]
+      responses:
+        302:
+          description: Redirection to the login page from the choosen IdP.
+  /logout:
+    post:
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Successful response
+        401:
+          description: Unouthorized response
+        500:
+          description: Error response
+  /public-administrations:
+    get:
+      parameters:
+        - name: search
+          in: query
+          required: true
+          description: "**Public administration name**. The API responds with a list of results that match the searching words."
+          schema:
+            type: string
+            example: comune gioiosa
+      responses:
+        200:
+          description: The public administrations whose names match the searching words
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchedOrganization'
+components:
+  schemas:
+    SearchedOrganization:
+      type: object
+      properties:
+        fiscalCode:
+          type: string
+        ipaCode:
+          type: string
+        name:
+          type: string
+        legalRepresentative:
+          type: object
+          properties:
+            familyName:
+              type: string
+            firstName:
+              type: string
+            fiscalCode:
+              nullable: true
+              default: null
+            phoneNumber:
+              nullable: true
+              default: null
+          required:
+            - familyName
+            - firstName
+            - fiscalCode
+            - phoneNumber
+        link:
+          type: string
+        pecs:
+          type: array
+          items:
+            type: string
+          minLength: 1
+          maxLength: 5
+        scope:
+          type: string
+          enum: ["LOCAL", "NATIONAL"]
+          nullable: true
+        selectedPecIndex:
+          type: integer
+          minimum: -1
+          maximum: 4
+          nullable: true
+      required:
+        - fiscalCode
+        - ipaCode
+        - name
+        - legalRepresentative
+        - link
+        - pecs
+        - scope
+        - selectedPecIndex
+      example:
+        [
+        {
+          "fiscalCode": "86000470830",
+          "ipaCode": "c_e043",
+          "legalRepresentative": {
+            "familyName": "Spano'",
+            "firstName": "Ignazio Alfonso",
+            "fiscalCode": null,
+            "phoneNumber": null
+          },
+          "name": "Comune di Gioiosa Marea",
+          "pecs": [
+            "indirizzo00@email.pec.it",
+            "indirizzo01@email.pec.it"
+          ],
+          "scope": null,
+          "selectedPecIndex": null,
+          "link": "/public-administrations/c_e043"
+        },
+        {
+          "fiscalCode": "81000930800",
+          "ipaCode": "c_e044",
+          "legalRepresentative": {
+            "familyName": "ALI'",
+            "firstName": "Gianfranco",
+            "fiscalCode": null,
+            "phoneNumber": null
+          },
+          "name": "Comune di Gioiosa Jonica",
+          "pecs": [
+            "indirizzo10@email.pec.it",
+            "indirizzo11@email.pec.it",
+            "indirizzo12@email.pec.it",
+            "indirizzo13@email.pec.it",
+          ],
+          "scope": null,
+          "selectedPecIndex": null,
+          "link": "/public-administrations/c_e044"
+        },
+        {
+          "fiscalCode": "00282520808",
+          "ipaCode": "c_e956",
+          "legalRepresentative": {
+            "familyName": "Sergio",
+            "firstName": "Mazzia",
+            "fiscalCode": null,
+            "phoneNumber": null
+          },
+          "name": "Comune di Marina di Gioiosa Ionica",
+          "pecs": [
+            "indirizzo20@email.pec.it",
+            "indirizzo21@email.pec.it",
+          ],
+          "scope": null,
+          "selectedPecIndex": null,
+          "link": "/public-administrations/c_e956"
+        }
+        ]
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
