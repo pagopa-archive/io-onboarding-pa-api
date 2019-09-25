@@ -40,6 +40,50 @@ paths:
           description: Unouthorized response
         500:
           description: Error response
+  /api/v1/profile:
+    get:
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: The user profile information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        400:
+          description: Bad request
+        401:
+          description: Unauthorized request
+        500:
+          description: Internal error
+    post:
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workEmail:
+                  $ref: "#/components/schemas/EmailAddress"
+              required:
+                - workEmail
+      responses:
+        200:
+          description: The updated user profile information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        400:
+          description: Bad request
+        401:
+          description: Unauthorized request
+        500:
+          description: Internal error
   /public-administrations:
     get:
       parameters:
@@ -61,6 +105,57 @@ paths:
                   $ref: '#/components/schemas/SearchedOrganization'
 components:
   schemas:
+    EmailAddress:
+      type: string
+      format: email
+    FiscalCode:
+      type: string
+      description: User's fiscal code.
+      format: FiscalCode
+      x-import: italia-ts-commons/lib/strings
+      example: SPNDNL80R13C555X
+    UserRole:
+      type: string
+      enum:
+        - "ORG_DELEGATE"
+        - "ORG_MANAGER"
+        - "DEVELOPER"
+        - "ADMIN"
+    UserProfile:
+      type: object
+      properties:
+        email:
+          $ref: "#/components/schemas/EmailAddress"
+        familyName:
+          type: string
+        firstName:
+          type: string
+        fiscalCode:
+          allOf:
+            - $ref: "#/components/schemas/FiscalCode"
+            - nullable: true
+        role:
+          $ref: "#/components/schemas/UserRole"
+        workEmail:
+          allOf:
+            - $ref: "#/components/schemas/EmailAddress"
+            - nullable: true
+      required:
+        - email
+        - familyName
+        - firstName
+        - fiscalCode
+        - role
+        - workEmail
+      example:
+        {
+          email: "example@email.com",
+          familyName: "Rossi",
+          firstName: "Mario",
+          fiscalCode: "RSSMRA80A01H501U",
+          role: "ORG_DELEGATE",
+          workEmail: "work-email@email.com"
+        }
     SearchedOrganization:
       type: object
       properties:
