@@ -10,13 +10,12 @@ services:
       context: ./
       dockerfile: Dockerfile
     env_file:
-      - .env.example
+      - .env
     ports:
       - "3000:3000"
     restart: always
     volumes:
       - "./certs:/usr/src/app/certs:delegated"
-      - "./.env:/usr/src/app/.env"
     depends_on:
       - database
       - spid-testenv2
@@ -26,7 +25,7 @@ services:
     container_name: postgresql
     image: postgres:12-alpine
     env_file:
-      - .env.example
+      - .env
     ports:
       - "5432:5432"
 

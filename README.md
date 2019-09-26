@@ -34,7 +34,7 @@ To build the application, run from the project root:
 docker-compose up -d
 ```
 
->NOTE: the *docker-compose.yaml* file sets some environment variables that could be used to adapt the application features to specific needs. Variable values can be modified editing the *.env.example* file in this repository. More info about variables can be found in the dedicated paragraph, below in the readme.
+>NOTE: the *docker-compose.yaml* file sets some environment variables that could be used to adapt the application features to specific needs. The *docker-compose.yaml* file sources variables from a *.env* file that should be placed in the root folder of this repository. An examplar *.env.example* is distributed with the code. For your convenience, you may start copying this file, renaming it to *.env* and editing its values. More info about variables can be found in the dedicated paragraph, below in the readme.
 
 Backend REST APIs can be now accessed at [http://localhost:3000](http://localhost:3000).
 
