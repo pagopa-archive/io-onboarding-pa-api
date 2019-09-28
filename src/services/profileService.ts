@@ -29,8 +29,8 @@ export default class ProfileService {
   ): Promise<IResponseErrorInternal | IResponseSuccessJson<UserProfile>> {
     return withValidatedOrInternalError(
       t.exact(UserProfile).decode(user),
-      updatedProfile => {
-        return ResponseSuccessJson(updatedProfile);
+      userProfile => {
+        return ResponseSuccessJson(userProfile);
       }
     );
   }
@@ -47,7 +47,10 @@ export default class ProfileService {
     | IResponseSuccessJson<UserProfile>
   > {
     return withCatchAsInternalError(async () => {
-      const userInstance = await User.findByPk(user.email);
+      const userInstance = await User.findOne({
+        // We use User.findOne() because User.findByPk() throws error on tests execution
+        where: { email: user.email }
+      });
       if (userInstance === null) {
         return ResponseErrorNotFound(
           "Not found",
