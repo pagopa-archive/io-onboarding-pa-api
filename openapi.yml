@@ -8,6 +8,18 @@ servers:
     description: Development environment
   - url: https://api.pa-onboarding.io.italia.it/
     description: Production environment
+x-commons:
+  # This section contains yaml anchors useful to implement common behaviors
+  #  in the OAS.
+  common-responses: &common-responses
+    400:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
+    429:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
+    503:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
+    default:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/default
 paths:
   /login:
     get:
@@ -34,29 +46,21 @@ paths:
       security:
         - bearerAuth: []
       responses:
+        <<: *common-responses
         200:
           description: Successful response
-        401:
-          description: Unouthorized response
-        500:
-          description: Error response
   /api/v1/profile:
     get:
       security:
         - bearerAuth: []
       responses:
+        <<: *common-responses
         200:
           description: The user profile information
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
-        400:
-          description: Bad request
-        401:
-          description: Unauthorized request
-        500:
-          description: Internal error
     post:
       security:
         - bearerAuth: []
@@ -72,18 +76,13 @@ paths:
               required:
                 - workEmail
       responses:
+        <<: *common-responses
         200:
           description: The updated user profile information
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
-        400:
-          description: Bad request
-        401:
-          description: Unauthorized request
-        500:
-          description: Internal error
   /public-administrations:
     get:
       parameters:
@@ -95,6 +94,7 @@ paths:
             type: string
             example: comune gioiosa
       responses:
+        <<: *common-responses
         200:
           description: The public administrations whose names match the searching words
           content:
