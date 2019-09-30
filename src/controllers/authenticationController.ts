@@ -24,6 +24,7 @@ import TokenService from "../services/tokenService";
 import { SuccessResponse } from "../types/commons";
 import { SessionToken } from "../types/token";
 import { validateSpidUser, withUserFromRequest } from "../types/user";
+import { getRequiredEnvVar } from "../utils/environment";
 import { log } from "../utils/logger";
 import { withCatchAsInternalError } from "../utils/responses";
 
@@ -83,6 +84,7 @@ export default class AuthenticationController {
 
     const withCookie = (res: Response) =>
       res.cookie("sessionToken", sessionToken, {
+        domain: getRequiredEnvVar("COOKIE_DOMAIN"),
         maxAge: this.tokenDurationInSeconds * 1000 // Express requires a value in ms
       });
 
