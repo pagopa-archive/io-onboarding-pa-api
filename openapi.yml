@@ -1,8 +1,31 @@
 openapi: "3.0.0"
 info:
   title: "IO onboarding PA API"
-  description: "The backend used by the onboarding portal for public administrations of the IO project."
+  x-summary: >-
+    Public Administriations onboarding APIs for the IO project.
+  description: |-
+      The backend used by the onboarding portal for public administrations of the IO project.
+
+      The website for the project is [io-website].
+      Privacy Policy is [privacy].
+
+      Development happens on github.
+
+
+      [//]:  # (Riferimenti e url)
+      [io-website]: https://io.italia.it
+      [tos]: https://io.italia.it/note-legali/
+      [privacy]: https://io.italia.it/privacy-policy/
+
   version: "0.0.1"
+  x-api-id: 49b844f5-2b1a-47a9-880a-ca480dac3736
+  contact:
+    url: https://io.italia.it
+    email: teamdigitale@governo.it
+  termsOfService: https://io.italia.it/note-legali/
+externalDocs:
+  url: https://io.italia.it
+  description: IO Project website
 servers:
   - url: https://api.pa-onboarding.dev.io.italia.it/
     description: Development environment
