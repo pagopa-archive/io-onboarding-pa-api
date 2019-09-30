@@ -3,6 +3,7 @@ info:
   title: "IO onboarding PA API"
   description: "The backend used by the onboarding portal for public administrations of the IO project."
   version: "0.0.1"
+  x-project: io
 servers:
   - url: https://api.pa-onboarding.dev.io.italia.it/
     description: Development environment
