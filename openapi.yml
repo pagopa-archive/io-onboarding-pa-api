@@ -15,7 +15,10 @@ paths:
         - name: entityID
           in: query
           required: true
-          description: "**IdP Provider ID**. *Example: `posteid`*. The id of the SPID IdP to perform the login through. *Note: Also a fake IdP provider is available, whose id is `xx_testenv2`*."
+          description: |-
+            **IdP Provider ID**. *Example: `posteid`*.
+            The id of the SPID IdP to perform the login through.
+            *Note: Also a fake IdP provider is available, whose id is `xx_testenv2`*."
           schema:
             type: string
             enum: ["lepidaid", "infocertid", "sielteid", "namirialid", "timid", "arubaid", "posteid", "intesaid", "spiditalia", "xx_testenv2"]
@@ -90,13 +93,16 @@ paths:
         - name: search
           in: query
           required: true
-          description: "**Public administration name**. The API responds with a list of results that match the searching words."
+          description: |
+            **Public administration name**.
+            The API responds with a list of results that match the searching words.
           schema:
             type: string
             example: comune gioiosa
       responses:
         200:
-          description: The public administrations whose names match the searching words
+          description: |-
+            The public administrations whose names match the searching words
           content:
             application/json:
               schema:
