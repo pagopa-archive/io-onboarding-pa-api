@@ -15,7 +15,7 @@ paths:
         - name: entityID
           in: query
           required: true
-          description: "**IdP Provider ID**. *Example: `posteid`*. The id of the SPID IdP to perform the login through. *Note: Also a fake IdP provider is available, whose id is `xx_testenv2`*."
+          description: "**IdP ID**. *Example: `posteid`*. The id of the SPID IdP to perform the login through. *Note: Also a fake IdP is available, whose id is `xx_testenv2`*."
           schema:
             type: string
             enum: ["lepidaid", "infocertid", "sielteid", "namirialid", "timid", "arubaid", "posteid", "intesaid", "spiditalia", "xx_testenv2"]
