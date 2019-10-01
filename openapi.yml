@@ -245,10 +245,10 @@ components:
           ],
           "scope": null,
           "selectedPecIndex": null,
-          "links": {
-              "rel": "self",
-              "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
-          }
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
+          }]
         },
         {
           "fiscalCode": "81000930800",
@@ -268,10 +268,10 @@ components:
           ],
           "scope": null,
           "selectedPecIndex": null,
-          "links": {
-              "rel": "self",
-              "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
-          }
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
+          }]
         },
         {
           "fiscalCode": "00282520808",
@@ -289,10 +289,10 @@ components:
           ],
           "scope": null,
           "selectedPecIndex": null,
-          "links": {
-              "rel": "self",
-              "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e0956"
-          }
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e0956"
+          }]
         }
         ]
   securitySchemes:
