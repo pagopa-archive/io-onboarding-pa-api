@@ -49,7 +49,7 @@ paths:
         <<: *common-responses
         200:
           description: Successful response
-  /api/v1/profile:
+  /profile:
     get:
       security:
         - bearerAuth: []
