@@ -195,7 +195,12 @@ const getPublicAdministrationsHandler: RequestHandler = async (
       searchedPublicAdministrations.map(searchedPublicAdministration => {
         return {
           ...searchedPublicAdministration,
-          link: `/public-administrations/${searchedPublicAdministration.ipaCode}`
+          links: [
+            {
+              href: `/public-administrations/${searchedPublicAdministration.ipaCode}`,
+              rel: "self"
+            }
+          ]
         };
       })
     );
