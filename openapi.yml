@@ -186,19 +186,36 @@ components:
           role: "ORG_DELEGATE",
           workEmail: "work-email@email.com"
         }
+    Link:
+      type: object
+      properties:
+        rel:
+          type: string
+        href:
+          type: string
+          format: uri-template
+        title:
+          type: string
+        description:
+          type: string
+        $comment:
+          type: string
+      required:
+        - rel
+        - href
     Links:
       externalDocs:
         url: https://tools.ietf.org/id/draft-handrews-json-schema-hyperschema-02.html
         description: HyperSchema internet draft.
       description: |-
         As this API wants to drive the consumer in the workflow, we decided to
-        use Link Descriptor Objects defined in the current json-schema draft.
+        use Link Descriptor Objects defined in the current [json-schema draft](https://json-schema.org/draft/2019-09/links).
 
         [IANA link relations](https://www.iana.org/assignments/link-relations/link-relations.xhtml)
         should be used in `rel`.
       type: array
       items:
-        $ref: https://json-schema.org/draft/2019-09/links
+        $ref: '#/components/schemas/Link'
       example:
         - rel: self
           href: https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e956
@@ -221,9 +238,11 @@ components:
             firstName:
               type: string
             fiscalCode:
+              type: string
               nullable: true
               default: null
             phoneNumber:
+              type: string
               nullable: true
               default: null
           required:
