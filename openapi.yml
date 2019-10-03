@@ -146,6 +146,12 @@ components:
       format: FiscalCode
       x-import: italia-ts-commons/lib/strings
       example: SPNDNL80R13C555X
+    OrganizationFiscalCode:
+      type: string
+      description: Organization's fiscal code.
+      format: OrganizationFiscalCode
+      x-import: italia-ts-commons/lib/strings
+      example: 01234567890
     UserRole:
       type: string
       enum:
@@ -227,7 +233,9 @@ components:
       type: object
       properties:
         fiscalCode:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/OrganizationFiscalCode"
+            - nullable: true
         ipaCode:
           type: string
         name:
@@ -240,6 +248,9 @@ components:
             firstName:
               type: string
             fiscalCode:
+              allOf:
+                - $ref: "#/components/schemas/FiscalCode"
+                - nullable: true
               type: string
               nullable: true
               default: null
@@ -257,7 +268,7 @@ components:
         pecs:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/EmailAddress'
           minLength: 1
           maxLength: 5
         scope:
