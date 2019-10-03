@@ -54,7 +54,7 @@ paths:
           description: |-
             **IdP ID**.
             The id of the SPID IdP to perform the login through.
-            *Note: Also a fake IdP is available, whose id is `xx_testenv2`*."
+            *Note: Also a fake IdP with id `xx_tedsstenv2` is available.*
           schema:
             type: string
             enum: ["lepidaid", "infocertid", "sielteid", "namirialid", "timid", "arubaid", "posteid", "intesaid", "spiditalia", "xx_testenv2"]
