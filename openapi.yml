@@ -52,19 +52,21 @@ paths:
           in: query
           required: true
           description: |-
-            **IdP ID**. *Example: `posteid`*.
+            **IdP ID**.
             The id of the SPID IdP to perform the login through.
             *Note: Also a fake IdP is available, whose id is `xx_testenv2`*."
           schema:
             type: string
             enum: ["lepidaid", "infocertid", "sielteid", "namirialid", "timid", "arubaid", "posteid", "intesaid", "spiditalia", "xx_testenv2"]
+          example: posteid
         - name: authLevel
           in: query
           required: true
-          description: "**SPID level**. *Example: `SpidL2`*. The security level of SPID authentication."
+          description: "**SPID level**. The security level of SPID authentication."
           schema:
             type: string
-            enum: ["SpidL1", "SpidL2", "SpidL3"]
+            enum: ["SpidL2", "SpidL3"]
+          example: SpidL2
       responses:
         302:
           description: Redirection to the login page from the choosen IdP.
