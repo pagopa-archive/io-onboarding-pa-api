@@ -11,6 +11,10 @@ export interface ISearchedOrganization {
     fiscalCode: string | null;
     phoneNumber: string | null;
   };
+  links: ReadonlyArray<{
+    href: string;
+    rel: string;
+  }>;
   pecs: ReadonlyArray<string>;
   scope: OrganizationScope | null;
   selectedPecIndex: number | null;
@@ -28,6 +32,16 @@ export function fromOrganizationModelToSearchedOrganization(
       fiscalCode: organizationModel.legalRepresentative.fiscalCode,
       phoneNumber: organizationModel.legalRepresentative.phoneNumber
     },
+    links: [
+      {
+        href: `/organizations/${organizationModel.ipaCode}`,
+        rel: "self"
+      },
+      {
+        href: `/organizations/${organizationModel.ipaCode}`,
+        rel: "edit"
+      }
+    ],
     name: organizationModel.name,
     pecs: [organizationModel.pec],
     scope: organizationModel.scope,
@@ -56,6 +70,12 @@ export function fromPublicAdministrationToSearchedOrganization(
       fiscalCode: null,
       phoneNumber: null
     },
+    links: [
+      {
+        href: `/organizations/${pa.cod_amm}`,
+        rel: "self"
+      }
+    ],
     name: pa.des_amm,
     pecs,
     scope: null,
