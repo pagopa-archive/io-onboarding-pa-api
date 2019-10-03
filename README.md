@@ -97,6 +97,7 @@ The table lists the environment variables needed by the application, that may be
 | POSTGRES_USER                          | PostgreSQL user name to connect as                                                | string |
 | POSTGRES_DB                            | The database name                                                                 | string |
 | CLIENT_DOMAIN                          | The client domain, which will be CORS-enabled                                     | string |
+| COOKIE_DOMAIN                          | The allowed hosts to receive the cookie containing the session token              | string |
 | CLIENT_SPID_LOGIN_REDIRECTION_URL      | The path where the user will be redirected to perform a SPID login                | string |
 | CLIENT_SPID_ERROR_REDIRECTION_URL      | The path where the user will be redirected when en error occurs during SPID login | string |
 | CLIENT_SPID_SUCCESS_REDIRECTION_URL    | The path where the user will be redirected after a successful SPID login          | string |
@@ -110,7 +111,6 @@ The table lists the environment variables needed by the application, that may be
 | SPID_TESTENV_URL                       | The absolute URL of the test IDP server                                           | string |
 | IDP_METADATA_URL                       | Url to download IDP metadata from                                                 | string |
 | TOKEN_DURATION_IN_SECONDS              | The number of seconds a session token is considered valid                         | int    |
-| API_BASE_PATH                          | The root path for the api endpoints                                               | string |
 
 ## Production deployments
 

@@ -58,7 +58,6 @@ const samlCert = () => {
   return fs.readFileSync(filePath, "utf-8");
 };
 
-const API_BASE_PATH = getRequiredEnvVar("API_BASE_PATH");
 // SAML settings.
 const SAML_CALLBACK_URL = getRequiredEnvVar("SAML_CALLBACK_URL");
 const SAML_ISSUER = getRequiredEnvVar("SAML_ISSUER");
@@ -98,7 +97,7 @@ export default async function newApp(): Promise<Express> {
     })
   );
 
-  passport.use(bearerTokenStrategy(API_BASE_PATH));
+  passport.use(bearerTokenStrategy());
   app.use(passport.initialize());
 
   registerRoutes(app);
@@ -195,7 +194,12 @@ const getPublicAdministrationsHandler: RequestHandler = async (
       searchedPublicAdministrations.map(searchedPublicAdministration => {
         return {
           ...searchedPublicAdministration,
-          link: `/public-administrations/${searchedPublicAdministration.ipaCode}`
+          links: [
+            {
+              href: `/public-administrations/${searchedPublicAdministration.ipaCode}`,
+              rel: "self"
+            }
+          ]
         };
       })
     );
@@ -211,13 +215,13 @@ function registerRoutes(app: Express): void {
   const profileController = new ProfileController(new ProfileService());
 
   app.get(
-    `${API_BASE_PATH}/profile`,
+    `/profile`,
     bearerTokenAuth,
     toExpressHandler(profileController.getProfile, profileController)
   );
 
   app.put(
-    `${API_BASE_PATH}/profile`,
+    `/profile`,
     bearerTokenAuth,
     toExpressHandler(profileController.editProfile, profileController)
   );

@@ -3,11 +3,24 @@ info:
   title: "IO onboarding PA API"
   description: "The backend used by the onboarding portal for public administrations of the IO project."
   version: "0.0.1"
+  x-project: io
 servers:
   - url: https://api.pa-onboarding.dev.io.italia.it/
     description: Development environment
   - url: https://api.pa-onboarding.io.italia.it/
     description: Production environment
+x-commons:
+  # This section contains yaml anchors useful to implement common behaviors
+  #  in the OAS.
+  common-responses: &common-responses
+    400:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
+    429:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
+    503:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
+    default:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/default
 paths:
   /login:
     get:
@@ -15,7 +28,10 @@ paths:
         - name: entityID
           in: query
           required: true
-          description: "**IdP ID**. *Example: `posteid`*. The id of the SPID IdP to perform the login through. *Note: Also a fake IdP is available, whose id is `xx_testenv2`*."
+          description: |-
+            **IdP ID**. *Example: `posteid`*.
+            The id of the SPID IdP to perform the login through.
+            *Note: Also a fake IdP is available, whose id is `xx_testenv2`*."
           schema:
             type: string
             enum: ["lepidaid", "infocertid", "sielteid", "namirialid", "timid", "arubaid", "posteid", "intesaid", "spiditalia", "xx_testenv2"]
@@ -34,29 +50,21 @@ paths:
       security:
         - bearerAuth: []
       responses:
+        <<: *common-responses
         200:
           description: Successful response
-        401:
-          description: Unouthorized response
-        500:
-          description: Error response
-  /api/v1/profile:
+  /profile:
     get:
       security:
         - bearerAuth: []
       responses:
+        <<: *common-responses
         200:
           description: The user profile information
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
-        400:
-          description: Bad request
-        401:
-          description: Unauthorized request
-        500:
-          description: Internal error
     post:
       security:
         - bearerAuth: []
@@ -72,31 +80,30 @@ paths:
               required:
                 - workEmail
       responses:
+        <<: *common-responses
         200:
           description: The updated user profile information
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
-        400:
-          description: Bad request
-        401:
-          description: Unauthorized request
-        500:
-          description: Internal error
   /public-administrations:
     get:
       parameters:
         - name: search
           in: query
           required: true
-          description: "**Public administration name**. The API responds with a list of results that match the searching words."
+          description: |
+            **Public administration name**.
+            The API responds with a list of results that match the searching words.
           schema:
             type: string
             example: comune gioiosa
       responses:
+        <<: *common-responses
         200:
-          description: The public administrations whose names match the searching words
+          description: |-
+            The public administrations whose names match the searching words
           content:
             application/json:
               schema:
@@ -156,6 +163,24 @@ components:
           role: "ORG_DELEGATE",
           workEmail: "work-email@email.com"
         }
+    Links:
+      externalDocs:
+        url: https://tools.ietf.org/id/draft-handrews-json-schema-hyperschema-02.html
+        description: HyperSchema internet draft.
+      description: |-
+        As this API wants to drive the consumer in the workflow, we decided to
+        use Link Descriptor Objects defined in the current json-schema draft.
+
+        [IANA link relations](https://www.iana.org/assignments/link-relations/link-relations.xhtml)
+        should be used in `rel`.
+      type: array
+      items:
+        $ref: https://json-schema.org/draft/2019-09/links
+      example:
+        - rel: self
+          href: https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e956
+          description: Agency URL
+
     SearchedOrganization:
       type: object
       properties:
@@ -183,8 +208,8 @@ components:
             - firstName
             - fiscalCode
             - phoneNumber
-        link:
-          type: string
+        links:
+          $ref: '#/components/schemas/Links'
         pecs:
           type: array
           items:
@@ -227,7 +252,10 @@ components:
           ],
           "scope": null,
           "selectedPecIndex": null,
-          "link": "/public-administrations/c_e043"
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
+          }]
         },
         {
           "fiscalCode": "81000930800",
@@ -247,7 +275,10 @@ components:
           ],
           "scope": null,
           "selectedPecIndex": null,
-          "link": "/public-administrations/c_e044"
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
+          }]
         },
         {
           "fiscalCode": "00282520808",
@@ -265,7 +296,10 @@ components:
           ],
           "scope": null,
           "selectedPecIndex": null,
-          "link": "/public-administrations/c_e956"
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e0956"
+          }]
         }
         ]
   securitySchemes:

@@ -1,3 +1,8 @@
+// Loads all the environment variables from a .env file before using them
+// @see https://github.com/motdotla/dotenv/tree/v6.1.0#how-do-i-use-dotenv-with-import
+import * as dotenv from "dotenv";
+dotenv.config();
+
 import { log } from "./logger";
 
 /**
