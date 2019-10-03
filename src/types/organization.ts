@@ -1,7 +1,7 @@
 import { Organization, OrganizationScope } from "../models/Organization";
 import { IIpaPublicAdministration } from "./PublicAdministration";
 
-export interface ISearchedOrganization {
+export interface IFoundAdministration {
   fiscalCode: string;
   ipaCode: string;
   name: string;
@@ -20,9 +20,9 @@ export interface ISearchedOrganization {
   selectedPecIndex: number | null;
 }
 
-export function fromOrganizationModelToSearchedOrganization(
+export function fromOrganizationModelToFoundAdministration(
   organizationModel: Organization
-): ISearchedOrganization {
+): IFoundAdministration {
   return {
     fiscalCode: organizationModel.fiscalCode,
     ipaCode: organizationModel.ipaCode,
@@ -49,9 +49,9 @@ export function fromOrganizationModelToSearchedOrganization(
   };
 }
 
-export function fromPublicAdministrationToSearchedOrganization(
+export function fromPublicAdministrationToFoundAdministration(
   pa: IIpaPublicAdministration
-): ISearchedOrganization {
+): IFoundAdministration {
   const pecs = [
     [pa.tipo_mail1, pa.mail1],
     [pa.tipo_mail2, pa.mail2],

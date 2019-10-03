@@ -128,13 +128,13 @@ paths:
         <<: *common-responses
         200:
           description: |-
-            The public administrations whose names match the searching words
+            Public Administrations matching the search criteria.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SearchedOrganization'
+                  $ref: '#/components/schemas/FoundAdministration'
 components:
   schemas:
     EmailAddress:
@@ -223,7 +223,7 @@ components:
           href: https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e956
           description: Agency URL
 
-    SearchedOrganization:
+    FoundAdministration:
       type: object
       properties:
         fiscalCode:

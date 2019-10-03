@@ -187,16 +187,16 @@ const getPublicAdministrationsHandler: RequestHandler = async (
     return res.status(400).json(validationErrors.array());
   }
   try {
-    const searchedPublicAdministrations = await findPublicAdministrationsByName(
+    const foundPublicAdministrations = await findPublicAdministrationsByName(
       req.query.search
     );
     res.json(
-      searchedPublicAdministrations.map(searchedPublicAdministration => {
+      foundPublicAdministrations.map(foundPublicAdministration => {
         return {
-          ...searchedPublicAdministration,
+          ...foundPublicAdministration,
           links: [
             {
-              href: `/public-administrations/${searchedPublicAdministration.ipaCode}`,
+              href: `/public-administrations/${foundPublicAdministration.ipaCode}`,
               rel: "self"
             }
           ]
