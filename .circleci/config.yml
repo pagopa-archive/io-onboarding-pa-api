@@ -51,6 +51,13 @@ jobs:
       - *install_node_modules
       - run: yarn lint
 
+  lint-api:
+    <<: *defaults_js
+    steps:
+      - checkout
+      - run: npm install swagger-cli
+      - run: npx swagger-cli validate openapi.yml
+
   danger:
     <<: *defaults_js
     steps:
@@ -66,6 +73,7 @@ workflows:
       - compile
       - tests
       - lint
+      - lint-api
       - danger:
           filters:
             branches:

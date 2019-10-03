@@ -40,3 +40,17 @@ export const withValidatedOrValidationError = <T, U>(
         errorsToReadableMessages(response.value).join(" / ")
       )
     : f(response.value);
+
+/**
+ * Calls the provided function with the valid response, or else returns an
+ * IResponseErrorInternal with the validation errors.
+ */
+export const withValidatedOrInternalError = <T, U>(
+  validated: t.Validation<T>,
+  f: (t: T) => U
+) =>
+  validated.isLeft()
+    ? ResponseErrorInternal(
+        errorsToReadableMessages(validated.value).join(" / ")
+      )
+    : f(validated.value);

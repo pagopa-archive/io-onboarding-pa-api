@@ -10,10 +10,12 @@ import SessionStorage from "../../services/sessionStorage";
 import TokenService from "../../services/tokenService";
 import { SessionToken } from "../../types/token";
 import { LoggedUser, UserRoleEnum, validateSpidUser } from "../../types/user";
+import { getRequiredEnvVar } from "../../utils/environment";
 import AuthenticationController from "../authenticationController";
 
 const aTimestamp = 1518010929530;
 const tokenDurationSecs = 60;
+const cookieDomain = getRequiredEnvVar("COOKIE_DOMAIN");
 
 const aValidFiscalCode = "GRBGPP87L04L741X" as FiscalCode;
 const aValidEmailAddress = "garibaldi@example.com" as EmailString;
@@ -36,7 +38,8 @@ const mockedLoggedUser: LoggedUser = {
     email: aValidEmailAddress,
     expirationTime: new Date(aTimestamp + tokenDurationSecs * 1000),
     token: mockSessionToken
-  }
+  },
+  workEmail: null
 };
 
 // each field of validUserPayload is correctly set
@@ -134,6 +137,7 @@ describe("AuthenticationController#acs", () => {
 
     expect(controller).toBeTruthy();
     expect(res.cookie).toHaveBeenCalledWith("sessionToken", mockSessionToken, {
+      domain: cookieDomain,
       maxAge: tokenDurationSecs * 1000
     });
     expect(res.redirect).toHaveBeenCalledWith(
