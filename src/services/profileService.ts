@@ -12,8 +12,8 @@ import {
 } from "italia-ts-commons/lib/responses";
 import { EmailString } from "italia-ts-commons/lib/strings";
 
+import { UserProfile } from "../generated/UserProfile";
 import { User } from "../models/User";
-import { UserProfile } from "../types/profile";
 import { LoggedUser } from "../types/user";
 import {
   withCatchAsInternalError,

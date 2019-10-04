@@ -2,8 +2,9 @@ import { SpidLevelEnum } from "io-spid-commons";
 import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/request";
 
+import { UserRoleEnum } from "../../generated/UserRole";
 import { SessionToken } from "../token";
-import { LoggedUser, SpidUser, UserRoleEnum, validateSpidUser } from "../user";
+import { LoggedUser, SpidUser, validateSpidUser } from "../user";
 
 const tokenDurationInSeconds = 300;
 

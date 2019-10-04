@@ -1,12 +1,12 @@
 import { Op, QueryTypes } from "sequelize";
 import sequelize from "../database/db";
+import { FoundAdministration } from "../generated/FoundAdministration";
 import { IpaPublicAdministration } from "../models/IpaPublicAdministration";
 import { Organization } from "../models/Organization";
 import { User } from "../models/User";
 import {
   fromOrganizationModelToFoundAdministration,
-  fromPublicAdministrationToFoundAdministration,
-  IFoundAdministration
+  fromPublicAdministrationToFoundAdministration
 } from "../types/organization";
 
 /**
@@ -16,7 +16,7 @@ import {
  */
 export async function findPublicAdministrationsByName(
   input: string
-): Promise<ReadonlyArray<IFoundAdministration>> {
+): Promise<ReadonlyArray<FoundAdministration>> {
   const descriptionWords = input
     .split(" ")
     .reduce(
@@ -72,20 +72,20 @@ export async function findPublicAdministrationsByName(
  * @param organizations The array of already registered public administrations
  */
 function mergePublicAdministrationsAndOrganizations(
-  publicAdministrations: ReadonlyArray<IFoundAdministration>,
-  organizations: ReadonlyArray<IFoundAdministration>
-): ReadonlyArray<IFoundAdministration> {
+  publicAdministrations: ReadonlyArray<FoundAdministration>,
+  organizations: ReadonlyArray<FoundAdministration>
+): ReadonlyArray<FoundAdministration> {
   return publicAdministrations.reduce(
     (
-      results: ReadonlyArray<IFoundAdministration>,
-      currentPublicAdministration: IFoundAdministration
+      results: ReadonlyArray<FoundAdministration>,
+      currentPublicAdministration: FoundAdministration
     ) => {
       const organizationsHash = organizations.reduce(
         (hash, currentOrganization) => ({
           ...hash,
           [currentOrganization.ipaCode]: currentOrganization
         }),
-        {} as { [key: string]: IFoundAdministration }
+        {} as { [key: string]: FoundAdministration }
       );
       if (organizationsHash[currentPublicAdministration.ipaCode]) {
         const currentOrganization =
@@ -103,6 +103,6 @@ function mergePublicAdministrationsAndOrganizations(
       }
       return [...results, currentPublicAdministration];
     },
-    [] as ReadonlyArray<IFoundAdministration>
+    [] as ReadonlyArray<FoundAdministration>
   );
 }

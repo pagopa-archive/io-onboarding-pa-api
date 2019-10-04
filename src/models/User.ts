@@ -1,6 +1,6 @@
 import { DataTypes, HasManyCreateAssociationMixin, Model } from "sequelize";
 import sequelize from "../database/db";
-import { UserRoleEnum } from "../types/user";
+import { UserRoleEnum } from "../generated/UserRole";
 import { Organization } from "./Organization";
 import { OrganizationUser } from "./OrganizationUser";
 import { Session } from "./Session";

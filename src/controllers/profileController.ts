@@ -7,7 +7,8 @@ import {
 } from "italia-ts-commons/lib/responses";
 import { EmailString } from "italia-ts-commons/lib/strings";
 import ProfileService from "../services/profileService";
-import { UserProfile } from "../types/profile";
+
+import { UserProfile } from "../generated/UserProfile";
 import { withUserFromRequest } from "../types/user";
 import { withValidatedOrValidationError } from "../utils/responses";
 

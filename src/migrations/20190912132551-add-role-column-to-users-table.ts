@@ -1,5 +1,5 @@
 import { DataTypes, QueryInterface } from "sequelize";
-import { UserRoleEnum } from "../types/user";
+import { UserRoleEnum } from "../generated/UserRole";
 
 export function up(queryInterface: QueryInterface): Promise<void> {
   return queryInterface.addColumn("Users", "role", {

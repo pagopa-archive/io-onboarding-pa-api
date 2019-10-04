@@ -2,10 +2,11 @@ import * as t from "io-ts";
 import { ResponseSuccessJson } from "italia-ts-commons/lib/responses";
 import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/request";
+import { UserProfile } from "../../generated/UserProfile";
+import { UserRoleEnum } from "../../generated/UserRole";
 import ProfileService from "../../services/profileService";
-import { UserProfile } from "../../types/profile";
 import { SessionToken } from "../../types/token";
-import { LoggedUser, UserRoleEnum } from "../../types/user";
+import { LoggedUser } from "../../types/user";
 import ProfileController from "../profileController";
 
 const aTimestamp = 1518010929530;

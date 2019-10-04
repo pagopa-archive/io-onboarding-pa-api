@@ -1,10 +1,11 @@
 import { Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
 import { Op } from "sequelize";
+import { UserRoleEnum } from "../generated/UserRole";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
 import { SessionToken } from "../types/token";
-import { LoggedUser, SpidUser, UserRoleEnum } from "../types/user";
+import { LoggedUser, SpidUser } from "../types/user";
 
 export const sessionNotFoundError = new Error("Session not found");
 
