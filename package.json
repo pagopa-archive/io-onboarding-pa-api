@@ -8,6 +8,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "generate:test-certs": "./scripts/generate-test-certs.sh certs",
+    "validate:specs": "npx swagger-cli validate openapi.yml",
     "prepare-db": "node dist/database/prepare.js",
     "build": "tsc",
     "postversion": "git push && git push --tags",
@@ -37,6 +38,7 @@
     "npm-run-all": "^4.1.5",
     "prettier": "^1.12.1",
     "rimraf": "^2.6.2",
+    "swagger-cli": "^2.3.1",
     "ts-jest": "^24.0.2",
     "tslint": "^5.1.0",
     "typescript": "^3.5.0"

@@ -1,13 +1,49 @@
 openapi: "3.0.0"
 info:
   title: "IO onboarding PA API"
-  description: "The backend used by the onboarding portal for public administrations of the IO project."
+  x-summary: >-
+    Public Administriations onboarding APIs for the IO project.
+  description: |-
+      The backend used by the onboarding portal for public administrations of the IO project.
+
+      The website for the project is [io-website].
+      Privacy Policy is [privacy].
+
+      Development happens on github.
+
+
+      [//]:  # (Riferimenti e url)
+      [io-website]: https://io.italia.it
+      [tos]: https://io.italia.it/note-legali/
+      [privacy]: https://io.italia.it/privacy-policy/
+
   version: "0.0.1"
+  x-project: io
+  x-api-id: 49b844f5-2b1a-47a9-880a-ca480dac3736
+  contact:
+    url: https://io.italia.it
+    email: teamdigitale@governo.it
+  termsOfService: https://io.italia.it/note-legali/
+externalDocs:
+  url: https://io.italia.it
+  description: IO Project website
 servers:
   - url: https://api.pa-onboarding.dev.io.italia.it/
     description: Development environment
   - url: https://api.pa-onboarding.io.italia.it/
     description: Production environment
+x-commons:
+  # This section contains yaml anchors useful to implement common behaviors
+  #  in the OAS.
+  common-responses: &common-responses
+    400:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
+    429:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
+    503:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
+    default:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/default
 paths:
   /login:
     get:
@@ -15,17 +51,22 @@ paths:
         - name: entityID
           in: query
           required: true
-          description: "**IdP Provider ID**. *Example: `posteid`*. The id of the SPID IdP to perform the login through. *Note: Also a fake IdP provider is available, whose id is `xx_testenv2`*."
+          description: |-
+            **IdP ID**.
+            The id of the SPID IdP to perform the login through.
+            *Note: Also a fake IdP with id `xx_tedsstenv2` is available.*
           schema:
             type: string
             enum: ["lepidaid", "infocertid", "sielteid", "namirialid", "timid", "arubaid", "posteid", "intesaid", "spiditalia", "xx_testenv2"]
+          example: posteid
         - name: authLevel
           in: query
           required: true
-          description: "**SPID level**. *Example: `SpidL2`*. The security level of SPID authentication."
+          description: "**SPID level**. The security level of SPID authentication."
           schema:
             type: string
-            enum: ["SpidL1", "SpidL2", "SpidL3"]
+            enum: ["SpidL2", "SpidL3"]
+          example: SpidL2
       responses:
         302:
           description: Redirection to the login page from the choosen IdP.
@@ -34,38 +75,167 @@ paths:
       security:
         - bearerAuth: []
       responses:
+        <<: *common-responses
         200:
           description: Successful response
-        401:
-          description: Unouthorized response
-        500:
-          description: Error response
+  /profile:
+    get:
+      security:
+        - bearerAuth: []
+      responses:
+        <<: *common-responses
+        200:
+          description: The user profile information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    post:
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workEmail:
+                  $ref: "#/components/schemas/EmailAddress"
+              required:
+                - workEmail
+      responses:
+        <<: *common-responses
+        200:
+          description: The updated user profile information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
   /public-administrations:
     get:
       parameters:
         - name: search
           in: query
           required: true
-          description: "**Public administration name**. The API responds with a list of results that match the searching words."
+          description: |
+            **Public administration name**.
+            The API responds with a list of results that match the searching words.
           schema:
             type: string
             example: comune gioiosa
       responses:
+        <<: *common-responses
         200:
-          description: The public administrations whose names match the searching words
+          description: |-
+            Public Administrations matching the search criteria.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SearchedOrganization'
+                  $ref: '#/components/schemas/FoundAdministration'
 components:
   schemas:
-    SearchedOrganization:
+    EmailAddress:
+      type: string
+      format: email
+    FiscalCode:
+      type: string
+      description: User's fiscal code.
+      format: FiscalCode
+      x-import: italia-ts-commons/lib/strings
+      example: SPNDNL80R13C555X
+    OrganizationFiscalCode:
+      type: string
+      description: Organization's fiscal code.
+      format: OrganizationFiscalCode
+      x-import: italia-ts-commons/lib/strings
+      example: 01234567890
+    UserRole:
+      type: string
+      enum:
+        - "ORG_DELEGATE"
+        - "ORG_MANAGER"
+        - "DEVELOPER"
+        - "ADMIN"
+    UserProfile:
+      type: object
+      properties:
+        email:
+          $ref: "#/components/schemas/EmailAddress"
+        familyName:
+          type: string
+        firstName:
+          type: string
+        fiscalCode:
+          allOf:
+            - $ref: "#/components/schemas/FiscalCode"
+            - nullable: true
+        role:
+          $ref: "#/components/schemas/UserRole"
+        workEmail:
+          allOf:
+            - $ref: "#/components/schemas/EmailAddress"
+            - nullable: true
+      required:
+        - email
+        - familyName
+        - firstName
+        - fiscalCode
+        - role
+        - workEmail
+      example:
+        {
+          email: "example@email.com",
+          familyName: "Rossi",
+          firstName: "Mario",
+          fiscalCode: "RSSMRA80A01H501U",
+          role: "ORG_DELEGATE",
+          workEmail: "work-email@email.com"
+        }
+    Link:
+      externalDocs:
+        url: https://tools.ietf.org/id/draft-handrews-json-schema-hyperschema-02.html
+        description: HyperSchema internet draft.
+      description: |-
+        As this API wants to drive the consumer in the workflow, we decided to
+        use Link Descriptor Objects defined in the current [json-schema draft](https://json-schema.org/draft/2019-09/links).
+
+        [IANA link relations](https://www.iana.org/assignments/link-relations/link-relations.xhtml)
+        should be used in `rel`.
+      type: object
+      properties:
+        rel:
+          type: string
+        href:
+          type: string
+          format: uri-template
+        title:
+          type: string
+        description:
+          type: string
+        $comment:
+          type: string
+      required:
+        - rel
+        - href
+    Links:
+      type: array
+      items:
+        $ref: '#/components/schemas/Link'
+      example:
+        - rel: self
+          href: https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e956
+          description: Agency URL
+
+    FoundAdministration:
       type: object
       properties:
         fiscalCode:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/OrganizationFiscalCode"
+            - nullable: true
         ipaCode:
           type: string
         name:
@@ -78,9 +248,14 @@ components:
             firstName:
               type: string
             fiscalCode:
+              allOf:
+                - $ref: "#/components/schemas/FiscalCode"
+                - nullable: true
+              type: string
               nullable: true
               default: null
             phoneNumber:
+              type: string
               nullable: true
               default: null
           required:
@@ -88,12 +263,12 @@ components:
             - firstName
             - fiscalCode
             - phoneNumber
-        link:
-          type: string
+        links:
+          $ref: '#/components/schemas/Links'
         pecs:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/EmailAddress'
           minLength: 1
           maxLength: 5
         scope:
@@ -132,7 +307,10 @@ components:
           ],
           "scope": null,
           "selectedPecIndex": null,
-          "link": "/public-administrations/c_e043"
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
+          }]
         },
         {
           "fiscalCode": "81000930800",
@@ -152,7 +330,10 @@ components:
           ],
           "scope": null,
           "selectedPecIndex": null,
-          "link": "/public-administrations/c_e044"
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
+          }]
         },
         {
           "fiscalCode": "00282520808",
@@ -170,7 +351,10 @@ components:
           ],
           "scope": null,
           "selectedPecIndex": null,
-          "link": "/public-administrations/c_e956"
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e0956"
+          }]
         }
         ]
   securitySchemes:

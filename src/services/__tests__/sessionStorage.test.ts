@@ -46,7 +46,8 @@ const mockedUserAttributes = {
   familyName: mockedSpidUser.familyName,
   firstName: mockedSpidUser.name,
   fiscalCode: mockedSpidUser.fiscalNumber,
-  role: UserRoleEnum.ORG_DELEGATE
+  role: UserRoleEnum.ORG_DELEGATE,
+  workEmail: null
 };
 
 const mockedUserModel = dbMock.define("user", mockedUserAttributes, {

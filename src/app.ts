@@ -35,7 +35,9 @@ import {
 import { log } from "./utils/logger";
 
 import AuthenticationController from "./controllers/authenticationController";
+import ProfileController from "./controllers/profileController";
 import { findPublicAdministrationsByName } from "./services/organizationService";
+import ProfileService from "./services/profileService";
 import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
 import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
@@ -56,7 +58,6 @@ const samlCert = () => {
   return fs.readFileSync(filePath, "utf-8");
 };
 
-const API_BASE_PATH = getRequiredEnvVar("API_BASE_PATH");
 // SAML settings.
 const SAML_CALLBACK_URL = getRequiredEnvVar("SAML_CALLBACK_URL");
 const SAML_ISSUER = getRequiredEnvVar("SAML_ISSUER");
@@ -96,7 +97,7 @@ export default async function newApp(): Promise<Express> {
     })
   );
 
-  passport.use(bearerTokenStrategy(API_BASE_PATH));
+  passport.use(bearerTokenStrategy());
   app.use(passport.initialize());
 
   registerRoutes(app);
@@ -186,14 +187,19 @@ const getPublicAdministrationsHandler: RequestHandler = async (
     return res.status(400).json(validationErrors.array());
   }
   try {
-    const searchedPublicAdministrations = await findPublicAdministrationsByName(
+    const foundPublicAdministrations = await findPublicAdministrationsByName(
       req.query.search
     );
     res.json(
-      searchedPublicAdministrations.map(searchedPublicAdministration => {
+      foundPublicAdministrations.map(foundPublicAdministration => {
         return {
-          ...searchedPublicAdministration,
-          link: `/public-administrations/${searchedPublicAdministration.ipaCode}`
+          ...foundPublicAdministration,
+          links: [
+            {
+              href: `/public-administrations/${foundPublicAdministration.ipaCode}`,
+              rel: "self"
+            }
+          ]
         };
       })
     );
@@ -204,6 +210,22 @@ const getPublicAdministrationsHandler: RequestHandler = async (
 };
 
 function registerRoutes(app: Express): void {
+  const bearerTokenAuth = passport.authenticate("bearer", { session: false });
+
+  const profileController = new ProfileController(new ProfileService());
+
+  app.get(
+    `/profile`,
+    bearerTokenAuth,
+    toExpressHandler(profileController.getProfile, profileController)
+  );
+
+  app.put(
+    `/profile`,
+    bearerTokenAuth,
+    toExpressHandler(profileController.editProfile, profileController)
+  );
+
   app.get(
     "/public-administrations",
     [

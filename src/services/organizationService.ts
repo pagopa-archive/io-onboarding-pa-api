@@ -4,9 +4,9 @@ import { IpaPublicAdministration } from "../models/IpaPublicAdministration";
 import { Organization } from "../models/Organization";
 import { User } from "../models/User";
 import {
-  fromOrganizationModelToSearchedOrganization,
-  fromPublicAdministrationToSearchedOrganization,
-  ISearchedOrganization
+  fromOrganizationModelToFoundAdministration,
+  fromPublicAdministrationToFoundAdministration,
+  IFoundAdministration
 } from "../types/organization";
 
 /**
@@ -16,7 +16,7 @@ import {
  */
 export async function findPublicAdministrationsByName(
   input: string
-): Promise<ReadonlyArray<ISearchedOrganization>> {
+): Promise<ReadonlyArray<IFoundAdministration>> {
   const descriptionWords = input
     .split(" ")
     .reduce(
@@ -54,10 +54,10 @@ export async function findPublicAdministrationsByName(
   });
 
   const parsedPublicAdministrations = publicAdministrations.map(
-    fromPublicAdministrationToSearchedOrganization
+    fromPublicAdministrationToFoundAdministration
   );
   const parsedOrganizations = organizations.map(
-    fromOrganizationModelToSearchedOrganization
+    fromOrganizationModelToFoundAdministration
   );
   return mergePublicAdministrationsAndOrganizations(
     parsedPublicAdministrations,
@@ -72,20 +72,20 @@ export async function findPublicAdministrationsByName(
  * @param organizations The array of already registered public administrations
  */
 function mergePublicAdministrationsAndOrganizations(
-  publicAdministrations: ReadonlyArray<ISearchedOrganization>,
-  organizations: ReadonlyArray<ISearchedOrganization>
-): ReadonlyArray<ISearchedOrganization> {
+  publicAdministrations: ReadonlyArray<IFoundAdministration>,
+  organizations: ReadonlyArray<IFoundAdministration>
+): ReadonlyArray<IFoundAdministration> {
   return publicAdministrations.reduce(
     (
-      results: ReadonlyArray<ISearchedOrganization>,
-      currentPublicAdministration: ISearchedOrganization
+      results: ReadonlyArray<IFoundAdministration>,
+      currentPublicAdministration: IFoundAdministration
     ) => {
       const organizationsHash = organizations.reduce(
         (hash, currentOrganization) => ({
           ...hash,
           [currentOrganization.ipaCode]: currentOrganization
         }),
-        {} as { [key: string]: ISearchedOrganization }
+        {} as { [key: string]: IFoundAdministration }
       );
       if (organizationsHash[currentPublicAdministration.ipaCode]) {
         const currentOrganization =
@@ -103,6 +103,6 @@ function mergePublicAdministrationsAndOrganizations(
       }
       return [...results, currentPublicAdministration];
     },
-    [] as ReadonlyArray<ISearchedOrganization>
+    [] as ReadonlyArray<IFoundAdministration>
   );
 }

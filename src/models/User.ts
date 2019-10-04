@@ -6,12 +6,13 @@ import { OrganizationUser } from "./OrganizationUser";
 import { Session } from "./Session";
 
 export class User extends Model {
-  public email!: string;
-  public fiscalCode!: string; // PK
+  public email!: string; // PK
+  public fiscalCode!: string;
   public firstName!: string;
   public familyName!: string;
   public phoneNumber!: string | null;
   public role!: UserRoleEnum;
+  public workEmail!: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -57,6 +58,10 @@ export function init(): void {
       role: {
         allowNull: false,
         type: new DataTypes.ENUM(...Object.values(UserRoleEnum))
+      },
+      workEmail: {
+        allowNull: true,
+        type: new DataTypes.STRING()
       }
     },
     {
