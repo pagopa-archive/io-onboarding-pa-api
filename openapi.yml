@@ -4,18 +4,18 @@ info:
   x-summary: >-
     Public Administriations onboarding APIs for the IO project.
   description: |-
-      The backend used by the onboarding portal for public administrations of the IO project.
+    The backend used by the onboarding portal for public administrations of the IO project.
 
-      The website for the project is [io-website].
-      Privacy Policy is [privacy].
+    The website for the project is [io-website].
+    Privacy Policy is [privacy].
 
-      Development happens on github.
+    Development happens on github.
 
 
-      [//]:  # (Riferimenti e url)
-      [io-website]: https://io.italia.it
-      [tos]: https://io.italia.it/note-legali/
-      [privacy]: https://io.italia.it/privacy-policy/
+    [//]:  # (Riferimenti e url)
+    [io-website]: https://io.italia.it
+    [tos]: https://io.italia.it/note-legali/
+    [privacy]: https://io.italia.it/privacy-policy/
 
   version: "0.0.1"
   x-project: io
@@ -169,22 +169,17 @@ components:
         firstName:
           type: string
         fiscalCode:
-          allOf:
-            - $ref: "#/components/schemas/FiscalCode"
-            - nullable: true
+          $ref: "#/components/schemas/FiscalCode"
         role:
           $ref: "#/components/schemas/UserRole"
         workEmail:
-          allOf:
-            - $ref: "#/components/schemas/EmailAddress"
-            - nullable: true
+          $ref: "#/components/schemas/EmailAddress"
       required:
         - email
         - familyName
         - firstName
         - fiscalCode
         - role
-        - workEmail
       example:
         {
           email: "example@email.com",
@@ -230,12 +225,104 @@ components:
           description: Agency URL
 
     FoundAdministration:
+      oneOf:
+        - $ref: '#/components/schemas/FoundNotRegisteredAdministration'
+        - $ref: '#/components/schemas/FoundRegisteredAdministration'
+    FoundNotRegisteredAdministration:
       type: object
       properties:
         fiscalCode:
-          allOf:
-            - $ref: "#/components/schemas/OrganizationFiscalCode"
-            - nullable: true
+          $ref: "#/components/schemas/OrganizationFiscalCode"
+        ipaCode:
+          type: string
+        name:
+          type: string
+        legalRepresentative:
+          type: object
+          properties:
+            familyName:
+              type: string
+            firstName:
+              type: string
+          required:
+            - familyName
+            - firstName
+        links:
+          $ref: '#/components/schemas/Links'
+        pecs:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailAddress'
+          minLength: 1
+          maxLength: 5
+      required:
+        - fiscalCode
+        - ipaCode
+        - name
+        - legalRepresentative
+        - link
+        - pecs
+      example:
+        [
+        {
+          "fiscalCode": "86000470830",
+          "ipaCode": "c_e043",
+          "legalRepresentative": {
+            "familyName": "Spano'",
+            "firstName": "Ignazio Alfonso"
+          },
+          "name": "Comune di Gioiosa Marea",
+          "pecs": [
+            "indirizzo00@email.pec.it",
+            "indirizzo01@email.pec.it"
+          ],
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
+          }]
+        },
+        {
+          "fiscalCode": "81000930800",
+          "ipaCode": "c_e044",
+          "legalRepresentative": {
+            "familyName": "ALI'",
+            "firstName": "Gianfranco"
+          },
+          "name": "Comune di Gioiosa Jonica",
+          "pecs": [
+            "indirizzo10@email.pec.it",
+            "indirizzo11@email.pec.it",
+            "indirizzo12@email.pec.it",
+            "indirizzo13@email.pec.it",
+          ],
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
+          }]
+        },
+        {
+          "fiscalCode": "00282520808",
+          "ipaCode": "c_e956",
+          "legalRepresentative": {
+            "familyName": "Sergio",
+            "firstName": "Mazzia"
+          },
+          "name": "Comune di Marina di Gioiosa Ionica",
+          "pecs": [
+            "indirizzo20@email.pec.it",
+            "indirizzo21@email.pec.it",
+          ],
+          "links": [{
+            "rel": "self",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e0956"
+          }]
+        }
+        ]
+    FoundRegisteredAdministration:
+      type: object
+      properties:
+        fiscalCode:
+          $ref: "#/components/schemas/OrganizationFiscalCode"
         ipaCode:
           type: string
         name:
@@ -248,16 +335,9 @@ components:
             firstName:
               type: string
             fiscalCode:
-              allOf:
-                - $ref: "#/components/schemas/FiscalCode"
-                - nullable: true
-              type: string
-              nullable: true
-              default: null
+              $ref: "#/components/schemas/FiscalCode"
             phoneNumber:
               type: string
-              nullable: true
-              default: null
           required:
             - familyName
             - firstName
@@ -274,12 +354,10 @@ components:
         scope:
           type: string
           enum: ["LOCAL", "NATIONAL"]
-          nullable: true
         selectedPecIndex:
           type: integer
           minimum: -1
           maximum: 4
-          nullable: true
       required:
         - fiscalCode
         - ipaCode
@@ -297,16 +375,16 @@ components:
           "legalRepresentative": {
             "familyName": "Spano'",
             "firstName": "Ignazio Alfonso",
-            "fiscalCode": null,
-            "phoneNumber": null
+            "fiscalCode": "BCDFGH12A21Z123D",
+            "phoneNumber": "3331111111"
           },
           "name": "Comune di Gioiosa Marea",
           "pecs": [
             "indirizzo00@email.pec.it",
             "indirizzo01@email.pec.it"
           ],
-          "scope": null,
-          "selectedPecIndex": null,
+          "scope": "NATIONAL",
+          "selectedPecIndex": 0,
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
@@ -318,8 +396,8 @@ components:
           "legalRepresentative": {
             "familyName": "ALI'",
             "firstName": "Gianfranco",
-            "fiscalCode": null,
-            "phoneNumber": null
+            "fiscalCode": "BCDFGH12A21Z123F",
+            "phoneNumber": "3332222222"
           },
           "name": "Comune di Gioiosa Jonica",
           "pecs": [
@@ -328,8 +406,8 @@ components:
             "indirizzo12@email.pec.it",
             "indirizzo13@email.pec.it",
           ],
-          "scope": null,
-          "selectedPecIndex": null,
+          "scope": "LOCAL",
+          "selectedPecIndex": 2,
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
@@ -341,16 +419,16 @@ components:
           "legalRepresentative": {
             "familyName": "Sergio",
             "firstName": "Mazzia",
-            "fiscalCode": null,
-            "phoneNumber": null
+            "fiscalCode": "BCDFGH12A21Z123E",
+            "phoneNumber": "3333333333"
           },
           "name": "Comune di Marina di Gioiosa Ionica",
           "pecs": [
             "indirizzo20@email.pec.it",
             "indirizzo21@email.pec.it",
           ],
-          "scope": null,
-          "selectedPecIndex": null,
+          "scope": "LOCAL",
+          "selectedPecIndex": 0,
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e0956"
