@@ -8,16 +8,16 @@ export interface IFoundAdministration {
   legalRepresentative: {
     familyName: string;
     firstName: string;
-    fiscalCode: string | null;
-    phoneNumber: string | null;
+    fiscalCode?: string;
+    phoneNumber?: string;
   };
   links: ReadonlyArray<{
     href: string;
     rel: string;
   }>;
   pecs: ReadonlyArray<string>;
-  scope: OrganizationScope | null;
-  selectedPecIndex: number | null;
+  scope?: OrganizationScope;
+  selectedPecIndex?: number;
 }
 
 export function fromOrganizationModelToFoundAdministration(
@@ -30,7 +30,7 @@ export function fromOrganizationModelToFoundAdministration(
       familyName: organizationModel.legalRepresentative.familyName,
       firstName: organizationModel.legalRepresentative.firstName,
       fiscalCode: organizationModel.legalRepresentative.fiscalCode,
-      phoneNumber: organizationModel.legalRepresentative.phoneNumber
+      phoneNumber: organizationModel.legalRepresentative.phoneNumber || "" // FIXME: use decoder to validate the object
     },
     links: [
       {
@@ -66,9 +66,7 @@ export function fromPublicAdministrationToFoundAdministration(
     ipaCode: pa.cod_amm,
     legalRepresentative: {
       familyName: pa.cogn_resp,
-      firstName: pa.nome_resp,
-      fiscalCode: null,
-      phoneNumber: null
+      firstName: pa.nome_resp
     },
     links: [
       {
@@ -77,8 +75,6 @@ export function fromPublicAdministrationToFoundAdministration(
       }
     ],
     name: pa.des_amm,
-    pecs,
-    scope: null,
-    selectedPecIndex: null
+    pecs
   };
 }

@@ -104,8 +104,7 @@ const mockedUser: LoggedUser = {
     email: aValidEmailAddress,
     expirationTime: new Date(Date.now() + tokenDurationInSeconds * 1000),
     token: "HexToKen" as SessionToken
-  },
-  workEmail: null
+  }
 };
 
 describe("user type", () => {

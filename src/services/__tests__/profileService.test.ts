@@ -22,8 +22,7 @@ const mockedLoggedUser: LoggedUser = {
   firstName: aFirstName,
   fiscalCode: aFiscalCode,
   role: UserRoleEnum.ORG_DELEGATE,
-  session: {} as NotClosedSession,
-  workEmail: null
+  session: {} as NotClosedSession
 } as LoggedUser;
 
 const mockedUserAttributes: UserProfile = {
@@ -31,8 +30,7 @@ const mockedUserAttributes: UserProfile = {
   familyName: aFamilyName,
   firstName: aFirstName,
   fiscalCode: aFiscalCode,
-  role: UserRoleEnum.ORG_DELEGATE,
-  workEmail: null
+  role: UserRoleEnum.ORG_DELEGATE
 };
 
 const dbMock = new SequelizeMock();

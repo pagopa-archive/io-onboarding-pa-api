@@ -32,8 +32,7 @@ const mockedLoggedUser: LoggedUser = {
     email: aValidEmailAddress,
     expirationTime: new Date(aTimestamp + tokenDurationSecs * 1000),
     token: mockSessionToken
-  },
-  workEmail: null
+  }
 };
 
 // mock for an ivalid logged user

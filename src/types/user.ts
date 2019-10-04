@@ -28,16 +28,20 @@ export enum UserRoleEnum {
 export type UserRole = t.TypeOf<typeof UserRole>;
 export const UserRole = enumType<UserRoleEnum>(UserRoleEnum, "UserRole");
 
-export const LoggedUser = t.interface({
-  createdAt: UTCISODateFromString,
-  email: EmailString,
-  familyName: t.string,
-  firstName: t.string,
-  fiscalCode: FiscalCode,
-  role: UserRole,
-  session: NotClosedSession,
-  workEmail: t.union([EmailString, t.null], "NullableEmailString")
-});
+export const LoggedUser = t.intersection([
+  t.interface({
+    createdAt: UTCISODateFromString,
+    email: EmailString,
+    familyName: t.string,
+    firstName: t.string,
+    fiscalCode: FiscalCode,
+    role: UserRole,
+    session: NotClosedSession
+  }),
+  t.partial({
+    workEmail: EmailString
+  })
+]);
 
 export type LoggedUser = t.TypeOf<typeof LoggedUser>;
 
