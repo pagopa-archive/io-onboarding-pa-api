@@ -6,6 +6,7 @@ COPY /src /usr/src/app/src
 COPY /package.json /usr/src/app/package.json
 COPY /tsconfig.json /usr/src/app/tsconfig.json
 COPY /yarn.lock /usr/src/app/yarn.lock
+COPY /openapi.yml /usr/src/app/openapi.yml
 
 RUN sudo chmod -R 777 /usr/src/app \
   && yarn install \

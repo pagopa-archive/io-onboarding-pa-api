@@ -6,10 +6,11 @@ import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 
 import mockReq from "../../__mocks__/request";
 import mockRes from "../../__mocks__/response";
+import { UserRoleEnum } from "../../generated/UserRole";
 import SessionStorage from "../../services/sessionStorage";
 import TokenService from "../../services/tokenService";
 import { SessionToken } from "../../types/token";
-import { LoggedUser, UserRoleEnum, validateSpidUser } from "../../types/user";
+import { LoggedUser, validateSpidUser } from "../../types/user";
 import { getRequiredEnvVar } from "../../utils/environment";
 import AuthenticationController from "../authenticationController";
 
@@ -38,8 +39,7 @@ const mockedLoggedUser: LoggedUser = {
     email: aValidEmailAddress,
     expirationTime: new Date(aTimestamp + tokenDurationSecs * 1000),
     token: mockSessionToken
-  },
-  workEmail: null
+  }
 };
 
 // each field of validUserPayload is correctly set

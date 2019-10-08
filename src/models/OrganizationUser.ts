@@ -1,6 +1,6 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../database/db";
-import { UserRoleEnum } from "../types/user";
+import { UserRoleEnum } from "../generated/UserRole";
 
 export class OrganizationUser extends Model {
   public userRole!: UserRoleEnum;

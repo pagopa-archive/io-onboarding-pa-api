@@ -1,29 +1,13 @@
-import { Organization, OrganizationScope } from "../models/Organization";
+import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
+import { FoundNotRegisteredAdministration } from "../generated/FoundNotRegisteredAdministration";
+import { FoundRegisteredAdministration } from "../generated/FoundRegisteredAdministration";
+import { Organization } from "../models/Organization";
 import { IIpaPublicAdministration } from "./PublicAdministration";
-
-export interface IFoundAdministration {
-  fiscalCode: string;
-  ipaCode: string;
-  name: string;
-  legalRepresentative: {
-    familyName: string;
-    firstName: string;
-    fiscalCode: string | null;
-    phoneNumber: string | null;
-  };
-  links: ReadonlyArray<{
-    href: string;
-    rel: string;
-  }>;
-  pecs: ReadonlyArray<string>;
-  scope: OrganizationScope | null;
-  selectedPecIndex: number | null;
-}
 
 export function fromOrganizationModelToFoundAdministration(
   organizationModel: Organization
-): IFoundAdministration {
-  return {
+): FoundRegisteredAdministration {
+  return FoundRegisteredAdministration.decode({
     fiscalCode: organizationModel.fiscalCode,
     ipaCode: organizationModel.ipaCode,
     legalRepresentative: {
@@ -46,12 +30,17 @@ export function fromOrganizationModelToFoundAdministration(
     pecs: [organizationModel.pec],
     scope: organizationModel.scope,
     selectedPecIndex: 0
-  };
+  }).fold(
+    errors => {
+      throw new Error(errorsToReadableMessages(errors).join(" / "));
+    },
+    value => value
+  );
 }
 
 export function fromPublicAdministrationToFoundAdministration(
   pa: IIpaPublicAdministration
-): IFoundAdministration {
+): FoundNotRegisteredAdministration {
   const pecs = [
     [pa.tipo_mail1, pa.mail1],
     [pa.tipo_mail2, pa.mail2],
@@ -61,14 +50,12 @@ export function fromPublicAdministrationToFoundAdministration(
   ]
     .filter(([emailType, _]) => emailType === "pec")
     .map(([_, pec]) => pec);
-  return {
+  return FoundNotRegisteredAdministration.decode({
     fiscalCode: pa.Cf,
     ipaCode: pa.cod_amm,
     legalRepresentative: {
       familyName: pa.cogn_resp,
-      firstName: pa.nome_resp,
-      fiscalCode: null,
-      phoneNumber: null
+      firstName: pa.nome_resp
     },
     links: [
       {
@@ -77,8 +64,11 @@ export function fromPublicAdministrationToFoundAdministration(
       }
     ],
     name: pa.des_amm,
-    pecs,
-    scope: null,
-    selectedPecIndex: null
-  };
+    pecs
+  }).fold(
+    errors => {
+      throw new Error(errorsToReadableMessages(errors).join(" / "));
+    },
+    value => value
+  );
 }

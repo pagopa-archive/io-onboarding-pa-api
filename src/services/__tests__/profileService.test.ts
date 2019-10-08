@@ -1,9 +1,10 @@
 import * as t from "io-ts";
 import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
 import * as SequelizeMock from "sequelize-mock";
-import { UserProfile } from "../../types/profile";
+import { UserProfile } from "../../generated/UserProfile";
+import { UserRoleEnum } from "../../generated/UserRole";
 import { NotClosedSession } from "../../types/session";
-import { LoggedUser, UserRoleEnum } from "../../types/user";
+import { LoggedUser } from "../../types/user";
 
 const anEmail = "asd@email.net" as EmailString;
 const aFiscalCode = "AAABBB11C22D333E" as FiscalCode;
@@ -22,8 +23,7 @@ const mockedLoggedUser: LoggedUser = {
   firstName: aFirstName,
   fiscalCode: aFiscalCode,
   role: UserRoleEnum.ORG_DELEGATE,
-  session: {} as NotClosedSession,
-  workEmail: null
+  session: {} as NotClosedSession
 } as LoggedUser;
 
 const mockedUserAttributes: UserProfile = {
@@ -31,8 +31,7 @@ const mockedUserAttributes: UserProfile = {
   familyName: aFamilyName,
   firstName: aFirstName,
   fiscalCode: aFiscalCode,
-  role: UserRoleEnum.ORG_DELEGATE,
-  workEmail: null
+  role: UserRoleEnum.ORG_DELEGATE
 };
 
 const dbMock = new SequelizeMock();
