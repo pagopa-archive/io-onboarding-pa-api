@@ -1,5 +1,5 @@
 import { DataTypes, QueryInterface } from "sequelize";
-import { OrganizationScope } from "../models/Organization";
+import { OrganizationScope } from "../generated/OrganizationScope";
 
 export function up(queryInterface: QueryInterface): Promise<void> {
   return queryInterface.addColumn("Organizations", "scope", {

@@ -35,6 +35,7 @@ import {
 import { log } from "./utils/logger";
 
 import AuthenticationController from "./controllers/authenticationController";
+import OrganizationController from "./controllers/organizationController";
 import ProfileController from "./controllers/profileController";
 import { findPublicAdministrationsByName } from "./services/organizationService";
 import ProfileService from "./services/profileService";
@@ -190,19 +191,7 @@ const getPublicAdministrationsHandler: RequestHandler = async (
     const foundPublicAdministrations = await findPublicAdministrationsByName(
       req.query.search
     );
-    res.json(
-      foundPublicAdministrations.map(foundPublicAdministration => {
-        return {
-          ...foundPublicAdministration,
-          links: [
-            {
-              href: `/public-administrations/${foundPublicAdministration.ipaCode}`,
-              rel: "self"
-            }
-          ]
-        };
-      })
-    );
+    res.json(foundPublicAdministrations);
   } catch (error) {
     log.error(error);
     res.status(500).json({ message: "Internal server error" });
@@ -224,6 +213,17 @@ function registerRoutes(app: Express): void {
     `/profile`,
     bearerTokenAuth,
     toExpressHandler(profileController.editProfile, profileController)
+  );
+
+  const organizationController = new OrganizationController();
+
+  app.post(
+    "/organizations",
+    bearerTokenAuth,
+    toExpressHandler(
+      organizationController.registerOrganization,
+      organizationController
+    )
   );
 
   app.get(

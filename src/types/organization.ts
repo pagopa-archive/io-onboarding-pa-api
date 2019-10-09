@@ -1,11 +1,11 @@
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { FoundNotRegisteredAdministration } from "../generated/FoundNotRegisteredAdministration";
 import { FoundRegisteredAdministration } from "../generated/FoundRegisteredAdministration";
-import { Organization } from "../models/Organization";
+import { Organization as OrganizationModel } from "../models/Organization";
 import { IIpaPublicAdministration } from "./PublicAdministration";
 
 export function fromOrganizationModelToFoundAdministration(
-  organizationModel: Organization
+  organizationModel: OrganizationModel
 ): FoundRegisteredAdministration {
   return FoundRegisteredAdministration.decode({
     fiscalCode: organizationModel.fiscalCode,
@@ -59,8 +59,12 @@ export function fromPublicAdministrationToFoundAdministration(
     },
     links: [
       {
-        href: `/organizations/${pa.cod_amm}`,
+        href: `/public-administrations/${pa.cod_amm}`,
         rel: "self"
+      },
+      {
+        href: "/organizations",
+        rel: "create"
       }
     ],
     name: pa.des_amm,

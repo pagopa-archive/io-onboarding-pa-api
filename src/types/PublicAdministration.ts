@@ -1,4 +1,10 @@
-// tslint:disable-next-line: interface-name
+import * as t from "io-ts";
+import {
+  EmailString,
+  NonEmptyString,
+  OrganizationFiscalCode
+} from "italia-ts-commons/lib/strings";
+
 export interface IIpaPublicAdministration {
   cod_amm: string;
   des_amm: string;
@@ -17,4 +23,38 @@ export interface IIpaPublicAdministration {
   tipo_mail4: string;
   mail5: string;
   tipo_mail5: string;
+}
+
+const EmailOrNullLiteral = t.union(
+  [EmailString, t.literal("null", "null")],
+  "EmailOrNullLiteral"
+);
+
+export const IpaPublicAdministration = t.interface({
+  Cf: OrganizationFiscalCode,
+  cf_validato: NonEmptyString,
+  cod_amm: NonEmptyString,
+  cogn_resp: NonEmptyString,
+  des_amm: NonEmptyString,
+  mail1: EmailOrNullLiteral,
+  mail2: EmailOrNullLiteral,
+  mail3: EmailOrNullLiteral,
+  mail4: EmailOrNullLiteral,
+  mail5: EmailOrNullLiteral,
+  nome_resp: NonEmptyString,
+  tipo_mail1: NonEmptyString,
+  tipo_mail2: NonEmptyString,
+  tipo_mail3: NonEmptyString,
+  tipo_mail4: NonEmptyString,
+  tipo_mail5: NonEmptyString,
+  titolo_resp: NonEmptyString
+});
+
+export type IpaPublicAdministration = t.TypeOf<typeof IpaPublicAdministration>;
+
+export function isIpaPublicAdministrationProperty(
+  value: string,
+  ipa: IpaPublicAdministration
+): value is keyof IpaPublicAdministration {
+  return value in ipa;
 }

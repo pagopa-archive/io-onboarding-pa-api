@@ -5,13 +5,9 @@ import {
   Model
 } from "sequelize";
 import sequelize from "../database/db";
+import { OrganizationScope } from "../generated/OrganizationScope";
 import { OrganizationUser } from "./OrganizationUser";
 import { User } from "./User";
-
-export enum OrganizationScope {
-  LOCAL = "LOCAL",
-  NATIONAL = "NATIONAL"
-}
 
 export class Organization extends Model {
   public fiscalCode!: string;

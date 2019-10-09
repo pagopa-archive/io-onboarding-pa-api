@@ -78,6 +78,23 @@ paths:
         <<: *common-responses
         200:
           description: Successful response
+  /organizations:
+    post:
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationRegistrationParams"
+      responses:
+        <<: *common-responses
+        200:
+          description: The registered organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
   /profile:
     get:
       security:
@@ -146,12 +163,31 @@ components:
       format: FiscalCode
       x-import: italia-ts-commons/lib/strings
       example: SPNDNL80R13C555X
+    ArrayIndexUpTo4:
+      type: integer
+      minimum: -1
+      maximum: 5
+      exclusiveMaximum: true
+    ExistingArrayIndexUpTo4:
+      type: integer
+      minimum: 0
+      maximum: 5
+      exclusiveMaximum: true
+    NonEmptyString:
+      type: string
+      format: NonEmptyString
+      x-import: italia-ts-commons/lib/strings
     OrganizationFiscalCode:
       type: string
       description: Organization's fiscal code.
       format: OrganizationFiscalCode
       x-import: italia-ts-commons/lib/strings
       example: 01234567890
+    OrganizationScope:
+      type: string
+      enum:
+        - "LOCAL"
+        - "NATIONAL"
     UserRole:
       type: string
       enum:
@@ -159,6 +195,37 @@ components:
         - "ORG_MANAGER"
         - "DEVELOPER"
         - "ADMIN"
+    LegalRepresentative:
+      type: object
+      properties:
+        email:
+          $ref: "#/components/schemas/EmailAddress"
+        familyName:
+          $ref: "#/components/schemas/NonEmptyString"
+        firstName:
+          $ref: "#/components/schemas/NonEmptyString"
+        fiscalCode:
+          $ref: "#/components/schemas/FiscalCode"
+        phoneNumber:
+          $ref: "#/components/schemas/NonEmptyString"
+        role:
+          $ref: "#/components/schemas/UserRole"
+      required:
+        - email
+        - familyName
+        - firstName
+        - fiscalCode
+        - phoneNumber
+        - role
+      example:
+        {
+          "familyName": "Spano'",
+          "firstName": "Ignazio Alfonso",
+          "fiscalCode": "BCDFGH12A21Z123D",
+          "phoneNumber": "5550000000",
+          "email": "indirizzo00@email.pec.it",
+          "role": "ORG_MANAGER"
+        }
     UserProfile:
       type: object
       properties:
@@ -352,12 +419,9 @@ components:
           minLength: 1
           maxLength: 5
         scope:
-          type: string
-          enum: ["LOCAL", "NATIONAL"]
+          $ref: '#/components/schemas/OrganizationScope'
         selectedPecIndex:
-          type: integer
-          minimum: -1
-          maximum: 4
+          $ref: '#/components/schemas/ArrayIndexUpTo4'
       required:
         - fiscalCode
         - ipaCode
@@ -435,6 +499,87 @@ components:
           }]
         }
         ]
+    Organization:
+      type: object
+      properties:
+        fiscalCode:
+          $ref: "#/components/schemas/OrganizationFiscalCode"
+        ipaCode:
+          $ref: "#/components/schemas/NonEmptyString"
+        legalRepresentative:
+          $ref: "#/components/schemas/LegalRepresentative"
+        links:
+          $ref: "#/components/schemas/Links"
+        name:
+          $ref: "#/components/schemas/NonEmptyString"
+        pec:
+          $ref: "#/components/schemas/EmailAddress"
+        scope:
+          $ref: '#/components/schemas/OrganizationScope'
+      required:
+        - fiscalCode
+        - ipaCode
+        - name
+        - pec
+        - scope
+      example:
+        {
+          "fiscalCode": "86000470830",
+          "ipaCode": "c_e043",
+          "legalRepresentative": {
+            "familyName": "Spano'",
+            "firstName": "Ignazio Alfonso",
+            "fiscalCode": "BCDFGH12A21Z123D",
+            "phoneNumber": "5550000000",
+            "email": "indirizzo00@email.pec.it",
+            "role": "ORG_MANAGER"
+          },
+          "name": "Comune di Gioiosa Marea",
+          "pec": "indirizzo00@email.pec.it",
+          "scope": "NATIONAL"
+        }
+    OrganizationRegistrationParams:
+      type: object
+      properties:
+        ipaCode:
+          $ref: "#/components/schemas/NonEmptyString"
+        legalRepresentative:
+          type: object
+          properties:
+            familyName:
+              $ref: "#/components/schemas/NonEmptyString"
+            firstName:
+              $ref: "#/components/schemas/NonEmptyString"
+            fiscalCode:
+              $ref: "#/components/schemas/FiscalCode"
+            phoneNumber:
+              $ref: "#/components/schemas/NonEmptyString"
+          required:
+            - familyName
+            - firstName
+            - fiscalCode
+            - phoneNumber
+        scope:
+          $ref: '#/components/schemas/OrganizationScope'
+        selectedPecIndex:
+          $ref: '#/components/schemas/ExistingArrayIndexUpTo4'
+      required:
+        - ipaCode
+        - legalRepresentative
+        - scope
+        - selectedPecIndex
+      example:
+        {
+          "ipaCode": "c_e043",
+          "legalRepresentative": {
+            "familyName": "Spano'",
+            "firstName": "Ignazio Alfonso",
+            "fiscalCode": "BCDFGH12A21Z123D",
+            "phoneNumber": "3331111111"
+          },
+          "scope": "NATIONAL",
+          "selectedPecIndex": 0
+        }
   securitySchemes:
     bearerAuth:
       type: http
