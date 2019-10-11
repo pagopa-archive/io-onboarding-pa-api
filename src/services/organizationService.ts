@@ -124,8 +124,12 @@ function mergePublicAdministrationsAndOrganizations(
           ...results,
           {
             ...currentOrganization,
-            selectedPecIndex: currentPublicAdministration.pecs.indexOf(
-              currentOrganization.pecs[0]
+            selectedPecLabel: Object.keys(
+              currentPublicAdministration.pecs
+            ).find(
+              labels =>
+                currentPublicAdministration.pecs[labels] ===
+                currentOrganization.pecs["1"]
             )
           }
         ];
@@ -176,12 +180,9 @@ export async function registerOrganization(
     }
     const ipaPublicAdministration = errorsOrIpaPublicAdministration.value;
 
-    // Check that the selected pec index detects an existing email whose type is pec
-    // tslint:disable-next-line:restrict-plus-operands
-    const emailPropName = `mail${newOrganizationParams.selectedPecIndex + 1}`;
-    // tslint:disable-next-line:restrict-plus-operands
-    const emailTypePropName = `tipo_mail${newOrganizationParams.selectedPecIndex +
-      1}`;
+    // Check that the selected pec label detects an existing email whose type is pec
+    const emailPropName = `mail${newOrganizationParams.selectedPecLabel}`;
+    const emailTypePropName = `tipo_mail${newOrganizationParams.selectedPecLabel}`;
 
     if (
       !isIpaPublicAdministrationProperty(
@@ -194,7 +195,7 @@ export async function registerOrganization(
       ) ||
       ipaPublicAdministration[emailTypePropName] !== "pec"
     ) {
-      return ResponseErrorValidation("Bad request", "Invalid selectedPecIndex");
+      return ResponseErrorValidation("Bad request", "Invalid selectedPecLabel");
     }
 
     // Transactionally save the entities into the database

@@ -127,7 +127,7 @@ describe("OrganizationService", () => {
         phoneNumber: "3330000000" as NonEmptyString
       },
       scope: OrganizationScopeEnum.LOCAL,
-      selectedPecIndex: 0 as number & IWithinRangeIntegerTag<0, 5>
+      selectedPecLabel: "1" as NonEmptyString
     };
 
     describe("when the public administration is valid", () => {

@@ -177,16 +177,6 @@ components:
       format: FiscalCode
       x-import: italia-ts-commons/lib/strings
       example: SPNDNL80R13C555X
-    PecIndex:
-      type: integer
-      minimum: -1
-      maximum: 5
-      exclusiveMaximum: true
-    ExistingPecIndex:
-      type: integer
-      minimum: 0
-      maximum: 5
-      exclusiveMaximum: true
     NonEmptyString:
       type: string
       description: |-
@@ -338,11 +328,9 @@ components:
         links:
           $ref: '#/components/schemas/Links'
         pecs:
-          type: array
-          items:
+          type: object
+          additionalProperties:
             $ref: '#/components/schemas/EmailAddress'
-          minLength: 1
-          maxLength: 5
       required:
         - fiscalCode
         - ipaCode
@@ -360,10 +348,10 @@ components:
             "firstName": "Ignazio Alfonso"
           },
           "name": "Comune di Gioiosa Marea",
-          "pecs": [
-            "indirizzo00@email.pec.it",
-            "indirizzo01@email.pec.it"
-          ],
+          "pecs": {
+            "1": "indirizzo00@email.pec.it",
+            "2": "indirizzo01@email.pec.it"
+          },
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
@@ -377,12 +365,12 @@ components:
             "firstName": "Gianfranco"
           },
           "name": "Comune di Gioiosa Jonica",
-          "pecs": [
-            "indirizzo10@email.pec.it",
-            "indirizzo11@email.pec.it",
-            "indirizzo12@email.pec.it",
-            "indirizzo13@email.pec.it",
-          ],
+          "pecs": {
+            "1": "indirizzo10@email.pec.it",
+            "2": "indirizzo11@email.pec.it",
+            "3": "indirizzo12@email.pec.it",
+            "4": "indirizzo13@email.pec.it",
+          },
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
@@ -396,10 +384,10 @@ components:
             "firstName": "Mazzia"
           },
           "name": "Comune di Marina di Gioiosa Ionica",
-          "pecs": [
-            "indirizzo20@email.pec.it",
-            "indirizzo21@email.pec.it",
-          ],
+          "pecs": {
+            "1": "indirizzo20@email.pec.it",
+            "2": "indirizzo21@email.pec.it",
+          },
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e0956"
@@ -434,15 +422,13 @@ components:
         links:
           $ref: '#/components/schemas/Links'
         pecs:
-          type: array
-          items:
+          type: object
+          additionalProperties:
             $ref: '#/components/schemas/EmailAddress'
-          minLength: 1
-          maxLength: 5
         scope:
           $ref: '#/components/schemas/OrganizationScope'
-        selectedPecIndex:
-          $ref: '#/components/schemas/PecIndex'
+        selectedPecLabel:
+          type: string
       required:
         - fiscalCode
         - ipaCode
@@ -451,7 +437,7 @@ components:
         - link
         - pecs
         - scope
-        - selectedPecIndex
+        - selectedPecLabel
       example:
         [
         {
@@ -464,12 +450,12 @@ components:
             "phoneNumber": "3331111111"
           },
           "name": "Comune di Gioiosa Marea",
-          "pecs": [
-            "indirizzo00@email.pec.it",
-            "indirizzo01@email.pec.it"
-          ],
+          "pecs": {
+            "1": "indirizzo00@email.pec.it",
+            "2": "indirizzo01@email.pec.it"
+          },
           "scope": "NATIONAL",
-          "selectedPecIndex": 0,
+          "selectedPecLabel": "1",
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
@@ -485,14 +471,14 @@ components:
             "phoneNumber": "3332222222"
           },
           "name": "Comune di Gioiosa Jonica",
-          "pecs": [
-            "indirizzo10@email.pec.it",
-            "indirizzo11@email.pec.it",
-            "indirizzo12@email.pec.it",
-            "indirizzo13@email.pec.it",
-          ],
+          "pecs": {
+            "1": "indirizzo10@email.pec.it",
+            "2": "indirizzo11@email.pec.it",
+            "3": "indirizzo12@email.pec.it",
+            "4": "indirizzo13@email.pec.it",
+          },
           "scope": "LOCAL",
-          "selectedPecIndex": 2,
+          "selectedPecLabel": "3",
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
@@ -508,12 +494,12 @@ components:
             "phoneNumber": "3333333333"
           },
           "name": "Comune di Marina di Gioiosa Ionica",
-          "pecs": [
-            "indirizzo20@email.pec.it",
-            "indirizzo21@email.pec.it",
-          ],
+          "pecs": {
+            "1": "indirizzo20@email.pec.it",
+            "2": "indirizzo21@email.pec.it",
+          },
           "scope": "LOCAL",
-          "selectedPecIndex": 0,
+          "selectedPecLabel": "1",
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e0956"
@@ -582,13 +568,13 @@ components:
             - phoneNumber
         scope:
           $ref: '#/components/schemas/OrganizationScope'
-        selectedPecIndex:
-          $ref: '#/components/schemas/ExistingPecIndex'
+        selectedPecLabel:
+          $ref: '#/components/schemas/NonEmptyString'
       required:
         - ipaCode
         - legalRepresentative
         - scope
-        - selectedPecIndex
+        - selectedPecLabel
       example:
         {
           "ipaCode": "c_e043",
@@ -599,7 +585,7 @@ components:
             "phoneNumber": "3331111111"
           },
           "scope": "NATIONAL",
-          "selectedPecIndex": 0
+          "selectedPecLabel": "1"
         }
   securitySchemes:
     bearerAuth:

@@ -27,9 +27,9 @@ export function fromOrganizationModelToFoundAdministration(
       }
     ],
     name: organizationModel.name,
-    pecs: [organizationModel.pec],
+    pecs: { "1": organizationModel.pec },
     scope: organizationModel.scope,
-    selectedPecIndex: 0
+    selectedPecLabel: "1"
   }).fold(
     errors => {
       throw new Error(errorsToReadableMessages(errors).join(" / "));
@@ -49,7 +49,13 @@ export function fromPublicAdministrationToFoundAdministration(
     [pa.tipo_mail5, pa.mail5]
   ]
     .filter(([emailType, _]) => emailType === "pec")
-    .map(([_, pec]) => pec);
+    .reduce<{ [label: string]: string }>(
+      (prev, [_, pec], index) => ({
+        ...prev,
+        [String(index + 1)]: pec
+      }),
+      {}
+    );
   return FoundNotRegisteredAdministration.decode({
     fiscalCode: pa.Cf,
     ipaCode: pa.cod_amm,
