@@ -47,6 +47,7 @@ x-commons:
 paths:
   /login:
     get:
+      description: Redirects the user to the login page of the chosen SPID IdP.
       parameters:
         - name: entityID
           in: query
@@ -69,9 +70,10 @@ paths:
           example: SpidL2
       responses:
         302:
-          description: Redirection to the login page from the choosen IdP.
+          description: Redirection to the login page from the chosen IdP.
   /logout:
     post:
+      description: Logs the user out
       security:
         - bearerAuth: []
       responses:
@@ -80,6 +82,9 @@ paths:
           description: Successful response
   /organizations:
     post:
+      description: |-
+        Creates a new organization associated with its legal responsible,
+        the user calling this endpoint is also associated to the organization as its delegate.
       security:
         - bearerAuth: []
       requestBody:
@@ -97,6 +102,8 @@ paths:
                 $ref: "#/components/schemas/Organization"
   /profile:
     get:
+      description: |-
+        Returns the user profile information.
       security:
         - bearerAuth: []
       responses:
@@ -107,7 +114,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
-    post:
+    put:
+      description: |-
+        Updates the user profile.
       security:
         - bearerAuth: []
       requestBody:
@@ -131,6 +140,8 @@ paths:
                 $ref: "#/components/schemas/UserProfile"
   /public-administrations:
     get:
+      description: |-
+        Returns a list of public administrations that match the searching words.
       parameters:
         - name: search
           in: query
