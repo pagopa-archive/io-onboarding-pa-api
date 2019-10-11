@@ -166,12 +166,12 @@ components:
       format: FiscalCode
       x-import: italia-ts-commons/lib/strings
       example: SPNDNL80R13C555X
-    ArrayIndexUpTo4:
+    PecIndex:
       type: integer
       minimum: -1
       maximum: 5
       exclusiveMaximum: true
-    ExistingArrayIndexUpTo4:
+    ExistingPecIndex:
       type: integer
       minimum: 0
       maximum: 5
@@ -431,7 +431,7 @@ components:
         scope:
           $ref: '#/components/schemas/OrganizationScope'
         selectedPecIndex:
-          $ref: '#/components/schemas/ArrayIndexUpTo4'
+          $ref: '#/components/schemas/PecIndex'
       required:
         - fiscalCode
         - ipaCode
@@ -572,7 +572,7 @@ components:
         scope:
           $ref: '#/components/schemas/OrganizationScope'
         selectedPecIndex:
-          $ref: '#/components/schemas/ExistingArrayIndexUpTo4'
+          $ref: '#/components/schemas/ExistingPecIndex'
       required:
         - ipaCode
         - legalRepresentative
