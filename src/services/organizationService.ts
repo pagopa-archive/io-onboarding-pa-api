@@ -6,12 +6,12 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorValidation,
-  IResponseSuccessJson,
+  IResponseSuccessRedirectToResource,
   ResponseErrorConflict,
   ResponseErrorInternal,
   ResponseErrorNotFound,
   ResponseErrorValidation,
-  ResponseSuccessJson
+  ResponseSuccessRedirectToResource
 } from "italia-ts-commons/lib/responses";
 import { Op, QueryTypes, UniqueConstraintError } from "sequelize";
 import sequelize from "../database/db";
@@ -154,7 +154,7 @@ export async function registerOrganization(
   | IResponseErrorConflict
   | IResponseErrorNotFound
   | IResponseErrorValidation
-  | IResponseSuccessJson<Organization>
+  | IResponseSuccessRedirectToResource<Organization, Organization>
 > {
   const genericError = "Error creating the new organization";
   try {
@@ -240,17 +240,23 @@ export async function registerOrganization(
             })
             .then(() =>
               // Associate the delegate to the organization as a user
-              OrganizationUserModel.create({
-                createdAt: now,
-                organizationIpaCode: createdOrganization.ipaCode,
-                updatedAt: now,
-                userEmail: user.email,
-                userRole: UserRoleEnum.ORG_DELEGATE
-              })
+              OrganizationUserModel.create(
+                {
+                  createdAt: now,
+                  organizationIpaCode: createdOrganization.ipaCode,
+                  updatedAt: now,
+                  userEmail: user.email,
+                  userRole: UserRoleEnum.ORG_DELEGATE
+                },
+                {
+                  transaction
+                }
+              )
             )
             .then(() => {
               return new Promise<
-                IResponseSuccessJson<Organization> | IResponseErrorInternal
+                | IResponseSuccessRedirectToResource<Organization, Organization>
+                | IResponseErrorInternal
               >(resolve => {
                 const validationErrorsHandler = (errors: Errors) => {
                   resolve(
@@ -263,33 +269,36 @@ export async function registerOrganization(
                   .decode(
                     createdOrganization.legalRepresentative.get({ plain: true })
                   )
-                  .fold(validationErrorsHandler, legalRepresentative =>
-                    t
+                  .fold(validationErrorsHandler, legalRepresentative => {
+                    const resourceUrl = `/organizations/${createdOrganization.ipaCode}`;
+                    return t
                       .exact(Organization)
-                      .decode(
-                        createdOrganization.get({
+                      .decode({
+                        ...createdOrganization.get({
                           plain: true
-                        })
-                      )
-                      .fold(validationErrorsHandler, organization =>
+                        }),
+                        legalRepresentative,
+                        links: [
+                          {
+                            href: resourceUrl,
+                            rel: "self"
+                          },
+                          {
+                            href: resourceUrl,
+                            rel: "edit"
+                          }
+                        ]
+                      })
+                      .fold(validationErrorsHandler, organization => {
                         resolve(
-                          ResponseSuccessJson({
-                            ...organization,
-                            legalRepresentative,
-                            links: [
-                              {
-                                href: `/organizations/${organization.ipaCode}`,
-                                rel: "self"
-                              },
-                              {
-                                href: `/organizations/${organization.ipaCode}`,
-                                rel: "edit"
-                              }
-                            ]
-                          })
-                        )
-                      )
-                  );
+                          ResponseSuccessRedirectToResource(
+                            organization,
+                            resourceUrl,
+                            organization
+                          )
+                        );
+                      });
+                  });
               });
             });
         })

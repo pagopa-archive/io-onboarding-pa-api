@@ -1,4 +1,3 @@
-import { IWithinRangeIntegerTag } from "italia-ts-commons/lib/numbers";
 import { Sequelize } from "sequelize";
 import { EmailAddress } from "../../generated/EmailAddress";
 import { FiscalCode } from "../../generated/FiscalCode";
@@ -183,8 +182,11 @@ describe("OrganizationService", () => {
         };
         const result = await registerOrganization(newOrganizationParams, user);
         expect(result).not.toBeNull();
-        expect(result).toHaveProperty("kind", "IResponseSuccessJson");
-        expect(result).toHaveProperty("value", expectedResult);
+        expect(result).toHaveProperty(
+          "kind",
+          "IResponseSuccessRedirectToResource"
+        );
+        expect(result).toHaveProperty("payload", expectedResult);
       });
     });
 

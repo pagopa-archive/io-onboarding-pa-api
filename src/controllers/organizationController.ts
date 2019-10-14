@@ -5,7 +5,7 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorValidation,
-  IResponseSuccessJson,
+  IResponseSuccessRedirectToResource,
   ResponseErrorForbiddenNotAuthorized
 } from "italia-ts-commons/lib/responses";
 import { Organization } from "../generated/Organization";
@@ -25,7 +25,7 @@ export default class OrganizationController {
     | IResponseErrorInternal
     | IResponseErrorNotFound
     | IResponseErrorValidation
-    | IResponseSuccessJson<Organization>
+    | IResponseSuccessRedirectToResource<Organization, Organization>
   > {
     return withUserFromRequest(req, async user => {
       if (user.role !== UserRoleEnum.ORG_DELEGATE) {

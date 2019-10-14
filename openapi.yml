@@ -94,8 +94,13 @@ paths:
               $ref: "#/components/schemas/OrganizationRegistrationParams"
       responses:
         <<: *common-responses
-        200:
+        201:
           description: The registered organization
+          headers:
+            Location:
+              description: URI of the created organization
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -526,6 +531,7 @@ components:
       required:
         - fiscalCode
         - ipaCode
+        - links
         - name
         - pec
         - scope
