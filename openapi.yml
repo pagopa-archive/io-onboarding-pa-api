@@ -44,6 +44,9 @@ x-commons:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
     default:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/default
+  non-empty-string: &non-empty-string
+    type: string
+    minLength: 1
 paths:
   /login:
     get:
@@ -181,14 +184,6 @@ components:
       format: FiscalCode
       x-import: italia-ts-commons/lib/strings
       example: SPNDNL80R13C555X
-    NonEmptyString:
-      type: string
-      description: |-
-        A non-empty string.
-        Its format is defined by the [`NonEmptyString`](https://teamdigitale.github.io/io-ts-commons/modules/_strings_.html#nonemptystring)
-        constant in [italia-ts-commons](https://teamdigitale.github.io/io-ts-commons) library.
-      format: NonEmptyString
-      x-import: italia-ts-commons/lib/strings
     OrganizationFiscalCode:
       type: string
       description: |-
@@ -216,13 +211,13 @@ components:
         email:
           $ref: "#/components/schemas/EmailAddress"
         familyName:
-          $ref: "#/components/schemas/NonEmptyString"
+          <<: *non-empty-string
         fiscalCode:
           $ref: "#/components/schemas/FiscalCode"
         givenName:
-          $ref: "#/components/schemas/NonEmptyString"
+          <<: *non-empty-string
         phoneNumber:
-          $ref: "#/components/schemas/NonEmptyString"
+          <<: *non-empty-string
         role:
           $ref: "#/components/schemas/UserRole"
       required:
@@ -519,13 +514,15 @@ components:
         fiscalCode:
           $ref: "#/components/schemas/OrganizationFiscalCode"
         ipaCode:
-          $ref: "#/components/schemas/NonEmptyString"
+          type: string
+          minLength: 1
         legalRepresentative:
           $ref: "#/components/schemas/LegalRepresentative"
         links:
           $ref: "#/components/schemas/Links"
         name:
-          $ref: "#/components/schemas/NonEmptyString"
+          type: string
+          minLength: 1
         pec:
           $ref: "#/components/schemas/EmailAddress"
         scope:
@@ -557,18 +554,22 @@ components:
       type: object
       properties:
         ipaCode:
-          $ref: "#/components/schemas/NonEmptyString"
+          type: string
+          minLength: 1
         legalRepresentative:
           type: object
           properties:
             familyName:
-              $ref: "#/components/schemas/NonEmptyString"
+              type: string
+              minLength: 1
             givenName:
-              $ref: "#/components/schemas/NonEmptyString"
+              type: string
+              minLength: 1
             fiscalCode:
               $ref: "#/components/schemas/FiscalCode"
             phoneNumber:
-              $ref: "#/components/schemas/NonEmptyString"
+              type: string
+              minLength: 1
           required:
             - familyName
             - givenName
@@ -577,7 +578,7 @@ components:
         scope:
           $ref: '#/components/schemas/OrganizationScope'
         selectedPecLabel:
-          $ref: '#/components/schemas/NonEmptyString'
+          <<: *non-empty-string
       required:
         - ipaCode
         - legalRepresentative

@@ -1,7 +1,7 @@
+import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Sequelize } from "sequelize";
 import { EmailAddress } from "../../generated/EmailAddress";
 import { FiscalCode } from "../../generated/FiscalCode";
-import { NonEmptyString } from "../../generated/NonEmptyString";
 import { Organization } from "../../generated/Organization";
 import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
