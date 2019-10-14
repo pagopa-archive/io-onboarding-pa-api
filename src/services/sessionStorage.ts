@@ -19,8 +19,8 @@ export default class SessionStorage {
       const [loggerUser, _] = await User.findOrCreate({
         defaults: {
           familyName: user.familyName,
-          firstName: user.name,
           fiscalCode: user.fiscalNumber,
+          givenName: user.name,
           role: UserRoleEnum.ORG_DELEGATE
         },
         where: { email: user.email }

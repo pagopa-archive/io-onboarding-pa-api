@@ -12,8 +12,8 @@ export function fromOrganizationModelToFoundAdministration(
     ipaCode: organizationModel.ipaCode,
     legalRepresentative: {
       familyName: organizationModel.legalRepresentative.familyName,
-      firstName: organizationModel.legalRepresentative.firstName,
       fiscalCode: organizationModel.legalRepresentative.fiscalCode,
+      givenName: organizationModel.legalRepresentative.givenName,
       phoneNumber: organizationModel.legalRepresentative.phoneNumber
     },
     links: [
@@ -61,7 +61,7 @@ export function fromPublicAdministrationToFoundAdministration(
     ipaCode: pa.cod_amm,
     legalRepresentative: {
       familyName: pa.cogn_resp,
-      firstName: pa.nome_resp
+      givenName: pa.nome_resp
     },
     links: [
       {

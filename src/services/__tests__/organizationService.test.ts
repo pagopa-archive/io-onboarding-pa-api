@@ -45,8 +45,8 @@ import { LoggedUser } from "../../types/user";
 const userInfo = {
   email: "delegate@email.net",
   familyName: "Bianchi",
-  firstName: "Mario",
   fiscalCode: "BNCMRA78S23G377D",
+  givenName: "Mario",
   role: UserRoleEnum.ORG_DELEGATE,
   session: {
     email: "delegate@email.net",
@@ -121,8 +121,8 @@ describe("OrganizationService", () => {
       ipaCode: "generic_code" as NonEmptyString,
       legalRepresentative: {
         familyName: "Rossi" as NonEmptyString,
-        firstName: "Alberto" as NonEmptyString,
         fiscalCode: "RSSLRT84S20G377O" as FiscalCode,
+        givenName: "Alberto" as NonEmptyString,
         phoneNumber: "3330000000" as NonEmptyString
       },
       scope: OrganizationScopeEnum.LOCAL,

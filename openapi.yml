@@ -217,10 +217,10 @@ components:
           $ref: "#/components/schemas/EmailAddress"
         familyName:
           $ref: "#/components/schemas/NonEmptyString"
-        firstName:
-          $ref: "#/components/schemas/NonEmptyString"
         fiscalCode:
           $ref: "#/components/schemas/FiscalCode"
+        givenName:
+          $ref: "#/components/schemas/NonEmptyString"
         phoneNumber:
           $ref: "#/components/schemas/NonEmptyString"
         role:
@@ -228,15 +228,15 @@ components:
       required:
         - email
         - familyName
-        - firstName
         - fiscalCode
+        - givenName
         - phoneNumber
         - role
       example:
         {
           "familyName": "Spano'",
-          "firstName": "Ignazio Alfonso",
           "fiscalCode": "BCDFGH12A21Z123D",
+          "givenName": "Ignazio Alfonso",
           "phoneNumber": "5550000000",
           "email": "indirizzo00@email.pec.it",
           "role": "ORG_MANAGER"
@@ -248,10 +248,10 @@ components:
           $ref: "#/components/schemas/EmailAddress"
         familyName:
           type: string
-        firstName:
-          type: string
         fiscalCode:
           $ref: "#/components/schemas/FiscalCode"
+        givenName:
+          type: string
         role:
           $ref: "#/components/schemas/UserRole"
         workEmail:
@@ -259,15 +259,15 @@ components:
       required:
         - email
         - familyName
-        - firstName
+        - givenName
         - fiscalCode
         - role
       example:
         {
           email: "example@email.com",
           familyName: "Rossi",
-          firstName: "Mario",
           fiscalCode: "RSSMRA80A01H501U",
+          givenName: "Mario",
           role: "ORG_DELEGATE",
           workEmail: "work-email@email.com"
         }
@@ -327,11 +327,11 @@ components:
           properties:
             familyName:
               type: string
-            firstName:
+            givenName:
               type: string
           required:
             - familyName
-            - firstName
+            - givenName
         links:
           $ref: '#/components/schemas/Links'
         pecs:
@@ -352,7 +352,7 @@ components:
           "ipaCode": "c_e043",
           "legalRepresentative": {
             "familyName": "Spano'",
-            "firstName": "Ignazio Alfonso"
+            "givenName": "Ignazio Alfonso"
           },
           "name": "Comune di Gioiosa Marea",
           "pecs": {
@@ -369,7 +369,7 @@ components:
           "ipaCode": "c_e044",
           "legalRepresentative": {
             "familyName": "ALI'",
-            "firstName": "Gianfranco"
+            "givenName": "Gianfranco"
           },
           "name": "Comune di Gioiosa Jonica",
           "pecs": {
@@ -388,7 +388,7 @@ components:
           "ipaCode": "c_e956",
           "legalRepresentative": {
             "familyName": "Sergio",
-            "firstName": "Mazzia"
+            "givenName": "Mazzia"
           },
           "name": "Comune di Marina di Gioiosa Ionica",
           "pecs": {
@@ -415,16 +415,16 @@ components:
           properties:
             familyName:
               type: string
-            firstName:
-              type: string
             fiscalCode:
               $ref: "#/components/schemas/FiscalCode"
+            givenName:
+              type: string
             phoneNumber:
               type: string
           required:
             - familyName
-            - firstName
             - fiscalCode
+            - givenName
             - phoneNumber
         links:
           $ref: '#/components/schemas/Links'
@@ -452,7 +452,7 @@ components:
           "ipaCode": "c_e043",
           "legalRepresentative": {
             "familyName": "Spano'",
-            "firstName": "Ignazio Alfonso",
+            "givenName": "Ignazio Alfonso",
             "fiscalCode": "BCDFGH12A21Z123D",
             "phoneNumber": "3331111111"
           },
@@ -473,7 +473,7 @@ components:
           "ipaCode": "c_e044",
           "legalRepresentative": {
             "familyName": "ALI'",
-            "firstName": "Gianfranco",
+            "givenName": "Gianfranco",
             "fiscalCode": "BCDFGH12A21Z123F",
             "phoneNumber": "3332222222"
           },
@@ -496,7 +496,7 @@ components:
           "ipaCode": "c_e956",
           "legalRepresentative": {
             "familyName": "Sergio",
-            "firstName": "Mazzia",
+            "givenName": "Mazzia",
             "fiscalCode": "BCDFGH12A21Z123E",
             "phoneNumber": "3333333333"
           },
@@ -543,7 +543,7 @@ components:
           "ipaCode": "c_e043",
           "legalRepresentative": {
             "familyName": "Spano'",
-            "firstName": "Ignazio Alfonso",
+            "givenName": "Ignazio Alfonso",
             "fiscalCode": "BCDFGH12A21Z123D",
             "phoneNumber": "5550000000",
             "email": "indirizzo00@email.pec.it",
@@ -563,7 +563,7 @@ components:
           properties:
             familyName:
               $ref: "#/components/schemas/NonEmptyString"
-            firstName:
+            givenName:
               $ref: "#/components/schemas/NonEmptyString"
             fiscalCode:
               $ref: "#/components/schemas/FiscalCode"
@@ -571,7 +571,7 @@ components:
               $ref: "#/components/schemas/NonEmptyString"
           required:
             - familyName
-            - firstName
+            - givenName
             - fiscalCode
             - phoneNumber
         scope:
@@ -588,7 +588,7 @@ components:
           "ipaCode": "c_e043",
           "legalRepresentative": {
             "familyName": "Spano'",
-            "firstName": "Ignazio Alfonso",
+            "givenName": "Ignazio Alfonso",
             "fiscalCode": "BCDFGH12A21Z123D",
             "phoneNumber": "3331111111"
           },

@@ -23,8 +23,8 @@ export const LoggedUser = t.intersection([
     createdAt: UTCISODateFromString,
     email: EmailString,
     familyName: t.string,
-    firstName: t.string,
     fiscalCode: FiscalCode,
+    givenName: t.string,
     role: UserRole,
     session: NotClosedSession
   }),

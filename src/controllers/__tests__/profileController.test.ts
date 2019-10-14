@@ -24,8 +24,8 @@ const mockedLoggedUser: LoggedUser = {
   createdAt: new Date(1518010929530),
   email: aValidEmailAddress,
   familyName: aValidSurname,
-  firstName: aValidName,
   fiscalCode: aValidFiscalCode,
+  givenName: aValidName,
   role: UserRoleEnum.ORG_DELEGATE,
   session: {
     createdAt: new Date(aTimestamp),
@@ -85,8 +85,8 @@ describe("ProfileController", () => {
       const mockedUpdatedProfile = {
         email: mockedLoggedUser.email,
         familyName: mockedLoggedUser.familyName,
-        firstName: mockedLoggedUser.firstName,
         fiscalCode: mockedLoggedUser.fiscalCode,
+        givenName: mockedLoggedUser.givenName,
         role: mockedLoggedUser.role,
         workEmail: newWorkEmail
       };

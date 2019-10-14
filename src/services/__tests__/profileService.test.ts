@@ -8,7 +8,7 @@ import { LoggedUser } from "../../types/user";
 
 const anEmail = "asd@email.net" as EmailString;
 const aFiscalCode = "AAABBB11C22D333E" as FiscalCode;
-const aFirstName = "Giuseppe";
+const aGivenName = "Giuseppe";
 const aFamilyName = "Garibaldi";
 const emailOfNotExistingUser = "not-existing-user" as EmailString;
 const anEmailThrowingErrorOnFind = "throw_error_on_find" as EmailString;
@@ -20,8 +20,8 @@ const mockedLoggedUser: LoggedUser = {
   createdAt: new Date(),
   email: anEmail,
   familyName: aFamilyName,
-  firstName: aFirstName,
   fiscalCode: aFiscalCode,
+  givenName: aGivenName,
   role: UserRoleEnum.ORG_DELEGATE,
   session: {} as NotClosedSession
 } as LoggedUser;
@@ -29,8 +29,8 @@ const mockedLoggedUser: LoggedUser = {
 const mockedUserAttributes: UserProfile = {
   email: anEmail,
   familyName: aFamilyName,
-  firstName: aFirstName,
   fiscalCode: aFiscalCode,
+  givenName: aGivenName,
   role: UserRoleEnum.ORG_DELEGATE
 };
 

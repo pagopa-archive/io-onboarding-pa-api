@@ -8,7 +8,7 @@ import { Session } from "./Session";
 export class User extends Model {
   public email!: string; // PK
   public fiscalCode!: string;
-  public firstName!: string;
+  public givenName!: string;
   public familyName!: string;
   public phoneNumber!: string | null;
   public role!: UserRoleEnum;
@@ -43,11 +43,11 @@ export function init(): void {
         allowNull: false,
         type: new DataTypes.STRING()
       },
-      firstName: {
+      fiscalCode: {
         allowNull: false,
         type: new DataTypes.STRING()
       },
-      fiscalCode: {
+      givenName: {
         allowNull: false,
         type: new DataTypes.STRING()
       },
