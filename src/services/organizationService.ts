@@ -124,6 +124,7 @@ function mergePublicAdministrationsAndOrganizations(
           ...results,
           {
             ...currentOrganization,
+            pecs: currentPublicAdministration.pecs,
             selectedPecLabel: Object.keys(
               currentPublicAdministration.pecs
             ).find(
