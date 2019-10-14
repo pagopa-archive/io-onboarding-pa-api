@@ -52,7 +52,6 @@
     "dotenv": "^6.1.0",
     "event-stream": "^4.0.1",
     "express": "^4.17.1",
-    "express-validator": "^6.1.0",
     "fp-ts": "1.12.0",
     "io-spid-commons": "https://github.com/teamdigitale/io-spid-commons#v0.0.3",
     "io-ts": "1.8.5",
