@@ -5,17 +5,47 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorValidation,
+  IResponseSuccessJson,
   IResponseSuccessRedirectToResource,
-  ResponseErrorForbiddenNotAuthorized
+  ResponseErrorForbiddenNotAuthorized,
+  ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
+import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
+import { FoundAdministration } from "../generated/FoundAdministration";
 import { Organization } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { UserRoleEnum } from "../generated/UserRole";
-import { registerOrganization } from "../services/organizationService";
+import {
+  findPublicAdministrationsByName,
+  registerOrganization
+} from "../services/organizationService";
 import { withUserFromRequest } from "../types/user";
-import { withValidatedOrValidationError } from "../utils/responses";
+import {
+  withCatchAsInternalError,
+  withValidatedOrValidationError
+} from "../utils/responses";
 
 export default class OrganizationController {
+  public async findPublicAdministration(
+    req: Request
+  ): Promise<
+    | IResponseErrorValidation
+    | IResponseErrorInternal
+    | IResponseSuccessJson<ReadonlyArray<FoundAdministration>>
+  > {
+    return withValidatedOrValidationError(
+      AdministrationSearchParam.decode(req.query.search),
+      searchParam =>
+        withCatchAsInternalError(
+          async () =>
+            ResponseSuccessJson(
+              await findPublicAdministrationsByName(searchParam)
+            ),
+          "Internal message error"
+        )
+    );
+  }
+
   public registerOrganization(
     req: Request
   ): Promise<

@@ -155,8 +155,7 @@ paths:
             **Public administration name**.
             The API responds with a list of results that match the searching words.
           schema:
-            type: string
-            example: comune gioiosa
+            $ref: "#/components/schemas/AdministrationSearchParam"
       responses:
         <<: *common-responses
         200:
@@ -306,7 +305,10 @@ components:
         - rel: self
           href: https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e956
           description: Agency URL
-
+    AdministrationSearchParam:
+      type: string
+      pattern: ^[0-9A-Za-z ]{3,}$
+      example: comune gioiosa
     FoundAdministration:
       oneOf:
         - $ref: '#/components/schemas/FoundNotRegisteredAdministration'
