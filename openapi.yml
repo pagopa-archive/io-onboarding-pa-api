@@ -514,8 +514,7 @@ components:
         fiscal_code:
           $ref: "#/components/schemas/OrganizationFiscalCode"
         ipa_code:
-          type: string
-          minLength: 1
+          <<: *non-empty-string
         legal_representative:
           $ref: "#/components/schemas/LegalRepresentative"
         links:
@@ -553,22 +552,18 @@ components:
       type: object
       properties:
         ipa_code:
-          type: string
-          minLength: 1
+          <<: *non-empty-string
         legal_representative:
           type: object
           properties:
             family_name:
-              type: string
-              minLength: 1
+              <<: *non-empty-string
             given_name:
-              type: string
-              minLength: 1
+              <<: *non-empty-string
             fiscal_code:
               $ref: "#/components/schemas/FiscalCode"
             phone_number:
-              type: string
-              minLength: 1
+              <<: *non-empty-string
           required:
             - family_name
             - given_name
