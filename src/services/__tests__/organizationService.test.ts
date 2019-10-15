@@ -118,15 +118,15 @@ describe("OrganizationService", () => {
     };
 
     const validNewOrganizationParams: OrganizationRegistrationParams = {
-      ipaCode: "generic_code" as NonEmptyString,
-      legalRepresentative: {
-        familyName: "Rossi" as NonEmptyString,
-        fiscalCode: "RSSLRT84S20G377O" as FiscalCode,
-        givenName: "Alberto" as NonEmptyString,
-        phoneNumber: "3330000000" as NonEmptyString
+      ipa_code: "generic_code" as NonEmptyString,
+      legal_representative: {
+        family_name: "Rossi" as NonEmptyString,
+        fiscal_code: "RSSLRT84S20G377O" as FiscalCode,
+        given_name: "Alberto" as NonEmptyString,
+        phone_number: "3330000000" as NonEmptyString
       },
       scope: OrganizationScopeEnum.LOCAL,
-      selectedPecLabel: "1" as NonEmptyString
+      selected_pec_label: "1" as NonEmptyString
     };
 
     describe("when the public administration is valid", () => {
@@ -154,25 +154,25 @@ describe("OrganizationService", () => {
       });
 
       it("should return a success response containing the new organization", async () => {
-        const newOrganizationParams = {
+        const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
-          ipaCode: ipaCodeOfValidPublicAdministration
+          ipa_code: ipaCodeOfValidPublicAdministration
         };
         const expectedResult: Organization = {
-          fiscalCode: validPublicAdministrationAttributes.Cf as OrganizationFiscalCode,
-          ipaCode: ipaCodeOfValidPublicAdministration,
-          legalRepresentative: {
-            ...newOrganizationParams.legalRepresentative,
+          fiscal_code: validPublicAdministrationAttributes.Cf as OrganizationFiscalCode,
+          ipa_code: ipaCodeOfValidPublicAdministration,
+          legal_representative: {
+            ...newOrganizationParams.legal_representative,
             email: validPublicAdministrationAttributes.mail1 as EmailAddress,
             role: UserRoleEnum.ORG_MANAGER
           },
           links: [
             {
-              href: `/organizations/${newOrganizationParams.ipaCode}`,
+              href: `/organizations/${newOrganizationParams.ipa_code}`,
               rel: "self"
             },
             {
-              href: `/organizations/${newOrganizationParams.ipaCode}`,
+              href: `/organizations/${newOrganizationParams.ipa_code}`,
               rel: "edit"
             }
           ],
@@ -187,6 +187,7 @@ describe("OrganizationService", () => {
           "IResponseSuccessRedirectToResource"
         );
         expect(result).toHaveProperty("payload", expectedResult);
+        expect(result).toHaveProperty("resource", expectedResult);
       });
     });
 
@@ -194,9 +195,9 @@ describe("OrganizationService", () => {
       const ipaCodeOfNotExistingPublicAdministration = "not_existing_public_administration" as NonEmptyString;
 
       it("should return a not found error response", async () => {
-        const newOrganizationParams = {
+        const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
-          ipaCode: ipaCodeOfNotExistingPublicAdministration
+          ipa_code: ipaCodeOfNotExistingPublicAdministration
         };
         const result = await registerOrganization(newOrganizationParams, user);
         expect(result).not.toBeNull();
@@ -222,9 +223,9 @@ describe("OrganizationService", () => {
         })
       );
       it("should return an internal error response", async () => {
-        const newOrganizationParams = {
+        const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
-          ipaCode: ipaCodeOfInvalidPublicAdministration
+          ipa_code: ipaCodeOfInvalidPublicAdministration
         };
         const result = await registerOrganization(newOrganizationParams, user);
         expect(result).not.toBeNull();
@@ -260,9 +261,9 @@ describe("OrganizationService", () => {
         });
       });
       it("should return an internal error response", async () => {
-        const newOrganizationParams = {
+        const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
-          ipaCode: ipaCodeOfRegisteredPublicAdministration
+          ipa_code: ipaCodeOfRegisteredPublicAdministration
         };
         const result = await registerOrganization(newOrganizationParams, user);
         expect(result).not.toBeNull();

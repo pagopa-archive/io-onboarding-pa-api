@@ -26,7 +26,7 @@ const mockedLoggedUser: LoggedUser = {
   session: {} as NotClosedSession
 } as LoggedUser;
 
-const mockedUserAttributes: UserProfile = {
+const mockedUserAttributes = {
   email: anEmail,
   familyName: aFamilyName,
   fiscalCode: aFiscalCode,
@@ -85,8 +85,12 @@ describe("Profile service", () => {
   describe("#getProfile()", () => {
     it("should return a success response with the user profile if the user is a valid object", async () => {
       const result = await profileService.getProfile(mockedLoggedUser);
-      const expectedResponseBody = t.exact(UserProfile).decode(mockedLoggedUser)
-        .value;
+      const expectedResponseBody = t.exact(UserProfile).decode({
+        ...mockedLoggedUser,
+        family_name: mockedLoggedUser.familyName,
+        fiscal_code: mockedLoggedUser.fiscalCode,
+        given_name: mockedLoggedUser.givenName
+      }).value;
       expect(result).not.toBeNull();
       expect(result).toHaveProperty("kind", "IResponseSuccessJson");
       expect(result).toHaveProperty("value", expectedResponseBody);
@@ -99,14 +103,18 @@ describe("Profile service", () => {
         mockedLoggedUser,
         newEmail
       );
+      const expectedResponseBody = t.exact(UserProfile).decode({
+        ...mockedLoggedUser,
+        family_name: mockedLoggedUser.familyName,
+        fiscal_code: mockedLoggedUser.fiscalCode,
+        given_name: mockedLoggedUser.givenName,
+        work_email: newEmail
+      }).value;
       expect(result).not.toBeNull();
       expect(result).toEqual({
         apply: expect.any(Function),
         kind: "IResponseSuccessJson",
-        value: {
-          ...mockedUserAttributes,
-          workEmail: newEmail
-        }
+        value: expectedResponseBody
       });
     });
 

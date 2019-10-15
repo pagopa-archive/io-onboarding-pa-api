@@ -8,13 +8,13 @@ export function fromOrganizationModelToFoundAdministration(
   organizationModel: OrganizationModel
 ): FoundRegisteredAdministration {
   return FoundRegisteredAdministration.decode({
-    fiscalCode: organizationModel.fiscalCode,
-    ipaCode: organizationModel.ipaCode,
-    legalRepresentative: {
-      familyName: organizationModel.legalRepresentative.familyName,
-      fiscalCode: organizationModel.legalRepresentative.fiscalCode,
-      givenName: organizationModel.legalRepresentative.givenName,
-      phoneNumber: organizationModel.legalRepresentative.phoneNumber
+    fiscal_code: organizationModel.fiscalCode,
+    ipa_code: organizationModel.ipaCode,
+    legal_representative: {
+      family_name: organizationModel.legalRepresentative.familyName,
+      fiscal_code: organizationModel.legalRepresentative.fiscalCode,
+      given_name: organizationModel.legalRepresentative.givenName,
+      phone_number: organizationModel.legalRepresentative.phoneNumber
     },
     links: [
       {
@@ -29,7 +29,7 @@ export function fromOrganizationModelToFoundAdministration(
     name: organizationModel.name,
     pecs: { "1": organizationModel.pec },
     scope: organizationModel.scope,
-    selectedPecLabel: "1"
+    selected_pec_label: "1"
   }).fold(
     errors => {
       throw new Error(errorsToReadableMessages(errors).join(" / "));
@@ -57,11 +57,11 @@ export function fromPublicAdministrationToFoundAdministration(
       {}
     );
   return FoundNotRegisteredAdministration.decode({
-    fiscalCode: pa.Cf,
-    ipaCode: pa.cod_amm,
-    legalRepresentative: {
-      familyName: pa.cogn_resp,
-      givenName: pa.nome_resp
+    fiscal_code: pa.Cf,
+    ipa_code: pa.cod_amm,
+    legal_representative: {
+      family_name: pa.cogn_resp,
+      given_name: pa.nome_resp
     },
     links: [
       {

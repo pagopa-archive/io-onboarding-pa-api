@@ -45,7 +45,10 @@ export default class SessionStorage {
       if (user === null) {
         return left<Error, LoggedUser>(sessionNotFoundError);
       }
-      const loggedUserOrError = LoggedUser.decode(user.get({ plain: true }));
+      const loggedUserOrError = LoggedUser.decode({
+        ...user.get({ plain: true }),
+        workEmail: user.workEmail ? user.workEmail : undefined
+      });
       return loggedUserOrError.isRight()
         ? right(loggedUserOrError.value)
         : left(new Error("User is not a valid object"));

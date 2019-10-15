@@ -112,13 +112,13 @@ function mergePublicAdministrationsAndOrganizations(
       const organizationsHash = organizations.reduce(
         (hash, currentOrganization) => ({
           ...hash,
-          [currentOrganization.ipaCode]: currentOrganization
+          [currentOrganization.ipa_code]: currentOrganization
         }),
         {} as { [key: string]: FoundAdministration }
       );
-      if (organizationsHash[currentPublicAdministration.ipaCode]) {
+      if (organizationsHash[currentPublicAdministration.ipa_code]) {
         const currentOrganization =
-          organizationsHash[currentPublicAdministration.ipaCode];
+          organizationsHash[currentPublicAdministration.ipa_code];
 
         return [
           ...results,
@@ -162,7 +162,7 @@ export async function registerOrganization(
     // Retrieve the public administration from the database
     const ipaPublicAdministrationModel = await IpaPublicAdministrationModel.findOne(
       {
-        where: { cod_amm: newOrganizationParams.ipaCode }
+        where: { cod_amm: newOrganizationParams.ipa_code }
       }
     );
     if (ipaPublicAdministrationModel === null) {
@@ -182,8 +182,8 @@ export async function registerOrganization(
     const ipaPublicAdministration = errorsOrIpaPublicAdministration.value;
 
     // Check that the selected pec label detects an existing email whose type is pec
-    const emailPropName = `mail${newOrganizationParams.selectedPecLabel}`;
-    const emailTypePropName = `tipo_mail${newOrganizationParams.selectedPecLabel}`;
+    const emailPropName = `mail${newOrganizationParams.selected_pec_label}`;
+    const emailTypePropName = `tipo_mail${newOrganizationParams.selected_pec_label}`;
 
     if (
       !isIpaPublicAdministrationProperty(
@@ -208,8 +208,14 @@ export async function registerOrganization(
             fiscalCode: ipaPublicAdministration.Cf,
             ipaCode: ipaPublicAdministration.cod_amm,
             legalRepresentative: {
-              ...newOrganizationParams.legalRepresentative,
               email: ipaPublicAdministration[emailPropName],
+              familyName:
+                newOrganizationParams.legal_representative.family_name,
+              fiscalCode:
+                newOrganizationParams.legal_representative.fiscal_code,
+              givenName: newOrganizationParams.legal_representative.given_name,
+              phoneNumber:
+                newOrganizationParams.legal_representative.phone_number,
               role: UserRoleEnum.ORG_MANAGER
             },
             name: ipaPublicAdministration.des_amm,
@@ -267,18 +273,26 @@ export async function registerOrganization(
                   );
                 };
                 t.exact(LegalRepresentative)
-                  .decode(
-                    createdOrganization.legalRepresentative.get({ plain: true })
-                  )
+                  .decode({
+                    email: createdOrganization.legalRepresentative.email,
+                    family_name:
+                      createdOrganization.legalRepresentative.familyName,
+                    fiscal_code:
+                      createdOrganization.legalRepresentative.fiscalCode,
+                    given_name:
+                      createdOrganization.legalRepresentative.givenName,
+                    phone_number:
+                      createdOrganization.legalRepresentative.phoneNumber,
+                    role: createdOrganization.legalRepresentative.role
+                  })
                   .fold(validationErrorsHandler, legalRepresentative => {
                     const resourceUrl = `/organizations/${createdOrganization.ipaCode}`;
                     return t
                       .exact(Organization)
                       .decode({
-                        ...createdOrganization.get({
-                          plain: true
-                        }),
-                        legalRepresentative,
+                        fiscal_code: createdOrganization.fiscalCode,
+                        ipa_code: createdOrganization.ipaCode,
+                        legal_representative: legalRepresentative,
                         links: [
                           {
                             href: resourceUrl,
@@ -288,7 +302,10 @@ export async function registerOrganization(
                             href: resourceUrl,
                             rel: "edit"
                           }
-                        ]
+                        ],
+                        name: createdOrganization.name,
+                        pec: createdOrganization.pec,
+                        scope: createdOrganization.scope
                       })
                       .fold(validationErrorsHandler, organization => {
                         resolve(

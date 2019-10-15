@@ -52,7 +52,7 @@ paths:
     get:
       description: Redirects the user to the login page of the chosen SPID IdP.
       parameters:
-        - name: entityID
+        - name: entity_id
           in: query
           required: true
           description: |-
@@ -63,7 +63,7 @@ paths:
             type: string
             x-extensible-enum: ["lepidaid", "infocertid", "sielteid", "namirialid", "timid", "arubaid", "posteid", "intesaid", "spiditalia", "xx_testenv2"]
           example: posteid
-        - name: authLevel
+        - name: auth_level
           in: query
           required: true
           description: "**SPID level**. The security level of SPID authentication."
@@ -134,10 +134,10 @@ paths:
             schema:
               type: object
               properties:
-                workEmail:
+                work_email:
                   $ref: "#/components/schemas/EmailAddress"
               required:
-                - workEmail
+                - work_email
       responses:
         <<: *common-responses
         200:
@@ -210,29 +210,29 @@ components:
       properties:
         email:
           $ref: "#/components/schemas/EmailAddress"
-        familyName:
+        family_name:
           <<: *non-empty-string
-        fiscalCode:
+        fiscal_code:
           $ref: "#/components/schemas/FiscalCode"
-        givenName:
+        given_name:
           <<: *non-empty-string
-        phoneNumber:
+        phone_number:
           <<: *non-empty-string
         role:
           $ref: "#/components/schemas/UserRole"
       required:
         - email
-        - familyName
-        - fiscalCode
-        - givenName
-        - phoneNumber
+        - family_name
+        - fiscal_code
+        - given_name
+        - phone_number
         - role
       example:
         {
-          "familyName": "Spano'",
-          "fiscalCode": "BCDFGH12A21Z123D",
-          "givenName": "Ignazio Alfonso",
-          "phoneNumber": "5550000000",
+          "family_name": "Spano'",
+          "fiscal_code": "BCDFGH12A21Z123D",
+          "given_name": "Ignazio Alfonso",
+          "phone_number": "5550000000",
           "email": "indirizzo00@email.pec.it",
           "role": "ORG_MANAGER"
         }
@@ -241,30 +241,30 @@ components:
       properties:
         email:
           $ref: "#/components/schemas/EmailAddress"
-        familyName:
+        family_name:
           type: string
-        fiscalCode:
+        fiscal_code:
           $ref: "#/components/schemas/FiscalCode"
-        givenName:
+        given_name:
           type: string
         role:
           $ref: "#/components/schemas/UserRole"
-        workEmail:
+        work_email:
           $ref: "#/components/schemas/EmailAddress"
       required:
         - email
-        - familyName
-        - givenName
-        - fiscalCode
+        - family_name
+        - given_name
+        - fiscal_code
         - role
       example:
         {
           email: "example@email.com",
-          familyName: "Rossi",
-          fiscalCode: "RSSMRA80A01H501U",
-          givenName: "Mario",
+          family_name: "Rossi",
+          fiscal_code: "RSSMRA80A01H501U",
+          given_name: "Mario",
           role: "ORG_DELEGATE",
-          workEmail: "work-email@email.com"
+          work_email: "work-email@email.com"
         }
     Link:
       externalDocs:
@@ -311,18 +311,18 @@ components:
     FoundNotRegisteredAdministration:
       type: object
       properties:
-        fiscalCode:
+        fiscal_code:
           $ref: "#/components/schemas/OrganizationFiscalCode"
-        ipaCode:
+        ipa_code:
           type: string
         name:
           type: string
-        legalRepresentative:
+        legal_representative:
           type: object
           properties:
-            familyName:
+            family_name:
               type: string
-            givenName:
+            given_name:
               type: string
           required:
             - familyName
@@ -334,20 +334,20 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/EmailAddress'
       required:
-        - fiscalCode
-        - ipaCode
+        - fiscal_Code
+        - ipa_code
         - name
-        - legalRepresentative
+        - legal_representative
         - link
         - pecs
       example:
         [
         {
-          "fiscalCode": "86000470830",
-          "ipaCode": "c_e043",
-          "legalRepresentative": {
-            "familyName": "Spano'",
-            "givenName": "Ignazio Alfonso"
+          "fiscal_Code": "86000470830",
+          "ipa_code": "c_e043",
+          "legal_representative": {
+            "family_name": "Spano'",
+            "given_name": "Ignazio Alfonso"
           },
           "name": "Comune di Gioiosa Marea",
           "pecs": {
@@ -360,11 +360,11 @@ components:
           }]
         },
         {
-          "fiscalCode": "81000930800",
-          "ipaCode": "c_e044",
-          "legalRepresentative": {
-            "familyName": "ALI'",
-            "givenName": "Gianfranco"
+          "fiscal_code": "81000930800",
+          "ipa_code": "c_e044",
+          "legal_representative": {
+            "family_name": "ALI'",
+            "given_name": "Gianfranco"
           },
           "name": "Comune di Gioiosa Jonica",
           "pecs": {
@@ -379,11 +379,11 @@ components:
           }]
         },
         {
-          "fiscalCode": "00282520808",
-          "ipaCode": "c_e956",
-          "legalRepresentative": {
-            "familyName": "Sergio",
-            "givenName": "Mazzia"
+          "fiscal_code": "00282520808",
+          "ipa_code": "c_e956",
+          "legal_representative": {
+            "family_name": "Sergio",
+            "given_name": "Mazzia"
           },
           "name": "Comune di Marina di Gioiosa Ionica",
           "pecs": {
@@ -399,28 +399,28 @@ components:
     FoundRegisteredAdministration:
       type: object
       properties:
-        fiscalCode:
+        fiscal_code:
           $ref: "#/components/schemas/OrganizationFiscalCode"
-        ipaCode:
+        ipa_code:
           type: string
         name:
           type: string
-        legalRepresentative:
+        legal_representative:
           type: object
           properties:
-            familyName:
+            family_name:
               type: string
-            fiscalCode:
+            fiscal_code:
               $ref: "#/components/schemas/FiscalCode"
-            givenName:
+            given_name:
               type: string
-            phoneNumber:
+            phone_number:
               type: string
           required:
-            - familyName
-            - fiscalCode
-            - givenName
-            - phoneNumber
+            - family_name
+            - fiscal_code
+            - given_name
+            - phone_number
         links:
           $ref: '#/components/schemas/Links'
         pecs:
@@ -432,24 +432,24 @@ components:
         selectedPecLabel:
           type: string
       required:
-        - fiscalCode
-        - ipaCode
+        - fiscal_code
+        - ipa_code
         - name
-        - legalRepresentative
+        - legal_representative
         - link
         - pecs
         - scope
-        - selectedPecLabel
+        - selected_pec_label
       example:
         [
         {
-          "fiscalCode": "86000470830",
-          "ipaCode": "c_e043",
-          "legalRepresentative": {
-            "familyName": "Spano'",
-            "givenName": "Ignazio Alfonso",
-            "fiscalCode": "BCDFGH12A21Z123D",
-            "phoneNumber": "3331111111"
+          "fiscal_code": "86000470830",
+          "ipa_code": "c_e043",
+          "legal_representative": {
+            "family_name": "Spano'",
+            "given_name": "Ignazio Alfonso",
+            "fiscal_code": "BCDFGH12A21Z123D",
+            "phone_number": "3331111111"
           },
           "name": "Comune di Gioiosa Marea",
           "pecs": {
@@ -457,19 +457,19 @@ components:
             "2": "indirizzo01@email.pec.it"
           },
           "scope": "NATIONAL",
-          "selectedPecLabel": "1",
+          "selected_pec_label": "1",
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
           }]
         },
         {
-          "fiscalCode": "81000930800",
-          "ipaCode": "c_e044",
-          "legalRepresentative": {
-            "familyName": "ALI'",
-            "givenName": "Gianfranco",
-            "fiscalCode": "BCDFGH12A21Z123F",
+          "fiscal_code": "81000930800",
+          "ipa_code": "c_e044",
+          "legal_representative": {
+            "family_name": "ALI'",
+            "given_name": "Gianfranco",
+            "fiscal_code": "BCDFGH12A21Z123F",
             "phoneNumber": "3332222222"
           },
           "name": "Comune di Gioiosa Jonica",
@@ -480,20 +480,20 @@ components:
             "4": "indirizzo13@email.pec.it",
           },
           "scope": "LOCAL",
-          "selectedPecLabel": "3",
+          "selected_pec_label": "3",
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
           }]
         },
         {
-          "fiscalCode": "00282520808",
-          "ipaCode": "c_e956",
-          "legalRepresentative": {
-            "familyName": "Sergio",
-            "givenName": "Mazzia",
-            "fiscalCode": "BCDFGH12A21Z123E",
-            "phoneNumber": "3333333333"
+          "fiscal_code": "00282520808",
+          "ipa_code": "c_e956",
+          "legal_representative": {
+            "family_name": "Sergio",
+            "given_name": "Mazzia",
+            "fiscal_code": "BCDFGH12A21Z123E",
+            "phone_number": "3333333333"
           },
           "name": "Comune di Marina di Gioiosa Ionica",
           "pecs": {
@@ -501,7 +501,7 @@ components:
             "2": "indirizzo21@email.pec.it",
           },
           "scope": "LOCAL",
-          "selectedPecLabel": "1",
+          "selected_pec_label": "1",
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e0956"
@@ -511,38 +511,37 @@ components:
     Organization:
       type: object
       properties:
-        fiscalCode:
+        fiscal_code:
           $ref: "#/components/schemas/OrganizationFiscalCode"
-        ipaCode:
+        ipa_code:
           type: string
           minLength: 1
-        legalRepresentative:
+        legal_representative:
           $ref: "#/components/schemas/LegalRepresentative"
         links:
           $ref: "#/components/schemas/Links"
         name:
-          type: string
-          minLength: 1
+          <<: *non-empty-string
         pec:
           $ref: "#/components/schemas/EmailAddress"
         scope:
           $ref: '#/components/schemas/OrganizationScope'
       required:
-        - fiscalCode
-        - ipaCode
+        - fiscal_code
+        - ipa_code
         - links
         - name
         - pec
         - scope
       example:
         {
-          "fiscalCode": "86000470830",
-          "ipaCode": "c_e043",
-          "legalRepresentative": {
-            "familyName": "Spano'",
-            "givenName": "Ignazio Alfonso",
-            "fiscalCode": "BCDFGH12A21Z123D",
-            "phoneNumber": "5550000000",
+          "fiscal_code": "86000470830",
+          "ipa_code": "c_e043",
+          "legal_representative": {
+            "family_name": "Spano'",
+            "given_name": "Ignazio Alfonso",
+            "fiscal_code": "BCDFGH12A21Z123D",
+            "phone_number": "5550000000",
             "email": "indirizzo00@email.pec.it",
             "role": "ORG_MANAGER"
           },
@@ -553,48 +552,48 @@ components:
     OrganizationRegistrationParams:
       type: object
       properties:
-        ipaCode:
+        ipa_code:
           type: string
           minLength: 1
-        legalRepresentative:
+        legal_representative:
           type: object
           properties:
-            familyName:
+            family_name:
               type: string
               minLength: 1
-            givenName:
+            given_name:
               type: string
               minLength: 1
-            fiscalCode:
+            fiscal_code:
               $ref: "#/components/schemas/FiscalCode"
-            phoneNumber:
+            phone_number:
               type: string
               minLength: 1
           required:
-            - familyName
-            - givenName
-            - fiscalCode
-            - phoneNumber
+            - family_name
+            - given_name
+            - fiscal_code
+            - phone_number
         scope:
           $ref: '#/components/schemas/OrganizationScope'
-        selectedPecLabel:
+        selected_pec_label:
           <<: *non-empty-string
       required:
-        - ipaCode
-        - legalRepresentative
+        - ipa_code
+        - legal_representative
         - scope
-        - selectedPecLabel
+        - selected_pec_label
       example:
         {
-          "ipaCode": "c_e043",
-          "legalRepresentative": {
-            "familyName": "Spano'",
-            "givenName": "Ignazio Alfonso",
-            "fiscalCode": "BCDFGH12A21Z123D",
-            "phoneNumber": "3331111111"
+          "ipa_code": "c_e043",
+          "legal_representative": {
+            "family_name": "Spano'",
+            "given_name": "Ignazio Alfonso",
+            "fiscal_code": "BCDFGH12A21Z123D",
+            "phone_number": "3331111111"
           },
           "scope": "NATIONAL",
-          "selectedPecLabel": "1"
+          "selected_pec_label": "1"
         }
   securitySchemes:
     bearerAuth:
