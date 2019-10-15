@@ -45,8 +45,8 @@ const mockedSpidUser: SpidUser = {
 const mockedUserAttributes = {
   email: mockedSpidUser.email,
   familyName: mockedSpidUser.familyName,
-  firstName: mockedSpidUser.name,
   fiscalCode: mockedSpidUser.fiscalNumber,
+  givenName: mockedSpidUser.name,
   role: UserRoleEnum.ORG_DELEGATE
 };
 

@@ -9,12 +9,39 @@ export class OrganizationUser extends Model {
 export function init(): void {
   OrganizationUser.init(
     {
-      userRole: new DataTypes.ENUM(...Object.values(UserRoleEnum))
+      createdAt: {
+        allowNull: false,
+        type: new DataTypes.DATE()
+      },
+      deletedAt: {
+        allowNull: true,
+        type: new DataTypes.DATE()
+      },
+      organizationIpaCode: {
+        allowNull: false,
+        primaryKey: true,
+        type: new DataTypes.STRING()
+      },
+      updatedAt: {
+        allowNull: false,
+        type: new DataTypes.DATE()
+      },
+      userEmail: {
+        allowNull: false,
+        primaryKey: true,
+        type: new DataTypes.STRING()
+      },
+      userRole: {
+        allowNull: false,
+        type: new DataTypes.ENUM(...Object.values(UserRoleEnum))
+      }
     },
     {
       modelName: "OrganizationUser",
+      paranoid: true,
       sequelize,
-      tableName: "OrganizationsUsers"
+      tableName: "OrganizationsUsers",
+      timestamps: true
     }
   );
 }

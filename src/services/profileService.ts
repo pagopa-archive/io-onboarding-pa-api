@@ -28,7 +28,14 @@ export default class ProfileService {
     user: LoggedUser
   ): Promise<IResponseErrorInternal | IResponseSuccessJson<UserProfile>> {
     return withValidatedOrInternalError(
-      t.exact(UserProfile).decode(user),
+      t.exact(UserProfile).decode({
+        email: user.email,
+        family_name: user.familyName,
+        fiscal_code: user.fiscalCode,
+        given_name: user.givenName,
+        role: user.role,
+        work_email: user.workEmail
+      }),
       userProfile => {
         return ResponseSuccessJson(userProfile);
       }
@@ -59,7 +66,14 @@ export default class ProfileService {
       }
       const updatedUser = await userInstance.update({ workEmail });
       return withValidatedOrInternalError(
-        t.exact(UserProfile).decode(updatedUser.get({ plain: true })),
+        t.exact(UserProfile).decode({
+          email: updatedUser.email,
+          family_name: updatedUser.familyName,
+          fiscal_code: updatedUser.fiscalCode,
+          given_name: updatedUser.givenName,
+          role: updatedUser.role,
+          work_email: updatedUser.workEmail ? updatedUser.workEmail : undefined
+        }),
         updatedProfile => {
           return ResponseSuccessJson(updatedProfile);
         }

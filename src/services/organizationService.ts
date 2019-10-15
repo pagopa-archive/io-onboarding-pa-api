@@ -1,13 +1,42 @@
-import { Op, QueryTypes } from "sequelize";
+import { Errors } from "io-ts";
+import * as t from "io-ts";
+import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
+import {
+  IResponseErrorConflict,
+  IResponseErrorInternal,
+  IResponseErrorNotFound,
+  IResponseErrorValidation,
+  IResponseSuccessRedirectToResource,
+  ResponseErrorConflict,
+  ResponseErrorInternal,
+  ResponseErrorNotFound,
+  ResponseErrorValidation,
+  ResponseSuccessRedirectToResource
+} from "italia-ts-commons/lib/responses";
+import { Op, QueryTypes, UniqueConstraintError } from "sequelize";
 import sequelize from "../database/db";
 import { FoundAdministration } from "../generated/FoundAdministration";
-import { IpaPublicAdministration } from "../models/IpaPublicAdministration";
-import { Organization } from "../models/Organization";
+import { LegalRepresentative } from "../generated/LegalRepresentative";
+import { Organization } from "../generated/Organization";
+import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
+import { UserRoleEnum } from "../generated/UserRole";
+import {
+  IpaPublicAdministration,
+  IpaPublicAdministration as IpaPublicAdministrationModel
+} from "../models/IpaPublicAdministration";
+import { Organization as OrganizationModel } from "../models/Organization";
+import { OrganizationUser as OrganizationUserModel } from "../models/OrganizationUser";
 import { User } from "../models/User";
 import {
   fromOrganizationModelToFoundAdministration,
   fromPublicAdministrationToFoundAdministration
 } from "../types/organization";
+import {
+  IpaPublicAdministration as IpaPublicAdministrationType,
+  isIpaPublicAdministrationProperty
+} from "../types/PublicAdministration";
+import { LoggedUser } from "../types/user";
+import { log } from "../utils/logger";
 
 /**
  * Retrieve from the db all the public administrations whose names match the provided value.
@@ -39,7 +68,7 @@ export async function findPublicAdministrationsByName(
       type: QueryTypes.SELECT
     }
   );
-  const organizations = await Organization.findAll({
+  const organizations = await OrganizationModel.findAll({
     include: [
       {
         as: "legalRepresentative",
@@ -83,20 +112,25 @@ function mergePublicAdministrationsAndOrganizations(
       const organizationsHash = organizations.reduce(
         (hash, currentOrganization) => ({
           ...hash,
-          [currentOrganization.ipaCode]: currentOrganization
+          [currentOrganization.ipa_code]: currentOrganization
         }),
         {} as { [key: string]: FoundAdministration }
       );
-      if (organizationsHash[currentPublicAdministration.ipaCode]) {
+      if (organizationsHash[currentPublicAdministration.ipa_code]) {
         const currentOrganization =
-          organizationsHash[currentPublicAdministration.ipaCode];
+          organizationsHash[currentPublicAdministration.ipa_code];
 
         return [
           ...results,
           {
             ...currentOrganization,
-            selectedPecIndex: currentPublicAdministration.pecs.indexOf(
-              currentOrganization.pecs[0]
+            pecs: currentPublicAdministration.pecs,
+            selectedPecLabel: Object.keys(
+              currentPublicAdministration.pecs
+            ).find(
+              labels =>
+                currentPublicAdministration.pecs[labels] ===
+                currentOrganization.pecs["1"]
             )
           }
         ];
@@ -105,4 +139,199 @@ function mergePublicAdministrationsAndOrganizations(
     },
     [] as ReadonlyArray<FoundAdministration>
   );
+}
+
+/**
+ * Creates a new organization associated with its legal representative
+ * and returns it in a success response.
+ * @param newOrganizationParams The parameters required to create the organization
+ */
+export async function registerOrganization(
+  newOrganizationParams: OrganizationRegistrationParams,
+  user: LoggedUser
+): Promise<
+  // tslint:disable-next-line:max-union-size
+  | IResponseErrorInternal
+  | IResponseErrorConflict
+  | IResponseErrorNotFound
+  | IResponseErrorValidation
+  | IResponseSuccessRedirectToResource<Organization, Organization>
+> {
+  const genericError = "Error creating the new organization";
+  try {
+    // Retrieve the public administration from the database
+    const ipaPublicAdministrationModel = await IpaPublicAdministrationModel.findOne(
+      {
+        where: { cod_amm: newOrganizationParams.ipa_code }
+      }
+    );
+    if (ipaPublicAdministrationModel === null) {
+      return ResponseErrorNotFound(
+        "Not found",
+        "IPA public administration does not exist"
+      );
+    }
+    const errorsOrIpaPublicAdministration = IpaPublicAdministrationType.decode(
+      ipaPublicAdministrationModel.get({
+        plain: true
+      })
+    );
+    if (errorsOrIpaPublicAdministration.isLeft()) {
+      return ResponseErrorInternal("Invalid IPA public administration data");
+    }
+    const ipaPublicAdministration = errorsOrIpaPublicAdministration.value;
+
+    // Check that the selected pec label detects an existing email whose type is pec
+    const emailPropName = `mail${newOrganizationParams.selected_pec_label}`;
+    const emailTypePropName = `tipo_mail${newOrganizationParams.selected_pec_label}`;
+
+    if (
+      !isIpaPublicAdministrationProperty(
+        emailPropName,
+        ipaPublicAdministration
+      ) ||
+      !isIpaPublicAdministrationProperty(
+        emailTypePropName,
+        ipaPublicAdministration
+      ) ||
+      ipaPublicAdministration[emailTypePropName] !== "pec"
+    ) {
+      return ResponseErrorValidation("Bad request", "Invalid selectedPecLabel");
+    }
+
+    // Transactionally save the entities into the database
+    return sequelize
+      .transaction(transaction =>
+        // Create the new organization with its associated legal representative
+        OrganizationModel.create(
+          {
+            fiscalCode: ipaPublicAdministration.Cf,
+            ipaCode: ipaPublicAdministration.cod_amm,
+            legalRepresentative: {
+              email: ipaPublicAdministration[emailPropName],
+              familyName:
+                newOrganizationParams.legal_representative.family_name,
+              fiscalCode:
+                newOrganizationParams.legal_representative.fiscal_code,
+              givenName: newOrganizationParams.legal_representative.given_name,
+              phoneNumber:
+                newOrganizationParams.legal_representative.phone_number,
+              role: UserRoleEnum.ORG_MANAGER
+            },
+            name: ipaPublicAdministration.des_amm,
+            pec: ipaPublicAdministration[emailPropName],
+            scope: newOrganizationParams.scope
+          },
+          {
+            include: [
+              {
+                as: "legalRepresentative",
+                model: User
+              }
+            ],
+            transaction
+          }
+        ).then(createdOrganization => {
+          const now = Date.now();
+          // Associate the legal representative to the organization as a user
+          return createdOrganization
+            .addUser(createdOrganization.legalRepresentative, {
+              through: {
+                createdAt: now,
+                organizationIpaCode: createdOrganization.ipaCode,
+                updatedAt: now,
+                userEmail: createdOrganization.legalRepresentative.email,
+                userRole: UserRoleEnum.ORG_MANAGER
+              },
+              transaction
+            })
+            .then(() =>
+              // Associate the delegate to the organization as a user
+              OrganizationUserModel.create(
+                {
+                  createdAt: now,
+                  organizationIpaCode: createdOrganization.ipaCode,
+                  updatedAt: now,
+                  userEmail: user.email,
+                  userRole: UserRoleEnum.ORG_DELEGATE
+                },
+                {
+                  transaction
+                }
+              )
+            )
+            .then(() => {
+              return new Promise<
+                | IResponseSuccessRedirectToResource<Organization, Organization>
+                | IResponseErrorInternal
+              >(resolve => {
+                const validationErrorsHandler = (errors: Errors) => {
+                  resolve(
+                    ResponseErrorInternal(
+                      errorsToReadableMessages(errors).join("/")
+                    )
+                  );
+                };
+                t.exact(LegalRepresentative)
+                  .decode({
+                    email: createdOrganization.legalRepresentative.email,
+                    family_name:
+                      createdOrganization.legalRepresentative.familyName,
+                    fiscal_code:
+                      createdOrganization.legalRepresentative.fiscalCode,
+                    given_name:
+                      createdOrganization.legalRepresentative.givenName,
+                    phone_number:
+                      createdOrganization.legalRepresentative.phoneNumber,
+                    role: createdOrganization.legalRepresentative.role
+                  })
+                  .fold(validationErrorsHandler, legalRepresentative => {
+                    const resourceUrl = `/organizations/${createdOrganization.ipaCode}`;
+                    return t
+                      .exact(Organization)
+                      .decode({
+                        fiscal_code: createdOrganization.fiscalCode,
+                        ipa_code: createdOrganization.ipaCode,
+                        legal_representative: legalRepresentative,
+                        links: [
+                          {
+                            href: resourceUrl,
+                            rel: "self"
+                          },
+                          {
+                            href: resourceUrl,
+                            rel: "edit"
+                          }
+                        ],
+                        name: createdOrganization.name,
+                        pec: createdOrganization.pec,
+                        scope: createdOrganization.scope
+                      })
+                      .fold(validationErrorsHandler, organization => {
+                        resolve(
+                          ResponseSuccessRedirectToResource(
+                            organization,
+                            resourceUrl,
+                            organization
+                          )
+                        );
+                      });
+                  });
+              });
+            });
+        })
+      )
+      .catch(error => {
+        log.error(`${genericError} %s`, error);
+        if (error instanceof UniqueConstraintError) {
+          return ResponseErrorConflict(
+            "The organization is already registered"
+          );
+        }
+        return ResponseErrorInternal(genericError);
+      });
+  } catch (error) {
+    log.error(`${genericError} %s`, error);
+    return ResponseErrorInternal(genericError);
+  }
 }

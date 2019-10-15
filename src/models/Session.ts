@@ -25,7 +25,7 @@ export function init(): void {
       userEmail: {
         references: {
           key: "email",
-          model: "User"
+          model: User
         },
         type: new DataTypes.STRING()
       }

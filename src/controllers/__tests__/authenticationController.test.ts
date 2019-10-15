@@ -30,8 +30,8 @@ const mockedLoggedUser: LoggedUser = {
   createdAt: new Date(aTimestamp),
   email: aValidEmailAddress,
   familyName: "Garibaldi",
-  firstName: "Giuseppe",
   fiscalCode: aValidFiscalCode,
+  givenName: "Giuseppe",
   role: UserRoleEnum.ORG_DELEGATE,
   session: {
     createdAt: new Date(aTimestamp),

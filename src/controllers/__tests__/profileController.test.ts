@@ -24,8 +24,8 @@ const mockedLoggedUser: LoggedUser = {
   createdAt: new Date(1518010929530),
   email: aValidEmailAddress,
   familyName: aValidSurname,
-  firstName: aValidName,
   fiscalCode: aValidFiscalCode,
+  givenName: aValidName,
   role: UserRoleEnum.ORG_DELEGATE,
   session: {
     createdAt: new Date(aTimestamp),
@@ -58,16 +58,18 @@ beforeEach(() => {
 describe("ProfileController", () => {
   describe("#getProfile()", () => {
     it("should return a successful response with the user profile if the request is valid", async () => {
-      const newWorkEmail = "new-work@email.net" as EmailString;
-      const mockedUserProfile = t.exact(UserProfile).decode(mockedLoggedUser)
-        .value;
+      const mockedUserProfile = t.exact(UserProfile).decode({
+        ...mockedLoggedUser,
+        family_name: mockedLoggedUser.familyName,
+        fiscal_code: mockedLoggedUser.fiscalCode,
+        given_name: mockedLoggedUser.givenName
+      }).value;
       mockGetProfile.mockReturnValue(
         Promise.resolve(ResponseSuccessJson(mockedUserProfile))
       );
 
       const req = mockReq();
       req.user = mockedLoggedUser;
-      req.body = { workEmail: newWorkEmail };
 
       const response = await controller.getProfile(req);
 
@@ -84,11 +86,11 @@ describe("ProfileController", () => {
       const newWorkEmail = "new-work@email.net" as EmailString;
       const mockedUpdatedProfile = {
         email: mockedLoggedUser.email,
-        familyName: mockedLoggedUser.familyName,
-        firstName: mockedLoggedUser.firstName,
-        fiscalCode: mockedLoggedUser.fiscalCode,
+        family_name: mockedLoggedUser.familyName,
+        fiscal_code: mockedLoggedUser.fiscalCode,
+        given_name: mockedLoggedUser.givenName,
         role: mockedLoggedUser.role,
-        workEmail: newWorkEmail
+        work_email: newWorkEmail
       };
       mockUpdateProfile.mockReturnValue(
         Promise.resolve(ResponseSuccessJson(mockedUpdatedProfile))
@@ -96,7 +98,7 @@ describe("ProfileController", () => {
 
       const req = mockReq();
       req.user = mockedLoggedUser;
-      req.body = { workEmail: newWorkEmail };
+      req.body = { work_email: newWorkEmail };
 
       const response = await controller.editProfile(req);
 
@@ -116,7 +118,7 @@ describe("ProfileController", () => {
 
       const req = mockReq();
       req.user = mockedLoggedUser;
-      req.body = { workEmail: invalidWorkEmail };
+      req.body = { work_email: invalidWorkEmail };
 
       const response = await controller.editProfile(req);
 

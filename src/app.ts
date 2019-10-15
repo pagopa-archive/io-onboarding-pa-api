@@ -1,14 +1,7 @@
 import * as bodyParser from "body-parser";
 import * as cors from "cors";
 import * as express from "express";
-import {
-  Express,
-  NextFunction,
-  Request,
-  RequestHandler,
-  Response
-} from "express";
-import { query, validationResult } from "express-validator";
+import { Express, NextFunction, Request, Response } from "express";
 import { fromNullable } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import {
@@ -35,8 +28,8 @@ import {
 import { log } from "./utils/logger";
 
 import AuthenticationController from "./controllers/authenticationController";
+import OrganizationController from "./controllers/organizationController";
 import ProfileController from "./controllers/profileController";
-import { findPublicAdministrationsByName } from "./services/organizationService";
 import ProfileService from "./services/profileService";
 import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
@@ -157,58 +150,6 @@ export default async function newApp(): Promise<Express> {
   return app;
 }
 
-type AsyncRequestHandler = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => Promise<void>;
-
-/**
- * Adds an error catching logic to an async middleware.
- * It wraps the execution of the middleware in order to intercept the possible thrown error
- * and to forward it to the error handler middleware through the `next()` function.
- *
- * @see: http://expressjs.com/en/guide/error-handling.html#catching-errors
- *
- * @param { AsyncRequestHandler } func The async middleware to add the error catching logic to.
- * @return { AsyncRequestHandler } The async middleware with the error catching logic.
- */
-function asyncHandler(func: AsyncRequestHandler): AsyncRequestHandler {
-  return (req: Request, res: Response, next: NextFunction) =>
-    func(req, res, next).catch(next);
-}
-
-const getPublicAdministrationsHandler: RequestHandler = async (
-  req: Request,
-  res: Response
-) => {
-  const validationErrors = validationResult(req);
-  if (!validationErrors.isEmpty()) {
-    return res.status(400).json(validationErrors.array());
-  }
-  try {
-    const foundPublicAdministrations = await findPublicAdministrationsByName(
-      req.query.search
-    );
-    res.json(
-      foundPublicAdministrations.map(foundPublicAdministration => {
-        return {
-          ...foundPublicAdministration,
-          links: [
-            {
-              href: `/public-administrations/${foundPublicAdministration.ipaCode}`,
-              rel: "self"
-            }
-          ]
-        };
-      })
-    );
-  } catch (error) {
-    log.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
 function registerRoutes(app: Express): void {
   const bearerTokenAuth = passport.authenticate("bearer", { session: false });
 
@@ -226,19 +167,23 @@ function registerRoutes(app: Express): void {
     toExpressHandler(profileController.editProfile, profileController)
   );
 
+  const organizationController = new OrganizationController();
+
+  app.post(
+    "/organizations",
+    bearerTokenAuth,
+    toExpressHandler(
+      organizationController.registerOrganization,
+      organizationController
+    )
+  );
+
   app.get(
     "/public-administrations",
-    [
-      query("search")
-        .not()
-        .isEmpty()
-        .withMessage("a value is required")
-        .isLength({ min: 3 })
-        .withMessage("value must have at least 3 characters")
-        .matches(/^[0-9A-Za-z ]*$/)
-        .withMessage("value can contain only letters, numbers and spaces")
-    ],
-    asyncHandler(getPublicAdministrationsHandler)
+    toExpressHandler(
+      organizationController.findPublicAdministration,
+      organizationController
+    )
   );
 }
 

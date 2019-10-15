@@ -96,8 +96,8 @@ const mockedUser: LoggedUser = {
   createdAt: new Date(),
   email: aValidEmailAddress,
   familyName: "Garibaldi",
-  firstName: "Giuseppe Maria",
   fiscalCode: aValidFiscalNumber,
+  givenName: "Giuseppe Maria",
   role: UserRoleEnum.ORG_DELEGATE,
   session: {
     createdAt: new Date(),

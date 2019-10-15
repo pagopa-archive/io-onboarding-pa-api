@@ -8,7 +8,7 @@ import { LoggedUser } from "../../types/user";
 
 const anEmail = "asd@email.net" as EmailString;
 const aFiscalCode = "AAABBB11C22D333E" as FiscalCode;
-const aFirstName = "Giuseppe";
+const aGivenName = "Giuseppe";
 const aFamilyName = "Garibaldi";
 const emailOfNotExistingUser = "not-existing-user" as EmailString;
 const anEmailThrowingErrorOnFind = "throw_error_on_find" as EmailString;
@@ -20,17 +20,17 @@ const mockedLoggedUser: LoggedUser = {
   createdAt: new Date(),
   email: anEmail,
   familyName: aFamilyName,
-  firstName: aFirstName,
   fiscalCode: aFiscalCode,
+  givenName: aGivenName,
   role: UserRoleEnum.ORG_DELEGATE,
   session: {} as NotClosedSession
 } as LoggedUser;
 
-const mockedUserAttributes: UserProfile = {
+const mockedUserAttributes = {
   email: anEmail,
   familyName: aFamilyName,
-  firstName: aFirstName,
   fiscalCode: aFiscalCode,
+  givenName: aGivenName,
   role: UserRoleEnum.ORG_DELEGATE
 };
 
@@ -85,8 +85,12 @@ describe("Profile service", () => {
   describe("#getProfile()", () => {
     it("should return a success response with the user profile if the user is a valid object", async () => {
       const result = await profileService.getProfile(mockedLoggedUser);
-      const expectedResponseBody = t.exact(UserProfile).decode(mockedLoggedUser)
-        .value;
+      const expectedResponseBody = t.exact(UserProfile).decode({
+        ...mockedLoggedUser,
+        family_name: mockedLoggedUser.familyName,
+        fiscal_code: mockedLoggedUser.fiscalCode,
+        given_name: mockedLoggedUser.givenName
+      }).value;
       expect(result).not.toBeNull();
       expect(result).toHaveProperty("kind", "IResponseSuccessJson");
       expect(result).toHaveProperty("value", expectedResponseBody);
@@ -99,14 +103,18 @@ describe("Profile service", () => {
         mockedLoggedUser,
         newEmail
       );
+      const expectedResponseBody = t.exact(UserProfile).decode({
+        ...mockedLoggedUser,
+        family_name: mockedLoggedUser.familyName,
+        fiscal_code: mockedLoggedUser.fiscalCode,
+        given_name: mockedLoggedUser.givenName,
+        work_email: newEmail
+      }).value;
       expect(result).not.toBeNull();
       expect(result).toEqual({
         apply: expect.any(Function),
         kind: "IResponseSuccessJson",
-        value: {
-          ...mockedUserAttributes,
-          workEmail: newEmail
-        }
+        value: expectedResponseBody
       });
     });
 

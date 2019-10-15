@@ -44,7 +44,7 @@ export default class ProfileController {
   > {
     return withUserFromRequest(req, async user =>
       withValidatedOrValidationError(
-        EmailString.decode(req.body.workEmail),
+        EmailString.decode(req.body.work_email),
         workEmail => this.profileService.updateProfile(user, workEmail)
       )
     );

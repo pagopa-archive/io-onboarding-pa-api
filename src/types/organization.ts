@@ -1,20 +1,20 @@
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { FoundNotRegisteredAdministration } from "../generated/FoundNotRegisteredAdministration";
 import { FoundRegisteredAdministration } from "../generated/FoundRegisteredAdministration";
-import { Organization } from "../models/Organization";
+import { Organization as OrganizationModel } from "../models/Organization";
 import { IIpaPublicAdministration } from "./PublicAdministration";
 
 export function fromOrganizationModelToFoundAdministration(
-  organizationModel: Organization
+  organizationModel: OrganizationModel
 ): FoundRegisteredAdministration {
   return FoundRegisteredAdministration.decode({
-    fiscalCode: organizationModel.fiscalCode,
-    ipaCode: organizationModel.ipaCode,
-    legalRepresentative: {
-      familyName: organizationModel.legalRepresentative.familyName,
-      firstName: organizationModel.legalRepresentative.firstName,
-      fiscalCode: organizationModel.legalRepresentative.fiscalCode,
-      phoneNumber: organizationModel.legalRepresentative.phoneNumber
+    fiscal_code: organizationModel.fiscalCode,
+    ipa_code: organizationModel.ipaCode,
+    legal_representative: {
+      family_name: organizationModel.legalRepresentative.familyName,
+      fiscal_code: organizationModel.legalRepresentative.fiscalCode,
+      given_name: organizationModel.legalRepresentative.givenName,
+      phone_number: organizationModel.legalRepresentative.phoneNumber
     },
     links: [
       {
@@ -27,9 +27,9 @@ export function fromOrganizationModelToFoundAdministration(
       }
     ],
     name: organizationModel.name,
-    pecs: [organizationModel.pec],
+    pecs: { "1": organizationModel.pec },
     scope: organizationModel.scope,
-    selectedPecIndex: 0
+    selected_pec_label: "1"
   }).fold(
     errors => {
       throw new Error(errorsToReadableMessages(errors).join(" / "));
@@ -49,18 +49,28 @@ export function fromPublicAdministrationToFoundAdministration(
     [pa.tipo_mail5, pa.mail5]
   ]
     .filter(([emailType, _]) => emailType === "pec")
-    .map(([_, pec]) => pec);
+    .reduce<{ [label: string]: string }>(
+      (prev, [_, pec], index) => ({
+        ...prev,
+        [String(index + 1)]: pec
+      }),
+      {}
+    );
   return FoundNotRegisteredAdministration.decode({
-    fiscalCode: pa.Cf,
-    ipaCode: pa.cod_amm,
-    legalRepresentative: {
-      familyName: pa.cogn_resp,
-      firstName: pa.nome_resp
+    fiscal_code: pa.Cf,
+    ipa_code: pa.cod_amm,
+    legal_representative: {
+      family_name: pa.cogn_resp,
+      given_name: pa.nome_resp
     },
     links: [
       {
-        href: `/organizations/${pa.cod_amm}`,
+        href: `/public-administrations/${pa.cod_amm}`,
         rel: "self"
+      },
+      {
+        href: "/organizations",
+        rel: "create"
       }
     ],
     name: pa.des_amm,
