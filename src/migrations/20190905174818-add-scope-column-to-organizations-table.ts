@@ -1,10 +1,10 @@
 import { DataTypes, QueryInterface } from "sequelize";
-import { OrganizationScope } from "../generated/OrganizationScope";
+import { OrganizationScopeEnum } from "../generated/OrganizationScope";
 
 export function up(queryInterface: QueryInterface): Promise<void> {
   return queryInterface.addColumn("Organizations", "scope", {
     allowNull: false,
-    type: new DataTypes.ENUM(...Object.values(OrganizationScope))
+    type: new DataTypes.ENUM(...Object.values(OrganizationScopeEnum))
   });
 }
 
