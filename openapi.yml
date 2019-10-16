@@ -325,8 +325,8 @@ components:
             given_name:
               type: string
           required:
-            - familyName
-            - givenName
+            - family_name
+            - given_name
         links:
           $ref: '#/components/schemas/Links'
         pecs:
@@ -334,7 +334,7 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/EmailAddress'
       required:
-        - fiscal_Code
+        - fiscal_code
         - ipa_code
         - name
         - legal_representative
@@ -343,7 +343,7 @@ components:
       example:
         [
         {
-          "fiscal_Code": "86000470830",
+          "fiscal_code": "86000470830",
           "ipa_code": "c_e043",
           "legal_representative": {
             "family_name": "Spano'",
@@ -429,7 +429,7 @@ components:
             $ref: '#/components/schemas/EmailAddress'
         scope:
           $ref: '#/components/schemas/OrganizationScope'
-        selectedPecLabel:
+        selected_pec_label:
           type: string
       required:
         - fiscal_code
@@ -470,7 +470,7 @@ components:
             "family_name": "ALI'",
             "given_name": "Gianfranco",
             "fiscal_code": "BCDFGH12A21Z123F",
-            "phoneNumber": "3332222222"
+            "phone_number": "3332222222"
           },
           "name": "Comune di Gioiosa Jonica",
           "pecs": {
