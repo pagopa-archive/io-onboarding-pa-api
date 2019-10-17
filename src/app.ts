@@ -30,6 +30,7 @@ import { log } from "./utils/logger";
 import AuthenticationController from "./controllers/authenticationController";
 import OrganizationController from "./controllers/organizationController";
 import ProfileController from "./controllers/profileController";
+import EmailService from "./services/emailService";
 import ProfileService from "./services/profileService";
 import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
@@ -153,7 +154,18 @@ export default async function newApp(): Promise<Express> {
 function registerRoutes(app: Express): void {
   const bearerTokenAuth = passport.authenticate("bearer", { session: false });
 
-  const profileController = new ProfileController(new ProfileService());
+  const profileController = new ProfileController(
+    new ProfileService(),
+    new EmailService({
+      auth: {
+        pass: getRequiredEnvVar("EMAIL_PASSWORD"),
+        user: getRequiredEnvVar("EMAIL_USER")
+      },
+      host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
+      port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
+      secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
+    })
+  );
 
   app.get(
     `/profile`,

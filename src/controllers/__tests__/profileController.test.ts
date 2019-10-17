@@ -1,21 +1,28 @@
 import * as t from "io-ts";
 import { ResponseSuccessJson } from "italia-ts-commons/lib/responses";
-import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
+import {
+  EmailString,
+  FiscalCode,
+  NonEmptyString
+} from "italia-ts-commons/lib/strings";
+import * as nodemailer from "nodemailer";
 import mockReq from "../../__mocks__/request";
 import { UserProfile } from "../../generated/UserProfile";
 import { UserRoleEnum } from "../../generated/UserRole";
+import EmailService from "../../services/emailService";
 import ProfileService from "../../services/profileService";
 import { SessionToken } from "../../types/token";
 import { LoggedUser } from "../../types/user";
 import ProfileController from "../profileController";
+import { some } from "fp-ts/lib/Option";
 
 const aTimestamp = 1518010929530;
 const tokenDurationSecs = 60;
 
 const aValidFiscalCode = "GRBGPP87L04L741X" as FiscalCode;
 const aValidEmailAddress = "garibaldi@example.com" as EmailString;
-const aValidName = "Giuseppe Maria";
-const aValidSurname = "Garibaldi";
+const aValidName = "Giuseppe Maria" as NonEmptyString;
+const aValidSurname = "Garibaldi" as NonEmptyString;
 
 const mockSessionToken = "c77de47586c841adbd1a1caeb90dce25dcecebed620488a4f932a6280b10ee99a77b6c494a8a6e6884ccbeb6d3fe736b" as SessionToken;
 
@@ -48,7 +55,24 @@ jest.mock("../../services/profileService", () => ({
   }))
 }));
 
-const controller = new ProfileController(new ProfileService());
+// tslint:disable-next-line:no-let
+let controller: ProfileController;
+
+beforeAll(async () => {
+  const testEmailAccount = await nodemailer.createTestAccount();
+  controller = new ProfileController(
+    new ProfileService(),
+    new EmailService({
+      auth: {
+        pass: testEmailAccount.pass,
+        user: testEmailAccount.user
+      },
+      host: testEmailAccount.smtp.host,
+      port: testEmailAccount.smtp.port,
+      secure: testEmailAccount.smtp.secure
+    })
+  );
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -93,7 +117,7 @@ describe("ProfileController", () => {
         work_email: newWorkEmail
       };
       mockUpdateProfile.mockReturnValue(
-        Promise.resolve(ResponseSuccessJson(mockedUpdatedProfile))
+        Promise.resolve(some(ResponseSuccessJson(mockedUpdatedProfile)))
       );
 
       const req = mockReq();

@@ -2,7 +2,11 @@
 
 import { none, some } from "fp-ts/lib/Option";
 import { SpidLevelEnum } from "io-spid-commons";
-import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
+import {
+  EmailString,
+  FiscalCode,
+  NonEmptyString
+} from "italia-ts-commons/lib/strings";
 
 import mockReq from "../../__mocks__/request";
 import mockRes from "../../__mocks__/response";
@@ -29,9 +33,9 @@ const mockSessionToken = "c77de47586c841adbd1a1caeb90dce25dcecebed620488a4f932a6
 const mockedLoggedUser: LoggedUser = {
   createdAt: new Date(aTimestamp),
   email: aValidEmailAddress,
-  familyName: "Garibaldi",
+  familyName: "Garibaldi" as NonEmptyString,
   fiscalCode: aValidFiscalCode,
-  givenName: "Giuseppe",
+  givenName: "Giuseppe" as NonEmptyString,
   role: UserRoleEnum.ORG_DELEGATE,
   session: {
     createdAt: new Date(aTimestamp),

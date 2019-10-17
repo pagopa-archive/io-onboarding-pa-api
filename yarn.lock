@@ -495,6 +495,13 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.14.1.tgz#8701cd760acc20beba5ffe0b7a1b879f39cb8c41"
   integrity sha512-Rymt08vh1GaW4vYB6QP61/5m/CFLGnFZP++bJpWbiNxceNa6RBipDmb413jvtSf/R1gg5a/jQVl2jY4XVRscEA==
 
+"@types/nodemailer@^6.2.1":
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/@types/nodemailer/-/nodemailer-6.2.1.tgz#8f089bf0ef826f04b9d8dd8750233b04978cb675"
+  integrity sha512-6f46rxxaFwyOW39psPoQiM7jHjL7apDRNT5WPHIuv+TZFv+7sBGSI9J7blIC3/NWff4O9/VSzgoQtO6aPLUdvQ==
+  dependencies:
+    "@types/node" "*"
+
 "@types/passport-http-bearer@^1.0.33":
   version "1.0.33"
   resolved "https://registry.yarnpkg.com/@types/passport-http-bearer/-/passport-http-bearer-1.0.33.tgz#68d6df93db17a2abf58925efbfdeb3b7c2e0fdf5"
@@ -3924,6 +3931,11 @@ node-pre-gyp@^0.12.0:
     rimraf "^2.6.1"
     semver "^5.3.0"
     tar "^4"
+
+nodemailer@^6.3.1:
+  version "6.3.1"
+  resolved "https://registry.yarnpkg.com/nodemailer/-/nodemailer-6.3.1.tgz#2784beebac6b9f014c424c54dbdcc5c4d1221346"
+  integrity sha512-j0BsSyaMlyadEDEypK/F+xlne2K5m6wzPYMXS/yxKI0s7jmT1kBx6GEKRVbZmyYfKOsjkeC/TiMVDJBI/w5gMQ==
 
 nopt@^4.0.1:
   version "4.0.1"
