@@ -181,6 +181,11 @@ components:
         User's fiscal code.
         Its format is defined by the [`FiscalCode`](https://teamdigitale.github.io/io-ts-commons/modules/_strings_.html#fiscalcode)
         constant in [italia-ts-commons](https://teamdigitale.github.io/io-ts-commons) library.
+
+        *NOTE: for historical reasons the labels using this schema are not aligned
+        with the nomenclature defined by the [national ontologies](https://w3id.org/italia).
+        They will be replaced with the correct label
+        of [`tax_code`](https://ontopia-lodview.prod.pdnd.italia.it/onto/CPV/taxCode) at some point in time.*
       format: FiscalCode
       x-import: italia-ts-commons/lib/strings
       example: SPNDNL80R13C555X
@@ -190,6 +195,11 @@ components:
         Organization's fiscal code.
         Its format is defined by the [`OrganizationFiscalCode`](https://teamdigitale.github.io/io-ts-commons/modules/_strings_.html#organizationfiscalcode)
         constant in [italia-ts-commons](https://teamdigitale.github.io/io-ts-commons) library.
+
+        *NOTE: for historical reasons the labels using this schema are not aligned
+        with the nomenclature defined by the [national ontologies](https://w3id.org/italia).
+        They will be replaced with the correct label
+        of [`tax_code`](https://ontopia-lodview.prod.pdnd.italia.it/onto/COV/taxCode) at some point in time.*
       format: OrganizationFiscalCode
       x-import: italia-ts-commons/lib/strings
       example: 01234567890
