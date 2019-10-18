@@ -56,14 +56,6 @@ export default class ProfileController {
             user,
             workEmail
           );
-          log.info(
-            "errorResponseOrSuccessResponse: %s",
-            JSON.stringify(errorResponseOrSuccessResponse, null, 4)
-          );
-          log.info(
-            "typeof errorResponseOrSuccessResponse: %s",
-            typeof errorResponseOrSuccessResponse
-          );
           return errorResponseOrSuccessResponse.map(response => {
             const emailText = `Ciao ${user.givenName},
 la tua email di lavoro è stata modificata con successo, da questo momento riceverai le comunicazioni al nuovo indirizzo da te scelto.`;
