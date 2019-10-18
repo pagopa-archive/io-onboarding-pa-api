@@ -9,6 +9,7 @@ export interface ITransporterOptions {
   host: string;
   port: number;
   secure: boolean;
+  from: string;
 }
 
 interface ITransporter {
@@ -20,7 +21,6 @@ interface ITransporter {
 export interface IMailOptions {
   // tslint:disable-next-line:readonly-array
   attachments?: Array<{ path: string; cid?: string }>;
-  from: string;
   html: string;
   subject: string;
   text: string;

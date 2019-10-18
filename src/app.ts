@@ -82,6 +82,7 @@ const emailService = new EmailService({
     pass: getRequiredEnvVar("EMAIL_PASSWORD"),
     user: getRequiredEnvVar("EMAIL_USER")
   },
+  from: getRequiredEnvVar("EMAIL_SENDER"),
   host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
   port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
   secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"

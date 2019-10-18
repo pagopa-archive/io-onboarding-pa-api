@@ -11,7 +11,6 @@ import ProfileService from "../services/profileService";
 
 import { UserProfile } from "../generated/UserProfile";
 import { withUserFromRequest } from "../types/user";
-import { getRequiredEnvVar } from "../utils/environment";
 import { log } from "../utils/logger";
 import { withValidatedOrValidationError } from "../utils/responses";
 
@@ -62,7 +61,6 @@ la tua email di lavoro è stata modificata con successo, da questo momento ricev
             // tslint:disable-next-line:no-floating-promises
             this.emailService
               .send({
-                from: getRequiredEnvVar("EMAIL_SENDER"),
                 html: emailText,
                 subject: "Modifica dell'email di lavoro",
                 text: emailText,
