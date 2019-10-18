@@ -167,9 +167,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FoundAdministration'
+                $ref: '#/components/schemas/AdministrationSearchResult'
 components:
   schemas:
     EmailAddress:
@@ -314,6 +312,15 @@ components:
       type: string
       pattern: ^[0-9A-Za-z ]{3,}$
       example: comune gioiosa
+    AdministrationSearchResult:
+      type: object
+      properties:
+        administrations:
+          type: array
+          items:
+            $ref: '#/components/schemas/FoundAdministration'
+      required:
+        - administrations
     FoundAdministration:
       oneOf:
         - $ref: '#/components/schemas/FoundNotRegisteredAdministration'
