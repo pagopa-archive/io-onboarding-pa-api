@@ -67,6 +67,7 @@ beforeAll(async () => {
         pass: testEmailAccount.pass,
         user: testEmailAccount.user
       },
+      from: "sender@email.com",
       host: testEmailAccount.smtp.host,
       port: testEmailAccount.smtp.port,
       secure: testEmailAccount.smtp.secure
