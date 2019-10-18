@@ -10,6 +10,7 @@ import EmailService from "../services/emailService";
 import ProfileService from "../services/profileService";
 
 import { UserProfile } from "../generated/UserProfile";
+import localeIt from "../locales/it";
 import { withUserFromRequest } from "../types/user";
 import { log } from "../utils/logger";
 import { withValidatedOrValidationError } from "../utils/responses";
@@ -56,13 +57,17 @@ export default class ProfileController {
             workEmail
           );
           return errorResponseOrSuccessResponse.map(response => {
-            const emailText = `Ciao ${user.givenName},
-la tua email di lavoro è stata modificata con successo, da questo momento riceverai le comunicazioni al nuovo indirizzo da te scelto.`;
+            const emailText = localeIt.profileController.editProfile.notificationEmail.content.replace(
+              "%s",
+              user.givenName
+            );
             // tslint:disable-next-line:no-floating-promises
             this.emailService
               .send({
                 html: emailText,
-                subject: "Modifica dell'email di lavoro",
+                subject:
+                  localeIt.profileController.editProfile.notificationEmail
+                    .subject,
                 text: emailText,
                 to: workEmail
               })
