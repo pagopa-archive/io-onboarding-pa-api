@@ -1,6 +1,5 @@
 import { none, Option, some } from "fp-ts/lib/Option";
 import * as nodemailer from "nodemailer";
-import { log } from "../utils/logger";
 
 export interface ITransporterOptions {
   auth: {
@@ -32,10 +31,6 @@ export default class EmailService {
   private transporter: ITransporter;
   public constructor(transporterConfig: ITransporterOptions) {
     this.transporter = nodemailer.createTransport(transporterConfig);
-    this.transporter
-      .verify()
-      .then(() => log.info("SMTP server is ready to accept messages"))
-      .catch(error => log.error("Error on SMTP transport creation. %s", error));
   }
 
   public send(mailOptions: IMailOptions): Promise<Option<Error>> {
@@ -43,5 +38,9 @@ export default class EmailService {
       .sendMail(mailOptions)
       .then(() => none)
       .catch(some);
+  }
+
+  public verifyTransport(): Promise<true> {
+    return this.transporter.verify();
   }
 }

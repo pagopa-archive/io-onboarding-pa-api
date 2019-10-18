@@ -77,6 +77,21 @@ const TOKEN_DURATION_IN_SECONDS = Number(
   getRequiredEnvVar("TOKEN_DURATION_IN_SECONDS")
 );
 
+const emailService = new EmailService({
+  auth: {
+    pass: getRequiredEnvVar("EMAIL_PASSWORD"),
+    user: getRequiredEnvVar("EMAIL_USER")
+  },
+  host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
+  port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
+  secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
+});
+
+emailService
+  .verifyTransport()
+  .then(() => log.info("SMTP server is ready to accept messages"))
+  .catch(error => log.error("Error on SMTP transport creation. %s", error));
+
 export default async function newApp(): Promise<Express> {
   // Create Express server
   const app = express();
@@ -94,7 +109,7 @@ export default async function newApp(): Promise<Express> {
   passport.use(bearerTokenStrategy());
   app.use(passport.initialize());
 
-  registerRoutes(app);
+  registerRoutes(app, emailService);
 
   try {
     const spidPassport = new SpidPassportBuilder(app, "/login", "/metadata", {
@@ -151,20 +166,15 @@ export default async function newApp(): Promise<Express> {
   return app;
 }
 
-function registerRoutes(app: Express): void {
+function registerRoutes(
+  app: Express,
+  emailServiceInstance: EmailService
+): void {
   const bearerTokenAuth = passport.authenticate("bearer", { session: false });
 
   const profileController = new ProfileController(
     new ProfileService(),
-    new EmailService({
-      auth: {
-        pass: getRequiredEnvVar("EMAIL_PASSWORD"),
-        user: getRequiredEnvVar("EMAIL_USER")
-      },
-      host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
-      port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
-      secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
-    })
+    emailServiceInstance
   );
 
   app.get(
