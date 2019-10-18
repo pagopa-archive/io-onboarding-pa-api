@@ -29,6 +29,7 @@
     "@types/node": "10.14.1",
     "@types/node-cron": "^2.0.2",
     "@types/node-fetch": "^2.5.0",
+    "@types/nodemailer": "^6.2.1",
     "@types/passport": "^0.4.0",
     "@types/passport-http-bearer": "^1.0.33",
     "@types/pg": "^7.4.14",
@@ -47,7 +48,6 @@
     "typescript": "^3.5.0"
   },
   "dependencies": {
-    "@types/nodemailer": "^6.2.1",
     "cors": "^2.8.5",
     "csv-stream": "^0.2.0",
     "dotenv": "^6.1.0",
