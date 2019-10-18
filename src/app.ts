@@ -90,7 +90,10 @@ const emailService = new EmailService({
 emailService
   .verifyTransport()
   .then(() => log.info("SMTP server is ready to accept messages"))
-  .catch(error => log.error("Error on SMTP transport creation. %s", error));
+  .catch(error => {
+    log.error("Error on SMTP transport creation. %s", error);
+    process.exit(1);
+  });
 
 export default async function newApp(): Promise<Express> {
   // Create Express server
