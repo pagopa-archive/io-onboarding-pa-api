@@ -11,7 +11,7 @@ import {
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
-import { FoundAdministration } from "../generated/FoundAdministration";
+import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
 import { Organization } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { UserRoleEnum } from "../generated/UserRole";
@@ -31,16 +31,18 @@ export default class OrganizationController {
   ): Promise<
     | IResponseErrorValidation
     | IResponseErrorInternal
-    | IResponseSuccessJson<ReadonlyArray<FoundAdministration>>
+    | IResponseSuccessJson<AdministrationSearchResult>
   > {
     return withValidatedOrValidationError(
       AdministrationSearchParam.decode(req.query.search),
       searchParam =>
         withCatchAsInternalError(
           async () =>
-            ResponseSuccessJson(
-              await findPublicAdministrationsByName(searchParam)
-            ),
+            ResponseSuccessJson({
+              administrations: await findPublicAdministrationsByName(
+                searchParam
+              )
+            }),
           "Internal message error"
         )
     );
