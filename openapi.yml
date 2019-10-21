@@ -474,7 +474,7 @@ components:
             "2": "indirizzo01@email.pec.it"
           },
           "scope": "NATIONAL",
-          "selected_pec_label": "1",
+          "selected_pec_label": "2",
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e043"
