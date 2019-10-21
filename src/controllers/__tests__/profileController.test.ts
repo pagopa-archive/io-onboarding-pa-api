@@ -1,5 +1,10 @@
+import { left, right } from "fp-ts/lib/Either";
+import { none, some } from "fp-ts/lib/Option";
 import * as t from "io-ts";
-import { ResponseSuccessJson } from "italia-ts-commons/lib/responses";
+import {
+  ResponseErrorInternal,
+  ResponseSuccessJson
+} from "italia-ts-commons/lib/responses";
 import {
   EmailString,
   FiscalCode,
@@ -14,7 +19,6 @@ import ProfileService from "../../services/profileService";
 import { SessionToken } from "../../types/token";
 import { LoggedUser } from "../../types/user";
 import ProfileController from "../profileController";
-import { some } from "fp-ts/lib/Option";
 
 const aTimestamp = 1518010929530;
 const tokenDurationSecs = 60;
@@ -23,6 +27,7 @@ const aValidFiscalCode = "GRBGPP87L04L741X" as FiscalCode;
 const aValidEmailAddress = "garibaldi@example.com" as EmailString;
 const aValidName = "Giuseppe Maria" as NonEmptyString;
 const aValidSurname = "Garibaldi" as NonEmptyString;
+const anotherValidEmailAddress = "new-work@email.net" as EmailString;
 
 const mockSessionToken = "c77de47586c841adbd1a1caeb90dce25dcecebed620488a4f932a6280b10ee99a77b6c494a8a6e6884ccbeb6d3fe736b" as SessionToken;
 
@@ -52,6 +57,12 @@ jest.mock("../../services/profileService", () => ({
   default: jest.fn().mockImplementation(() => ({
     getProfile: mockGetProfile,
     updateProfile: mockUpdateProfile
+  }))
+}));
+const mockSendEmail = jest.fn();
+jest.mock("../../services/emailService", () => ({
+  default: jest.fn().mockImplementation(() => ({
+    send: mockSendEmail
   }))
 }));
 
@@ -108,7 +119,7 @@ describe("ProfileController", () => {
   });
   describe("#updateProfile()", () => {
     it("should return a successful response with the user profile if the request is valid", async () => {
-      const newWorkEmail = "new-work@email.net" as EmailString;
+      const newWorkEmail = anotherValidEmailAddress as EmailString;
       const mockedUpdatedProfile = {
         email: mockedLoggedUser.email,
         family_name: mockedLoggedUser.familyName,
@@ -120,6 +131,7 @@ describe("ProfileController", () => {
       mockUpdateProfile.mockReturnValue(
         Promise.resolve(some(ResponseSuccessJson(mockedUpdatedProfile)))
       );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
 
       const req = mockReq();
       req.user = mockedLoggedUser;
@@ -131,11 +143,27 @@ describe("ProfileController", () => {
         mockedLoggedUser,
         newWorkEmail
       );
+      expect(mockSendEmail).toHaveBeenCalled();
       expect(response).toEqual({
         apply: expect.any(Function),
         kind: "IResponseSuccessJson",
         value: mockedUpdatedProfile
       });
+    });
+
+    it("should send a notification email when the update succeeds", async () => {
+      const newWorkEmail = anotherValidEmailAddress as EmailString;
+      mockUpdateProfile.mockReturnValue(
+        Promise.resolve(right(ResponseSuccessJson({})))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+
+      const req = mockReq();
+      req.user = mockedLoggedUser;
+      req.body = { work_email: newWorkEmail };
+
+      await controller.editProfile(req);
+      expect(mockSendEmail).toHaveBeenCalled();
     });
 
     it("should return a validation error response if the request is invalid", async () => {
@@ -151,6 +179,21 @@ describe("ProfileController", () => {
       expect(response).toHaveProperty("apply", expect.any(Function));
       expect(response).toHaveProperty("kind", "IResponseErrorValidation");
       expect(response).toHaveProperty("detail");
+    });
+
+    it("should not send a notification email when the update fails", async () => {
+      const newWorkEmail = anotherValidEmailAddress as EmailString;
+      mockUpdateProfile.mockReturnValue(
+        Promise.resolve(left(ResponseErrorInternal("")))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+
+      const req = mockReq();
+      req.user = mockedLoggedUser;
+      req.body = { work_email: newWorkEmail };
+
+      await controller.editProfile(req);
+      expect(mockSendEmail).not.toHaveBeenCalled();
     });
   });
 });
