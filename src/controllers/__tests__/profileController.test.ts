@@ -184,7 +184,7 @@ describe("ProfileController", () => {
     it("should not send a notification email when the update fails", async () => {
       const newWorkEmail = anotherValidEmailAddress as EmailString;
       mockUpdateProfile.mockReturnValue(
-        Promise.resolve(left(ResponseErrorInternal("")))
+        Promise.resolve(left(ResponseErrorInternal("error")))
       );
       mockSendEmail.mockReturnValue(Promise.resolve(none));
 
