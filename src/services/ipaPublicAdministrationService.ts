@@ -6,7 +6,10 @@ import {
   init as initIpaPublicAdministration,
   IpaPublicAdministration as IpaPublicAdministrationModel
 } from "../models/IpaPublicAdministration";
-import { IIpaPublicAdministration } from "../types/PublicAdministration";
+import {
+  IIpaPublicAdministrationRaw,
+  IpaPublicAdministration
+} from "../types/PublicAdministration";
 import { log } from "../utils/logger";
 
 export function upsertFromIpa(): Promise<void> {
@@ -24,31 +27,37 @@ export function upsertFromIpa(): Promise<void> {
       indicepaResponse.body
         .pipe(csvStream)
         .pipe(
-          es.map((entry: IIpaPublicAdministration, cb: () => void) => {
-            if (entry.cf_validato !== "S") {
-              // filter out entries without a validated CF
-              return cb();
-            }
-            if (!entry.Cf || !entry.Cf.match(/^\d{2,}$/)) {
-              // filter out entries with bogus CF
-              return cb();
-            }
-            const entryIndex = notUpdatedEntries.findIndex(
-              entryFromDb => entryFromDb.cod_amm === entry.cod_amm
-            );
-            notUpdatedEntries.splice(entryIndex, 1);
-            IpaPublicAdministrationModel.upsert(entry)
-              .then(() => {
-                cb();
-              })
-              .catch(error => {
-                log.error(
-                  "IpaPublicAdministration upsert failed for %s: %s",
-                  entry.des_amm,
-                  error
+          es.map((parsedRow: IIpaPublicAdministrationRaw, cb: () => void) => {
+            IpaPublicAdministration.decode(
+              Object.entries(parsedRow)
+                .map(([key, val]) => [key, val.trim()])
+                .reduce(
+                  (prev, [cKey, cVal]) => {
+                    return { ...prev, [cKey]: cVal };
+                  },
+                  {} as unknown
+                )
+            ).fold(
+              () => cb(),
+              newEntry => {
+                const entryIndex = notUpdatedEntries.findIndex(
+                  entryFromDb => entryFromDb.cod_amm === newEntry.cod_amm
                 );
-                cb();
-              });
+                notUpdatedEntries.splice(entryIndex, 1);
+                IpaPublicAdministrationModel.upsert(newEntry)
+                  .then(() => {
+                    cb();
+                  })
+                  .catch(error => {
+                    log.error(
+                      "IpaPublicAdministration upsert failed for %s: %s",
+                      newEntry.des_amm,
+                      error
+                    );
+                    cb();
+                  });
+              }
+            );
           })
         )
         .on("end", () => {

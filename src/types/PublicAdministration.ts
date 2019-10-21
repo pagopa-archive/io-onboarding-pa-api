@@ -5,7 +5,7 @@ import {
   OrganizationFiscalCode
 } from "italia-ts-commons/lib/strings";
 
-export interface IIpaPublicAdministration {
+export interface IIpaPublicAdministrationRaw {
   cod_amm: string;
   des_amm: string;
   nome_resp: string;
@@ -32,7 +32,7 @@ const EmailOrNullLiteral = t.union(
 
 export const IpaPublicAdministration = t.interface({
   Cf: OrganizationFiscalCode,
-  cf_validato: NonEmptyString,
+  cf_validato: t.literal("S"),
   cod_amm: NonEmptyString,
   cogn_resp: NonEmptyString,
   des_amm: NonEmptyString,
