@@ -5,7 +5,7 @@ import * as Mail from "nodemailer/lib/mailer";
 import EmailService, {
   IMailOptions,
   ITransporterOptions
-} from "../EmailService";
+} from "../emailService";
 
 describe("Email service", () => {
   const transporterOptions = {
