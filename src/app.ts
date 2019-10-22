@@ -96,14 +96,7 @@ export default async function newApp(
   passport.use(bearerTokenStrategy());
   app.use(passport.initialize());
 
-  try {
-    await emailService.verifyTransport();
-    log.info("SMTP server is ready to accept messages");
-    registerRoutes(app, emailService);
-  } catch (error) {
-    log.error("Error on SMTP transport creation. %s", error);
-    process.exit(1);
-  }
+  registerRoutes(app, emailService);
 
   try {
     const spidPassport = new SpidPassportBuilder(app, "/login", "/metadata", {

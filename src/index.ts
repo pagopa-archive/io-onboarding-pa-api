@@ -16,18 +16,27 @@ const emailService = new EmailService({
   secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
 });
 
-newApp(emailService)
-  .then(app => {
-    app.listen(app.get("port"), () => {
-      log.info(
-        "  App is running at http://localhost:%d in %s mode",
-        app.get("port"),
-        app.get("env")
-      );
-      log.info("  Press CTRL-C to stop\n");
-    });
+emailService
+  .verifyTransport()
+  .then(() => {
+    log.info("SMTP server is ready to accept messages");
+    return newApp(emailService)
+      .then(app => {
+        app.listen(app.get("port"), () => {
+          log.info(
+            "  App is running at http://localhost:%d in %s mode",
+            app.get("port"),
+            app.get("env")
+          );
+          log.info("  Press CTRL-C to stop\n");
+        });
+      })
+      .catch(error => log.error("Error loading app: %s", error));
   })
-  .catch(error => log.error("Error loading app: %s", error));
+  .catch(error => {
+    log.error("Error on SMTP transport creation. %s", error);
+    process.exit(1);
+  });
 
 schedule(
   "0 0 2 * * *", // running in container at 02:00 UTC
