@@ -77,18 +77,9 @@ const TOKEN_DURATION_IN_SECONDS = Number(
   getRequiredEnvVar("TOKEN_DURATION_IN_SECONDS")
 );
 
-const emailService = new EmailService({
-  auth: {
-    pass: getRequiredEnvVar("EMAIL_PASSWORD"),
-    user: getRequiredEnvVar("EMAIL_USER")
-  },
-  from: getRequiredEnvVar("EMAIL_SENDER"),
-  host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
-  port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
-  secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
-});
-
-export default async function newApp(): Promise<Express> {
+export default async function newApp(
+  emailService: EmailService
+): Promise<Express> {
   // Create Express server
   const app = express();
 

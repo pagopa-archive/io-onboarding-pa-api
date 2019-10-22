@@ -1,9 +1,22 @@
 import { schedule } from "node-cron";
 import newApp from "./app";
+import EmailService from "./services/emailService";
 import { upsertFromIpa } from "./services/ipaPublicAdministrationService";
+import { getRequiredEnvVar } from "./utils/environment";
 import { log } from "./utils/logger";
 
-newApp()
+const emailService = new EmailService({
+  auth: {
+    pass: getRequiredEnvVar("EMAIL_PASSWORD"),
+    user: getRequiredEnvVar("EMAIL_USER")
+  },
+  from: getRequiredEnvVar("EMAIL_SENDER"),
+  host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
+  port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
+  secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
+});
+
+newApp(emailService)
   .then(app => {
     app.listen(app.get("port"), () => {
       log.info(
