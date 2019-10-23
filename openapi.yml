@@ -363,24 +363,6 @@ definitions:
       - links
       - pecs
     example:
-      [
-      {
-        "fiscal_code": "86000470830",
-        "ipa_code": "c_e043",
-        "legal_representative": {
-          "family_name": "Spano'",
-          "given_name": "Ignazio Alfonso"
-        },
-        "name": "Comune di Gioiosa Marea",
-        "pecs": {
-          "1": "indirizzo00@email.pec.it",
-          "2": "indirizzo01@email.pec.it"
-        },
-        "links": [{
-          "rel": "self",
-          "href": "https://api.pa-onboarding.io.italia.it/public-administrations/c_e043"
-        }]
-      },
       {
         "fiscal_code": "81000930800",
         "ipa_code": "c_e044",
@@ -399,25 +381,7 @@ definitions:
           "rel": "self",
           "href": "https://api.pa-onboarding.io.italia.it/public-administrations/c_e044"
         }]
-      },
-      {
-        "fiscal_code": "00282520808",
-        "ipa_code": "c_e956",
-        "legal_representative": {
-          "family_name": "Sergio",
-          "given_name": "Mazzia"
-        },
-        "name": "Comune di Marina di Gioiosa Ionica",
-        "pecs": {
-          "1": "indirizzo20@email.pec.it",
-          "2": "indirizzo21@email.pec.it",
-        },
-        "links": [{
-          "rel": "self",
-          "href": "https://api.pa-onboarding.io.italia.it/public-administrations/c_e0956"
-        }]
       }
-      ]
   FoundRegisteredAdministration:
     type: object
     properties:
@@ -463,28 +427,6 @@ definitions:
       - scope
       - selected_pec_label
     example:
-      [
-      {
-        "fiscal_code": "86000470830",
-        "ipa_code": "c_e043",
-        "legal_representative": {
-          "family_name": "Spano'",
-          "given_name": "Ignazio Alfonso",
-          "fiscal_code": "BCDFGH12A21Z123D",
-          "phone_number": "3331111111"
-        },
-        "name": "Comune di Gioiosa Marea",
-        "pecs": {
-          "1": "indirizzo00@email.pec.it",
-          "2": "indirizzo01@email.pec.it"
-        },
-        "scope": "NATIONAL",
-        "selected_pec_label": "2",
-        "links": [{
-                    "rel": "self",
-                    "href": "https://api.pa-onboarding.io.italia.it/public-administrations/c_e043"
-                  }]
-      },
       {
         "fiscal_code": "81000930800",
         "ipa_code": "c_e044",
@@ -504,32 +446,10 @@ definitions:
         "scope": "LOCAL",
         "selected_pec_label": "3",
         "links": [{
-                    "rel": "self",
-                    "href": "https://api.pa-onboarding.io.italia.it/public-administrations/c_e044"
-                  }]
-      },
-      {
-        "fiscal_code": "00282520808",
-        "ipa_code": "c_e956",
-        "legal_representative": {
-          "family_name": "Sergio",
-          "given_name": "Mazzia",
-          "fiscal_code": "BCDFGH12A21Z123E",
-          "phone_number": "3333333333"
-        },
-        "name": "Comune di Marina di Gioiosa Ionica",
-        "pecs": {
-          "1": "indirizzo20@email.pec.it",
-          "2": "indirizzo21@email.pec.it",
-        },
-        "scope": "LOCAL",
-        "selected_pec_label": "1",
-        "links": [{
           "rel": "self",
-          "href": "https://api.pa-onboarding.io.italia.it/public-administrations/c_e0956"
+          "href": "https://api.pa-onboarding.io.italia.it/public-administrations/c_e044"
         }]
       }
-      ]
   Organization:
     type: object
     properties:
