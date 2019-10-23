@@ -50,6 +50,7 @@ paths:
   /login:
     get:
       description: Redirects the user to the login page of the chosen SPID IdP.
+      operationId: login
       parameters:
         - name: entity_id
           in: query
@@ -74,6 +75,7 @@ paths:
   /logout:
     post:
       description: Logs the user out
+      operationId: logout
       security:
         - bearerAuth: []
       responses:
@@ -85,6 +87,7 @@ paths:
       description: |-
         Creates a new organization associated with its legal responsible,
         the user calling this endpoint is also associated to the organization as its delegate.
+      operationId: registerOrganization
       security:
         - bearerAuth: []
       consumes:
@@ -110,6 +113,7 @@ paths:
     get:
       description: |-
         Returns the user profile information.
+      operationId: getProfile
       security:
         - bearerAuth: []
       produces:
@@ -123,6 +127,7 @@ paths:
     put:
       description: |-
         Updates the user profile.
+      operationId: updateProfile
       security:
         - bearerAuth: []
       consumes:
@@ -150,6 +155,7 @@ paths:
     get:
       description: |-
         Returns a list of public administrations that match the searching words.
+      operationId: searchPublicAdministration
       produces:
         - application/json
       parameters:
