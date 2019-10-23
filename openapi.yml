@@ -358,7 +358,7 @@ definitions:
       - ipa_code
       - name
       - legal_representative
-      - link
+      - links
       - pecs
     example:
       [
@@ -449,14 +449,14 @@ definitions:
           $ref: '#/definitions/EmailAddress'
       scope:
         $ref: '#/definitions/OrganizationScope'
-      selected_pec_abel:
+      selected_pec_label:
         type: string
     required:
       - fiscal_code
       - ipa_code
       - name
       - legal_representative
-      - link
+      - links
       - pecs
       - scope
       - selected_pec_label
