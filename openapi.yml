@@ -129,12 +129,7 @@ paths:
           name: body
           required: true
           schema:
-            type: object
-            properties:
-              work_email:
-                $ref: "#/definitions/EmailAddress"
-            required:
-              - work_email
+            $ref: "#/definitions/WorkEmailObj"
       responses:
         200:
           description: The updated user profile information
@@ -246,6 +241,13 @@ definitions:
         "email": "indirizzo00@email.pec.it",
         "role": "ORG_MANAGER"
       }
+  WorkEmailObj:
+    type: object
+    properties:
+      work_email:
+        $ref: "#/definitions/EmailAddress"
+    required:
+      - work_email
   UserProfile:
     type: object
     properties:
@@ -610,6 +612,7 @@ definitions:
         "scope": "NATIONAL",
         "selected_pec_label": "1"
       }
+
   ProblemJson:
     $ref: "https://raw.githubusercontent.com/teamdigitale/io-functions-commons/v0.5.0/openapi/definitions.yaml#/ProblemJson"
 securityDefinitions:
