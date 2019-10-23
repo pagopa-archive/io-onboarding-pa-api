@@ -34,13 +34,6 @@ schemes:
 x-commons:
   # This section contains yaml anchors useful to implement common behaviors
   #  in the OAS.
-  common-responses: &common-responses
-    400:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
-    429:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
-    503:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
   non-empty-string: &non-empty-string
     type: string
     minLength: 1
@@ -77,7 +70,6 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        <<: *common-responses
         200:
           description: Successful response
   /organizations:
@@ -98,7 +90,6 @@ paths:
           schema:
             $ref: "#/definitions/OrganizationRegistrationParams"
       responses:
-        <<: *common-responses
         201:
           description: The registered organization
           headers:
@@ -107,6 +98,8 @@ paths:
               type: string
           schema:
             $ref: "#/definitions/Organization"
+        400:
+          $ref: "#/responses/400"
   /profile:
     get:
       description: |-
@@ -117,7 +110,6 @@ paths:
       produces:
         - application/json
       responses:
-        <<: *common-responses
         200:
           description: The user profile information
           schema:
@@ -144,11 +136,12 @@ paths:
             required:
               - work_email
       responses:
-        <<: *common-responses
         200:
           description: The updated user profile information
           schema:
             $ref: "#/definitions/UserProfile"
+        400:
+          $ref: "#/responses/400"
   /public-administrations:
     get:
       description: |-
@@ -166,12 +159,18 @@ paths:
           pattern: ^[0-9A-Za-z ]{3,}$
           type: string
       responses:
-        <<: *common-responses
         200:
           description: |-
             Public Administrations matching the search criteria.
           schema:
             $ref: '#/definitions/AdministrationSearchResult'
+        400:
+          $ref: '#/responses/400'
+responses:
+  400:
+    description: Bad request
+    schema:
+      $ref: "#/definitions/ProblemJson"
 definitions:
   EmailAddress:
     type: string
@@ -611,6 +610,8 @@ definitions:
         "scope": "NATIONAL",
         "selected_pec_label": "1"
       }
+  ProblemJson:
+    $ref: "https://raw.githubusercontent.com/teamdigitale/io-functions-commons/v0.5.0/openapi/definitions.yaml#/ProblemJson"
 securityDefinitions:
   bearerAuth:
     in: header
