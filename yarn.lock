@@ -2772,17 +2772,6 @@ italia-utils@^4.1.0:
     swagger-parser "^7.0.0"
     yargs "^11.1.0"
 
-italia-utils@aymen94/io-utils-build:
-  version "4.1.0"
-  resolved "https://codeload.github.com/aymen94/io-utils-build/tar.gz/4a59a9bc23301bd30d37542dccb3faf8394f618f"
-  dependencies:
-    fs-extra "^6.0.0"
-    italia-ts-commons "^5.0.1"
-    nunjucks "^3.1.2"
-    prettier "^1.12.1"
-    swagger-parser "^7.0.0"
-    yargs "^11.1.0"
-
 jest-changed-files@^24.8.0:
   version "24.8.0"
   resolved "https://registry.yarnpkg.com/jest-changed-files/-/jest-changed-files-24.8.0.tgz#7e7eb21cf687587a85e50f3d249d1327e15b157b"
