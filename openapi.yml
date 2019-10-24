@@ -37,13 +37,11 @@ x-commons:
   #  in the OAS.
   common-responses: &common-responses
     400:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
+      $ref: "#/components/responses/400BadRequest"
     429:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
+      $ref: "#/components/responses/429TooManyRequests"
     503:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
-    default:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/default
+      $ref: "#/components/responses/503ServiceUnavailable"
   non-empty-string: &non-empty-string
     type: string
     minLength: 1
@@ -51,6 +49,7 @@ paths:
   /login:
     get:
       description: Redirects the user to the login page of the chosen SPID IdP.
+      operationId: getLogin
       parameters:
         - name: entity_id
           in: query
@@ -77,6 +76,7 @@ paths:
   /logout:
     post:
       description: Logs the user out
+      operationId: postLogout
       security:
         - bearerAuth: []
       responses:
@@ -85,6 +85,7 @@ paths:
           description: Successful response
   /organizations:
     post:
+      operationId: postOrganizations
       description: |-
         Creates a new organization associated with its legal responsible,
         the user calling this endpoint is also associated to the organization as its delegate.
@@ -112,6 +113,7 @@ paths:
     get:
       description: |-
         Returns the user profile information.
+      operationId: getProfile
       security:
         - bearerAuth: []
       responses:
@@ -125,6 +127,7 @@ paths:
     put:
       description: |-
         Updates the user profile.
+      operationId: putProfile
       security:
         - bearerAuth: []
       requestBody:
@@ -150,6 +153,7 @@ paths:
     get:
       description: |-
         Returns a list of public administrations that match the searching words.
+      operationId: getPublicAdministrations
       parameters:
         - name: search
           in: query
@@ -169,6 +173,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdministrationSearchResult'
 components:
+  responses:
+    400BadRequest:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
+    429TooManyRequests:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
+    503ServiceUnavailable:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
   schemas:
     EmailAddress:
       type: string
@@ -355,7 +366,7 @@ components:
         - ipa_code
         - name
         - legal_representative
-        - link
+        - links
         - pecs
       example:
         [
@@ -453,7 +464,7 @@ components:
         - ipa_code
         - name
         - legal_representative
-        - link
+        - links
         - pecs
         - scope
         - selected_pec_label
@@ -607,6 +618,8 @@ components:
           "scope": "NATIONAL",
           "selected_pec_label": "1"
         }
+    Problem:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/schemas/Problem
   securitySchemes:
     bearerAuth:
       type: http
