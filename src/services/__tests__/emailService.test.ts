@@ -1,11 +1,6 @@
 import * as nodemailer from "nodemailer";
 import MockTransport = require("nodemailer-mock-transport");
-// tslint:disable-next-line:no-submodule-imports
-import * as Mail from "nodemailer/lib/mailer";
-import EmailService, {
-  IMailOptions,
-  ITransporterOptions
-} from "../emailService";
+import EmailService, { ITransporterOptions } from "../emailService";
 
 describe("Email service", () => {
   const transporterOptions = {
@@ -21,7 +16,7 @@ describe("Email service", () => {
 
   describe("#send() with mock transport", () => {
     it("should return none after a successful email send", async () => {
-      const validEmailOptions: IMailOptions = {
+      const validEmailOptions: nodemailer.SendMailOptions = {
         html: "Html content",
         subject: "Email subject",
         text: "Text content",
@@ -42,7 +37,7 @@ describe("Email service", () => {
     });
 
     it("should return an option error when the email send fails", async () => {
-      const invalidEmailOptions: IMailOptions = {} as IMailOptions;
+      const invalidEmailOptions = {} as nodemailer.SendMailOptions;
       const mockTransport = MockTransport(transporterOptions);
       const emailServiceInstance = new EmailService(
         (mockTransport as unknown) as ITransporterOptions
@@ -61,7 +56,7 @@ describe("Email service", () => {
       jest.spyOn(nodemailer, "createTransport").mockImplementation(() => {
         return ({
           verify: mockedVerify
-        } as unknown) as Mail;
+        } as unknown) as nodemailer.Transporter;
       });
       const testEmailAccount = await nodemailer.createTestAccount();
       const transporterConfig = {

@@ -12,28 +12,13 @@ export interface ITransporterOptions {
   from: string;
 }
 
-interface ITransporter {
-  // tslint:disable-next-line:no-any
-  sendMail: (mailOptions: IMailOptions) => Promise<any>;
-  verify: () => Promise<true>;
-}
-
-export interface IMailOptions {
-  // tslint:disable-next-line:readonly-array
-  attachments?: Array<{ path: string; cid?: string }>;
-  html: string;
-  subject: string;
-  text: string;
-  to: string;
-}
-
 export default class EmailService {
-  private transporter: ITransporter;
+  private transporter: nodemailer.Transporter;
   public constructor(transporterConfig: ITransporterOptions) {
     this.transporter = nodemailer.createTransport(transporterConfig);
   }
 
-  public send(mailOptions: IMailOptions): Promise<Option<Error>> {
+  public send(mailOptions: nodemailer.SendMailOptions): Promise<Option<Error>> {
     return this.transporter
       .sendMail(mailOptions)
       .then(() => none)
