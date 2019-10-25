@@ -355,7 +355,7 @@ components:
         - ipa_code
         - name
         - legal_representative
-        - link
+        - links
         - pecs
       example:
         {
@@ -417,7 +417,7 @@ components:
         - ipa_code
         - name
         - legal_representative
-        - link
+        - links
         - pecs
         - scope
         - selected_pec_label
