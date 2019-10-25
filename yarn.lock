@@ -2772,9 +2772,9 @@ italia-utils@^4.1.0:
     swagger-parser "^7.0.0"
     yargs "^11.1.0"
 
-italia-utils@aymen94/io-utils-build:
-  version "4.1.0"
-  resolved "https://codeload.github.com/aymen94/io-utils-build/tar.gz/4a59a9bc23301bd30d37542dccb3faf8394f618f"
+italia-utils@teamdigitale/io-utils-build-oas3:
+  version "4.1.1-beta.2"
+  resolved "https://codeload.github.com/teamdigitale/io-utils-build-oas3/tar.gz/da0a29b3acf8ba3f9a32b8a8e6826d3f8b12e210"
   dependencies:
     fs-extra "^6.0.0"
     italia-ts-commons "^5.0.1"
