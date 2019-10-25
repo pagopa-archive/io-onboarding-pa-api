@@ -132,12 +132,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                work_email:
-                  $ref: "#/components/schemas/EmailAddress"
-              required:
-                - work_email
+              $ref: "#/components/schemas/WorkEmailObj"
       responses:
         <<: *common-responses
         200:
@@ -244,6 +239,13 @@ components:
           "email": "indirizzo00@email.pec.it",
           "role": "ORG_MANAGER"
         }
+    WorkEmailObj:
+      type: object
+      properties:
+        work_email:
+          $ref: "#/components/schemas/EmailAddress"
+      required:
+        - work_email
     UserProfile:
       type: object
       properties:
