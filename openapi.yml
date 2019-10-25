@@ -42,8 +42,6 @@ x-commons:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
     503:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
-    default:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/default
   non-empty-string: &non-empty-string
     type: string
     minLength: 1
