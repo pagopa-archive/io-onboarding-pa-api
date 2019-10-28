@@ -377,6 +377,9 @@ components:
           "links": [{
             "rel": "self",
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
+          }, {
+            "rel": "create",
+            "href": "https://api.pa-onboarding.dev.io.italia.it/organizations"
           }]
         }
     FoundRegisteredAdministration:
