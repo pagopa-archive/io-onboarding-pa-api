@@ -71,12 +71,10 @@ export default class ProfileController {
                 text: emailText,
                 to: workEmail
               })
-              .then(maybeError =>
-                maybeError.map(error =>
-                  log.error(
-                    "Failed to send email notification for work email change. %s",
-                    error
-                  )
+              .catch(error =>
+                log.error(
+                  "Failed to send email notification for work email change. %s",
+                  error
                 )
               );
             return response;

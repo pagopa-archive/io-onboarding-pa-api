@@ -1,4 +1,3 @@
-import { none, Option, some } from "fp-ts/lib/Option";
 import * as nodemailer from "nodemailer";
 
 export interface ITransporterOptions {
@@ -18,11 +17,9 @@ export default class EmailService {
     this.transporter = nodemailer.createTransport(transporterConfig);
   }
 
-  public send(mailOptions: nodemailer.SendMailOptions): Promise<Option<Error>> {
-    return this.transporter
-      .sendMail(mailOptions)
-      .then(() => none)
-      .catch(some);
+  // tslint:disable-next-line:no-any
+  public send(mailOptions: nodemailer.SendMailOptions): Promise<any> {
+    return this.transporter.sendMail(mailOptions);
   }
 
   public verifyTransport(): Promise<true> {
