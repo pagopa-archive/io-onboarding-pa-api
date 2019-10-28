@@ -10,7 +10,6 @@ import {
   FiscalCode,
   NonEmptyString
 } from "italia-ts-commons/lib/strings";
-import * as nodemailer from "nodemailer";
 import mockReq from "../../__mocks__/request";
 import { UserProfile } from "../../generated/UserProfile";
 import { UserRoleEnum } from "../../generated/UserRole";
@@ -66,25 +65,21 @@ jest.mock("../../services/emailService", () => ({
   }))
 }));
 
-// tslint:disable-next-line:no-let
-let controller: ProfileController;
-
-beforeAll(async () => {
-  const testEmailAccount = await nodemailer.createTestAccount();
-  controller = new ProfileController(
-    new ProfileService(),
-    new EmailService({
-      auth: {
-        pass: testEmailAccount.pass,
-        user: testEmailAccount.user
-      },
-      from: "sender@email.com",
-      host: testEmailAccount.smtp.host,
-      port: testEmailAccount.smtp.port,
-      secure: testEmailAccount.smtp.secure
-    })
-  );
+const profileService = new ProfileService();
+const emailService = new EmailService({
+  auth: {
+    pass: "password",
+    user: "user"
+  },
+  from: "sender@email.com",
+  host: "smtp.host",
+  port: 1111,
+  secure: false
 });
+
+async function getProfileController(): Promise<ProfileController> {
+  return new ProfileController(profileService, emailService);
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -107,6 +102,7 @@ describe("ProfileController", () => {
       const req = mockReq();
       req.user = mockedLoggedUser;
 
+      const controller = await getProfileController();
       const response = await controller.getProfile(req);
 
       expect(mockGetProfile).toHaveBeenCalledWith(mockedLoggedUser);
@@ -137,6 +133,7 @@ describe("ProfileController", () => {
       req.user = mockedLoggedUser;
       req.body = { work_email: newWorkEmail };
 
+      const controller = await getProfileController();
       const response = await controller.editProfile(req);
 
       expect(mockUpdateProfile).toHaveBeenCalledWith(
@@ -162,6 +159,7 @@ describe("ProfileController", () => {
       req.user = mockedLoggedUser;
       req.body = { work_email: newWorkEmail };
 
+      const controller = await getProfileController();
       await controller.editProfile(req);
       expect(mockSendEmail).toHaveBeenCalled();
     });
@@ -173,6 +171,7 @@ describe("ProfileController", () => {
       req.user = mockedLoggedUser;
       req.body = { work_email: invalidWorkEmail };
 
+      const controller = await getProfileController();
       const response = await controller.editProfile(req);
 
       expect(mockUpdateProfile).not.toHaveBeenCalled();
@@ -192,6 +191,7 @@ describe("ProfileController", () => {
       req.user = mockedLoggedUser;
       req.body = { work_email: newWorkEmail };
 
+      const controller = await getProfileController();
       await controller.editProfile(req);
       expect(mockSendEmail).not.toHaveBeenCalled();
     });
