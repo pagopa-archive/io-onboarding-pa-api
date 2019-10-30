@@ -42,8 +42,6 @@ x-commons:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
     503:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
-    default:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/default
   non-empty-string: &non-empty-string
     type: string
     minLength: 1
@@ -51,6 +49,7 @@ paths:
   /login:
     get:
       description: Redirects the user to the login page of the chosen SPID IdP.
+      operationId: loginWithSpid
       parameters:
         - name: entity_id
           in: query
@@ -77,6 +76,7 @@ paths:
   /logout:
     post:
       description: Logs the user out
+      operationId: logout
       security:
         - bearerAuth: []
       responses:
@@ -88,6 +88,7 @@ paths:
       description: |-
         Creates a new organization associated with its legal responsible,
         the user calling this endpoint is also associated to the organization as its delegate.
+      operationId: createOrganizations
       security:
         - bearerAuth: []
       requestBody:
@@ -112,6 +113,7 @@ paths:
     get:
       description: |-
         Returns the user profile information.
+      operationId: getProfile
       security:
         - bearerAuth: []
       responses:
@@ -125,6 +127,7 @@ paths:
     put:
       description: |-
         Updates the user profile.
+      operationId: updateProfile
       security:
         - bearerAuth: []
       requestBody:
@@ -145,6 +148,7 @@ paths:
     get:
       description: |-
         Returns a list of public administrations that match the searching words.
+      operationId: searchPublicAdministrations
       parameters:
         - name: search
           in: query
