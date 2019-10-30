@@ -6,14 +6,20 @@ import {
   IResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { EmailString } from "italia-ts-commons/lib/strings";
+import EmailService from "../services/emailService";
 import ProfileService from "../services/profileService";
 
 import { UserProfile } from "../generated/UserProfile";
+import localeIt from "../locales/it";
 import { withUserFromRequest } from "../types/user";
+import { log } from "../utils/logger";
 import { withValidatedOrValidationError } from "../utils/responses";
 
 export default class ProfileController {
-  constructor(private readonly profileService: ProfileService) {}
+  constructor(
+    private readonly profileService: ProfileService,
+    private readonly emailService: EmailService
+  ) {}
 
   /**
    * Returns the user profile information.
@@ -45,7 +51,35 @@ export default class ProfileController {
     return withUserFromRequest(req, async user =>
       withValidatedOrValidationError(
         EmailString.decode(req.body.work_email),
-        workEmail => this.profileService.updateProfile(user, workEmail)
+        async workEmail => {
+          const errorResponseOrSuccessResponse = await this.profileService.updateProfile(
+            user,
+            workEmail
+          );
+          return errorResponseOrSuccessResponse.map(response => {
+            const emailText = localeIt.profileController.editProfile.notificationEmail.content.replace(
+              "%s",
+              user.givenName
+            );
+            // tslint:disable-next-line:no-floating-promises
+            this.emailService
+              .send({
+                html: emailText,
+                subject:
+                  localeIt.profileController.editProfile.notificationEmail
+                    .subject,
+                text: emailText,
+                to: workEmail
+              })
+              .catch(error =>
+                log.error(
+                  "Failed to send email notification for work email change. %s",
+                  error
+                )
+              );
+            return response;
+          }).value;
+        }
       )
     );
   }

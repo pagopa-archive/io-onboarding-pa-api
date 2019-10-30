@@ -30,6 +30,7 @@ import { log } from "./utils/logger";
 import AuthenticationController from "./controllers/authenticationController";
 import OrganizationController from "./controllers/organizationController";
 import ProfileController from "./controllers/profileController";
+import EmailService from "./services/emailService";
 import ProfileService from "./services/profileService";
 import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
@@ -76,7 +77,9 @@ const TOKEN_DURATION_IN_SECONDS = Number(
   getRequiredEnvVar("TOKEN_DURATION_IN_SECONDS")
 );
 
-export default async function newApp(): Promise<Express> {
+export default async function newApp(
+  emailService: EmailService
+): Promise<Express> {
   // Create Express server
   const app = express();
 
@@ -93,7 +96,7 @@ export default async function newApp(): Promise<Express> {
   passport.use(bearerTokenStrategy());
   app.use(passport.initialize());
 
-  registerRoutes(app);
+  registerRoutes(app, emailService);
 
   try {
     const spidPassport = new SpidPassportBuilder(app, "/login", "/metadata", {
@@ -150,10 +153,16 @@ export default async function newApp(): Promise<Express> {
   return app;
 }
 
-function registerRoutes(app: Express): void {
+function registerRoutes(
+  app: Express,
+  emailServiceInstance: EmailService
+): void {
   const bearerTokenAuth = passport.authenticate("bearer", { session: false });
 
-  const profileController = new ProfileController(new ProfileService());
+  const profileController = new ProfileController(
+    new ProfileService(),
+    emailServiceInstance
+  );
 
   app.get(
     `/profile`,
