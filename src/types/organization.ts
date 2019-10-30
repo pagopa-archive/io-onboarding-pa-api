@@ -2,7 +2,7 @@ import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { FoundNotRegisteredAdministration } from "../generated/FoundNotRegisteredAdministration";
 import { FoundRegisteredAdministration } from "../generated/FoundRegisteredAdministration";
 import { Organization as OrganizationModel } from "../models/Organization";
-import { IIpaPublicAdministration } from "./PublicAdministration";
+import { IIpaPublicAdministrationRaw } from "./PublicAdministration";
 
 export function fromOrganizationModelToFoundAdministration(
   organizationModel: OrganizationModel
@@ -39,7 +39,7 @@ export function fromOrganizationModelToFoundAdministration(
 }
 
 export function fromPublicAdministrationToFoundAdministration(
-  pa: IIpaPublicAdministration
+  pa: IIpaPublicAdministrationRaw
 ): FoundNotRegisteredAdministration {
   const pecs = [
     [pa.tipo_mail1, pa.mail1],

@@ -20,10 +20,7 @@ import { LegalRepresentative } from "../generated/LegalRepresentative";
 import { Organization } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { UserRoleEnum } from "../generated/UserRole";
-import {
-  IpaPublicAdministration,
-  IpaPublicAdministration as IpaPublicAdministrationModel
-} from "../models/IpaPublicAdministration";
+import { IpaPublicAdministration as IpaPublicAdministrationModel } from "../models/IpaPublicAdministration";
 import { Organization as OrganizationModel } from "../models/Organization";
 import { OrganizationUser as OrganizationUserModel } from "../models/OrganizationUser";
 import { User } from "../models/User";
@@ -54,16 +51,16 @@ export async function findPublicAdministrationsByName(
       []
     );
   const publicAdministrations: ReadonlyArray<
-    IpaPublicAdministration
+    IpaPublicAdministrationModel
   > = await sequelize.query(
     `
       SELECT *
-      FROM "${IpaPublicAdministration.tableName}"
+      FROM "${IpaPublicAdministrationModel.tableName}"
       WHERE _search @@ plainto_tsquery('italian', :query);
     `,
     {
       mapToModel: true,
-      model: IpaPublicAdministration,
+      model: IpaPublicAdministrationModel,
       replacements: { query: `%${descriptionWords.join("%")}%` },
       type: QueryTypes.SELECT
     }
