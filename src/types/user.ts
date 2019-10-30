@@ -10,7 +10,11 @@ import * as t from "io-ts";
 import { UTCISODateFromString } from "italia-ts-commons/lib/dates";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { IResponseErrorValidation } from "italia-ts-commons/lib/responses";
-import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
+import {
+  EmailString,
+  FiscalCode,
+  NonEmptyString
+} from "italia-ts-commons/lib/strings";
 
 import { UserRole } from "../generated/UserRole";
 import { log } from "../utils/logger";
@@ -22,9 +26,9 @@ export const LoggedUser = t.intersection([
   t.interface({
     createdAt: UTCISODateFromString,
     email: EmailString,
-    familyName: t.string,
+    familyName: NonEmptyString,
     fiscalCode: FiscalCode,
-    givenName: t.string,
+    givenName: NonEmptyString,
     role: UserRole,
     session: NotClosedSession
   }),

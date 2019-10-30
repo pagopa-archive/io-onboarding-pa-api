@@ -111,6 +111,12 @@ The table lists the environment variables needed by the application, that may be
 | SPID_TESTENV_URL                       | The absolute URL of the test IDP server                                           | string |
 | IDP_METADATA_URL                       | Url to download IDP metadata from                                                 | string |
 | TOKEN_DURATION_IN_SECONDS              | The number of seconds a session token is considered valid                         | int    |
+| EMAIL_PASSWORD                         | The password used to connect to the email server                                  | string |
+| EMAIL_USER                             | The user to connect to the email server                                           | string |
+| EMAIL_SMTP_HOST                        | The hostname or IP address of the SMTP server                                     | string |
+| EMAIL_SMTP_PORT                        | The port of the SMTP server                                                       | int    |
+| EMAIL_SMTP_SECURE                      | If set to true, uses TLS in SMTP connection                                       | boolean|
+| EMAIL_SENDER                           | The email address of the sender                                                   | string |
 
 ## Production deployments
 

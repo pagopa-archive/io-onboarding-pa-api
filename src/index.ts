@@ -1,20 +1,42 @@
 import { schedule } from "node-cron";
 import newApp from "./app";
+import EmailService from "./services/emailService";
 import { upsertFromIpa } from "./services/ipaPublicAdministrationService";
+import { getRequiredEnvVar } from "./utils/environment";
 import { log } from "./utils/logger";
 
-newApp()
-  .then(app => {
-    app.listen(app.get("port"), () => {
-      log.info(
-        "  App is running at http://localhost:%d in %s mode",
-        app.get("port"),
-        app.get("env")
-      );
-      log.info("  Press CTRL-C to stop\n");
-    });
+const emailService = new EmailService({
+  auth: {
+    pass: getRequiredEnvVar("EMAIL_PASSWORD"),
+    user: getRequiredEnvVar("EMAIL_USER")
+  },
+  from: getRequiredEnvVar("EMAIL_SENDER"),
+  host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
+  port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
+  secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
+});
+
+emailService
+  .verifyTransport()
+  .then(() => {
+    log.info("SMTP server is ready to accept messages");
+    return newApp(emailService)
+      .then(app => {
+        app.listen(app.get("port"), () => {
+          log.info(
+            "  App is running at http://localhost:%d in %s mode",
+            app.get("port"),
+            app.get("env")
+          );
+          log.info("  Press CTRL-C to stop\n");
+        });
+      })
+      .catch(error => log.error("Error loading app: %s", error));
   })
-  .catch(error => log.error("Error loading app: %s", error));
+  .catch(error => {
+    log.error("Error on SMTP transport creation. %s", error);
+    process.exit(1);
+  });
 
 schedule(
   "0 0 2 * * *", // running in container at 02:00 UTC

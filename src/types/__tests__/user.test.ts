@@ -1,5 +1,5 @@
 import { SpidLevelEnum } from "io-spid-commons";
-import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
+import { EmailString, FiscalCode, NonEmptyString } from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/request";
 
 import { UserRoleEnum } from "../../generated/UserRole";
@@ -95,9 +95,9 @@ const mockedSpidUserWithInvalidLevel = {
 const mockedUser: LoggedUser = {
   createdAt: new Date(),
   email: aValidEmailAddress,
-  familyName: "Garibaldi",
+  familyName: "Garibaldi" as NonEmptyString,
   fiscalCode: aValidFiscalNumber,
-  givenName: "Giuseppe Maria",
+  givenName: "Giuseppe Maria" as NonEmptyString,
   role: UserRoleEnum.ORG_DELEGATE,
   session: {
     createdAt: new Date(),
