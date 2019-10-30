@@ -1,9 +1,19 @@
+import { left, right } from "fp-ts/lib/Either";
+import { none, some } from "fp-ts/lib/Option";
 import * as t from "io-ts";
-import { ResponseSuccessJson } from "italia-ts-commons/lib/responses";
-import { EmailString, FiscalCode } from "italia-ts-commons/lib/strings";
+import {
+  ResponseErrorInternal,
+  ResponseSuccessJson
+} from "italia-ts-commons/lib/responses";
+import {
+  EmailString,
+  FiscalCode,
+  NonEmptyString
+} from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/request";
 import { UserProfile } from "../../generated/UserProfile";
 import { UserRoleEnum } from "../../generated/UserRole";
+import EmailService from "../../services/emailService";
 import ProfileService from "../../services/profileService";
 import { SessionToken } from "../../types/token";
 import { LoggedUser } from "../../types/user";
@@ -14,8 +24,9 @@ const tokenDurationSecs = 60;
 
 const aValidFiscalCode = "GRBGPP87L04L741X" as FiscalCode;
 const aValidEmailAddress = "garibaldi@example.com" as EmailString;
-const aValidName = "Giuseppe Maria";
-const aValidSurname = "Garibaldi";
+const aValidName = "Giuseppe Maria" as NonEmptyString;
+const aValidSurname = "Garibaldi" as NonEmptyString;
+const anotherValidEmailAddress = "new-work@email.net" as EmailString;
 
 const mockSessionToken = "c77de47586c841adbd1a1caeb90dce25dcecebed620488a4f932a6280b10ee99a77b6c494a8a6e6884ccbeb6d3fe736b" as SessionToken;
 
@@ -47,8 +58,28 @@ jest.mock("../../services/profileService", () => ({
     updateProfile: mockUpdateProfile
   }))
 }));
+const mockSendEmail = jest.fn();
+jest.mock("../../services/emailService", () => ({
+  default: jest.fn().mockImplementation(() => ({
+    send: mockSendEmail
+  }))
+}));
 
-const controller = new ProfileController(new ProfileService());
+const profileService = new ProfileService();
+const emailService = new EmailService({
+  auth: {
+    pass: "password",
+    user: "user"
+  },
+  from: "sender@email.com",
+  host: "smtp.host",
+  port: 1111,
+  secure: false
+});
+
+async function getProfileController(): Promise<ProfileController> {
+  return new ProfileController(profileService, emailService);
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -71,6 +102,7 @@ describe("ProfileController", () => {
       const req = mockReq();
       req.user = mockedLoggedUser;
 
+      const controller = await getProfileController();
       const response = await controller.getProfile(req);
 
       expect(mockGetProfile).toHaveBeenCalledWith(mockedLoggedUser);
@@ -83,7 +115,7 @@ describe("ProfileController", () => {
   });
   describe("#updateProfile()", () => {
     it("should return a successful response with the user profile if the request is valid", async () => {
-      const newWorkEmail = "new-work@email.net" as EmailString;
+      const newWorkEmail = anotherValidEmailAddress as EmailString;
       const mockedUpdatedProfile = {
         email: mockedLoggedUser.email,
         family_name: mockedLoggedUser.familyName,
@@ -93,24 +125,43 @@ describe("ProfileController", () => {
         work_email: newWorkEmail
       };
       mockUpdateProfile.mockReturnValue(
-        Promise.resolve(ResponseSuccessJson(mockedUpdatedProfile))
+        Promise.resolve(some(ResponseSuccessJson(mockedUpdatedProfile)))
       );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
 
       const req = mockReq();
       req.user = mockedLoggedUser;
       req.body = { work_email: newWorkEmail };
 
+      const controller = await getProfileController();
       const response = await controller.editProfile(req);
 
       expect(mockUpdateProfile).toHaveBeenCalledWith(
         mockedLoggedUser,
         newWorkEmail
       );
+      expect(mockSendEmail).toHaveBeenCalled();
       expect(response).toEqual({
         apply: expect.any(Function),
         kind: "IResponseSuccessJson",
         value: mockedUpdatedProfile
       });
+    });
+
+    it("should send a notification email when the update succeeds", async () => {
+      const newWorkEmail = anotherValidEmailAddress as EmailString;
+      mockUpdateProfile.mockReturnValue(
+        Promise.resolve(right(ResponseSuccessJson({})))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+
+      const req = mockReq();
+      req.user = mockedLoggedUser;
+      req.body = { work_email: newWorkEmail };
+
+      const controller = await getProfileController();
+      await controller.editProfile(req);
+      expect(mockSendEmail).toHaveBeenCalled();
     });
 
     it("should return a validation error response if the request is invalid", async () => {
@@ -120,12 +171,29 @@ describe("ProfileController", () => {
       req.user = mockedLoggedUser;
       req.body = { work_email: invalidWorkEmail };
 
+      const controller = await getProfileController();
       const response = await controller.editProfile(req);
 
       expect(mockUpdateProfile).not.toHaveBeenCalled();
       expect(response).toHaveProperty("apply", expect.any(Function));
       expect(response).toHaveProperty("kind", "IResponseErrorValidation");
       expect(response).toHaveProperty("detail");
+    });
+
+    it("should not send a notification email when the update fails", async () => {
+      const newWorkEmail = anotherValidEmailAddress as EmailString;
+      mockUpdateProfile.mockReturnValue(
+        Promise.resolve(left(ResponseErrorInternal("error")))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+
+      const req = mockReq();
+      req.user = mockedLoggedUser;
+      req.body = { work_email: newWorkEmail };
+
+      const controller = await getProfileController();
+      await controller.editProfile(req);
+      expect(mockSendEmail).not.toHaveBeenCalled();
     });
   });
 });

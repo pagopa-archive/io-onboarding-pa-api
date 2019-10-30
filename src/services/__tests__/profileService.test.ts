@@ -111,7 +111,7 @@ describe("Profile service", () => {
         work_email: newEmail
       }).value;
       expect(result).not.toBeNull();
-      expect(result).toEqual({
+      expect(result).toHaveProperty("value", {
         apply: expect.any(Function),
         kind: "IResponseSuccessJson",
         value: expectedResponseBody
@@ -123,8 +123,9 @@ describe("Profile service", () => {
         { ...mockedLoggedUser, email: emailOfNotExistingUser },
         anEmail
       );
-      expect(result).toHaveProperty("apply", expect.any(Function));
-      expect(result).toHaveProperty("kind", "IResponseErrorNotFound");
+      expect(result).not.toBeNull();
+      expect(result.value).toHaveProperty("apply", expect.any(Function));
+      expect(result.value).toHaveProperty("kind", "IResponseErrorNotFound");
     });
 
     it("should return an internal error response if the db throws an error", async () => {
@@ -132,8 +133,9 @@ describe("Profile service", () => {
         mockedLoggedUser,
         anEmailThrowingErrorOnFind
       );
-      expect(result).toHaveProperty("apply", expect.any(Function));
-      expect(result).toHaveProperty("kind", "IResponseErrorInternal");
+      expect(result).not.toBeNull();
+      expect(result.value).toHaveProperty("apply", expect.any(Function));
+      expect(result.value).toHaveProperty("kind", "IResponseErrorInternal");
     });
   });
 });
