@@ -30,6 +30,7 @@ import { log } from "./utils/logger";
 import AuthenticationController from "./controllers/authenticationController";
 import OrganizationController from "./controllers/organizationController";
 import ProfileController from "./controllers/profileController";
+import DocumentService from "./services/documentService";
 import EmailService from "./services/emailService";
 import ProfileService from "./services/profileService";
 import SessionStorage from "./services/sessionStorage";
@@ -176,7 +177,8 @@ function registerRoutes(
     toExpressHandler(profileController.editProfile, profileController)
   );
 
-  const organizationController = new OrganizationController();
+  const documentService = new DocumentService();
+  const organizationController = new OrganizationController(documentService);
 
   app.post(
     "/organizations",

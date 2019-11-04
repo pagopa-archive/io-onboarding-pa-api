@@ -1,3 +1,4 @@
+import { isLeft, isRight } from "fp-ts/lib/Either";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Sequelize } from "sequelize";
 import { EmailAddress } from "../../generated/EmailAddress";
@@ -153,7 +154,7 @@ describe("OrganizationService", () => {
         });
       });
 
-      it("should return a success response containing the new organization", async () => {
+      it("should return a right value with a success response containing the new organization", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
           ipa_code: ipaCodeOfValidPublicAdministration
@@ -182,26 +183,28 @@ describe("OrganizationService", () => {
         };
         const result = await registerOrganization(newOrganizationParams, user);
         expect(result).not.toBeNull();
-        expect(result).toHaveProperty(
+        expect(isRight(result)).toBeTruthy();
+        expect(result.value).toHaveProperty(
           "kind",
           "IResponseSuccessRedirectToResource"
         );
-        expect(result).toHaveProperty("payload", expectedResult);
-        expect(result).toHaveProperty("resource", expectedResult);
+        expect(result.value).toHaveProperty("payload", expectedResult);
+        expect(result.value).toHaveProperty("resource", expectedResult);
       });
     });
 
     describe("when the public administration does not exist", () => {
       const ipaCodeOfNotExistingPublicAdministration = "not_existing_public_administration" as NonEmptyString;
 
-      it("should return a not found error response", async () => {
+      it("should return a left value with a not found error response", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
           ipa_code: ipaCodeOfNotExistingPublicAdministration
         };
         const result = await registerOrganization(newOrganizationParams, user);
         expect(result).not.toBeNull();
-        expect(result).toHaveProperty("kind", "IResponseErrorNotFound");
+        expect(isLeft(result)).toBeTruthy();
+        expect(result.value).toHaveProperty("kind", "IResponseErrorNotFound");
       });
     });
 
@@ -229,7 +232,8 @@ describe("OrganizationService", () => {
         };
         const result = await registerOrganization(newOrganizationParams, user);
         expect(result).not.toBeNull();
-        expect(result).toHaveProperty("kind", "IResponseErrorInternal");
+        expect(isLeft(result)).toBeTruthy();
+        expect(result.value).toHaveProperty("kind", "IResponseErrorInternal");
       });
     });
 
@@ -267,7 +271,8 @@ describe("OrganizationService", () => {
         };
         const result = await registerOrganization(newOrganizationParams, user);
         expect(result).not.toBeNull();
-        expect(result).toHaveProperty("kind", "IResponseErrorConflict");
+        expect(isLeft(result)).toBeTruthy();
+        expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");
       });
     });
   });
