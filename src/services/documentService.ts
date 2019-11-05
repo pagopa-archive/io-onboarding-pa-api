@@ -1,7 +1,7 @@
+import { spawn } from "child_process";
 import { none, Option, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import * as PdfDocument from "pdfkit";
-import * as shell from "shelljs";
 import { log } from "../utils/logger";
 
 export default class DocumentService {
@@ -19,7 +19,7 @@ export default class DocumentService {
         resolve(some(error));
       });
       stream.on("finish", async () => {
-        resolve(this.convertToPdfA(tempFilePath, documentPath));
+        resolve(await this.convertToPdfA(tempFilePath, documentPath));
         fs.unlink(tempFilePath, err => {
           if (err) {
             log.error(
@@ -34,13 +34,30 @@ export default class DocumentService {
   }
 
   private convertToPdfA(input: string, output: string): Promise<Option<Error>> {
-    const command = `gs \
-      -dQUIET -dPDFA=1 -dBATCH -dNOPAUSE -sDEVICE=pdfwrite \
-      -sProcessColorModel=DeviceRGB -sColorConversionStrategy=UseDeviceIndependentColor \
-      -sOutputFile=${output} ${input}`;
+    const gsCommandArgs: ReadonlyArray<string> = [
+      "-dQUIET",
+      "-dPDFA=1",
+      "-dBATCH",
+      "-dNOPAUSE",
+      "-sDEVICE=pdfwrite",
+      "-sProcessColorModel=DeviceRGB",
+      "-sColorConversionStrategy=UseDeviceIndependentColor",
+      `-sOutputFile=${output}`,
+      `${input}`
+    ];
     return new Promise(resolve => {
-      const result = shell.exec(command);
-      resolve(result.code !== 0 ? some(Error(result.stderr)) : none);
+      const conversionProcess = spawn("gs", gsCommandArgs);
+      // tslint:disable-next-line:readonly-array
+      const logs: string[] = [];
+      conversionProcess.stdout.on("data", data => {
+        logs.push(data.toString());
+      });
+      conversionProcess.stderr.on("data", data => {
+        logs.push(data.toString());
+      });
+      conversionProcess.on("close", code => {
+        resolve(code === 0 ? none : some(Error(logs.join(" / "))));
+      });
     });
   }
 }

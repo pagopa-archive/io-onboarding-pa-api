@@ -74,7 +74,6 @@
     "pg-hstore": "^2.3.3",
     "sequelize": "^5.9.2",
     "sequelize-mock": "^0.10.2",
-    "shelljs": "^0.8.3",
     "spid-passport": "git://github.com/teamdigitale/spid-passport.git#v1.1.7",
     "umzug-sync": "^1.0.0",
     "winston": "^3.2.1",
