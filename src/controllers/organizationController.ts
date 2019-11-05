@@ -82,8 +82,8 @@ export default class OrganizationController {
           return errorResponseOrSuccessResponse.map(async response => {
             const organization = response.payload;
             const outputFolder = `./documents/${organization.ipa_code}`;
-            fs.mkdirSync(outputFolder, { recursive: true });
             try {
+              await fs.promises.mkdir(outputFolder, { recursive: true });
               const arrayOfMaybeError = await Promise.all([
                 this.documentService.generateDocument(
                   localeIt.organizationController.registerOrganization.contract.replace(
