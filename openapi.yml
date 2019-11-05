@@ -538,5 +538,6 @@ components:
         }
   securitySchemes:
     bearerAuth:
-      type: http
-      scheme: bearer
+      type: apiKey
+      name: Authorization
+      in: header
