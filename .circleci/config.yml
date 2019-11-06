@@ -1,6 +1,13 @@
 defaults: &defaults
   working_directory: ~/repo
 
+add_ghostscript_libs: &install_ghostscript_libs
+  run:
+    command: |
+      sudo apt-get update
+      sudo apt-get --yes install ghostscript
+      sudo apt-get --yes install libgs-dev
+
 node_cache_key: &node_cache_key v1-dependencies-{{ checksum "yarn.lock" }}
 
 defaults_js: &defaults_js
@@ -40,6 +47,7 @@ jobs:
       - checkout
       - *restore_node_cache
       - *install_node_modules
+      - *install_ghostscript_libs
       - run: yarn test
       - run: 'bash <(curl -s https://codecov.io/bash)'
 
