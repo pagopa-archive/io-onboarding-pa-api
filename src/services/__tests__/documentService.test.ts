@@ -40,8 +40,7 @@ describe("DocumentService", () => {
       mockConvertToPdfA.mockRestore();
       expect(isSome(result)).toBeTruthy();
       return fs.access(validOutputPath, error => {
-        expect(error).toBeNull();
-        return fs.unlink(validOutputPath, () => undefined);
+        expect(error).not.toBeNull();
       });
     });
   });
