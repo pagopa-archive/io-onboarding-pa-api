@@ -62,7 +62,6 @@ export default class ProfileController {
                 "%s",
                 user.givenName
               );
-              // tslint:disable-next-line:no-floating-promises
               this.emailService
                 .send({
                   html: emailText,
