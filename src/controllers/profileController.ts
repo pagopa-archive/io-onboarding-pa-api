@@ -62,6 +62,9 @@ export default class ProfileController {
                 "%s",
                 user.givenName
               );
+              // TODO:
+              //  refactor this kind of tasks with some external asynchronous worker processes linked to a shared queue.
+              //  @see https://www.pivotaltracker.com/story/show/169620861
               this.emailService
                 .send({
                   html: emailText,
