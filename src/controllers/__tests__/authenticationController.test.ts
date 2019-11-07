@@ -18,6 +18,9 @@ import { LoggedUser, validateSpidUser } from "../../types/user";
 import { getRequiredEnvVar } from "../../utils/environment";
 import AuthenticationController from "../authenticationController";
 
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.example" });
+
 const aTimestamp = 1518010929530;
 const tokenDurationSecs = 60;
 const cookieDomain = getRequiredEnvVar("COOKIE_DOMAIN");
