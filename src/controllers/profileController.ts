@@ -57,26 +57,30 @@ export default class ProfileController {
             workEmail
           );
           return errorResponseOrSuccessResponse.map(response => {
-            const emailText = localeIt.profileController.editProfile.notificationEmail.content.replace(
-              "%s",
-              user.givenName
-            );
-            // tslint:disable-next-line:no-floating-promises
-            this.emailService
-              .send({
-                html: emailText,
-                subject:
-                  localeIt.profileController.editProfile.notificationEmail
-                    .subject,
-                text: emailText,
-                to: workEmail
-              })
-              .catch(error =>
-                log.error(
-                  "Failed to send email notification for work email change. %s",
-                  error
-                )
+            if (response.value.work_email !== response.value.email) {
+              const emailText = localeIt.profileController.editProfile.notificationEmail.content.replace(
+                "%s",
+                user.givenName
               );
+              // TODO:
+              //  refactor this kind of tasks with some external asynchronous worker processes linked to a shared queue.
+              //  @see https://www.pivotaltracker.com/story/show/169620861
+              this.emailService
+                .send({
+                  html: emailText,
+                  subject:
+                    localeIt.profileController.editProfile.notificationEmail
+                      .subject,
+                  text: emailText,
+                  to: workEmail
+                })
+                .catch(error =>
+                  log.error(
+                    "Failed to send email notification for work email change. %s",
+                    error
+                  )
+                );
+            }
             return response;
           }).value;
         }
