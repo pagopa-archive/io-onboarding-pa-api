@@ -109,7 +109,7 @@ export default class OrganizationController {
                       "%delegate%",
                       `${user.givenName} ${user.familyName}`
                     ),
-                  `${outputFolder}/mandate.pdf`
+                  `${outputFolder}/mandate-${user.fiscalCode.toLowerCase()}.pdf`
                 )
               ]);
               const someError = arrayOfMaybeError.find(isSome);
