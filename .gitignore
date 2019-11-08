@@ -6,3 +6,6 @@ coverage
 .vscode
 .idea
 /src/generated/
+
+# Exclude custom local enviroment variables.
+/.env

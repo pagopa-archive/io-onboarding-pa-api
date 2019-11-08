@@ -148,20 +148,55 @@ describe("ProfileController", () => {
       });
     });
 
-    it("should send a notification email when the update succeeds", async () => {
+    it("should send a notification email only when the work email is updated with a different address than the email address", async () => {
       const newWorkEmail = anotherValidEmailAddress as EmailString;
-      mockUpdateProfile.mockReturnValue(
-        Promise.resolve(right(ResponseSuccessJson({})))
-      );
+      const mockedUserProfile: UserProfile = {
+        email: mockedLoggedUser.email,
+        family_name: mockedLoggedUser.familyName,
+        fiscal_code: mockedLoggedUser.fiscalCode,
+        given_name: mockedLoggedUser.givenName,
+        role: mockedLoggedUser.role
+      };
       mockSendEmail.mockReturnValue(Promise.resolve(none));
 
       const req = mockReq();
+
+      // The work email differs from the email,
+      // a notification email should be sent
       req.user = mockedLoggedUser;
       req.body = { work_email: newWorkEmail };
-
+      mockUpdateProfile.mockReturnValue(
+        Promise.resolve(
+          some(
+            ResponseSuccessJson({
+              ...mockedUserProfile,
+              work_email: newWorkEmail
+            })
+          )
+        )
+      );
       const controller = await getProfileController();
       await controller.editProfile(req);
       expect(mockSendEmail).toHaveBeenCalled();
+
+      mockSendEmail.mockClear();
+
+      // The work email does not differ from the email,
+      // no notification email should be sent
+      req.user = mockedLoggedUser;
+      req.body = { work_email: req.user.email };
+      mockUpdateProfile.mockReturnValue(
+        Promise.resolve(
+          some(
+            ResponseSuccessJson({
+              ...mockedUserProfile,
+              work_email: req.body.work_email
+            })
+          )
+        )
+      );
+      await controller.editProfile(req);
+      expect(mockSendEmail).not.toHaveBeenCalled();
     });
 
     it("should return a validation error response if the request is invalid", async () => {
