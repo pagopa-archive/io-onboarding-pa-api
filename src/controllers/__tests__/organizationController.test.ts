@@ -1,3 +1,6 @@
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.example" });
+
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
 import {
