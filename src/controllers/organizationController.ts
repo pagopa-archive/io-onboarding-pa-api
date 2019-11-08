@@ -20,10 +20,16 @@ import { OrganizationRegistrationParams } from "../generated/OrganizationRegistr
 import { UserRoleEnum } from "../generated/UserRole";
 import localeIt from "../locales/it";
 import DocumentService from "../services/documentService";
-import { findPublicAdministrationsByName, registerOrganization } from "../services/organizationService";
+import {
+  findPublicAdministrationsByName,
+  registerOrganization
+} from "../services/organizationService";
 import { withUserFromRequest } from "../types/user";
 import { log } from "../utils/logger";
-import { withCatchAsInternalError, withValidatedOrValidationError } from "../utils/responses";
+import {
+  withCatchAsInternalError,
+  withValidatedOrValidationError
+} from "../utils/responses";
 
 export default class OrganizationController {
   constructor(private readonly documentService: DocumentService) {}
