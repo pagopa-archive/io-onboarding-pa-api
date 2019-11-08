@@ -75,6 +75,9 @@ export default class OrganizationController {
           );
           return errorResponseOrSuccessResponse.map(async response => {
             const organization = response.payload;
+            // TODO:
+            //  the documents must be stored on cloud (Azure Blob Storage).
+            //  @see https://www.pivotaltracker.com/story/show/169644958
             const outputFolder = `./documents/${organization.ipa_code}`;
             try {
               await fs.promises.mkdir(outputFolder, { recursive: true });
