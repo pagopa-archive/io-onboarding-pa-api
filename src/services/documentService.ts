@@ -2,7 +2,7 @@ import { spawn } from "child_process";
 import { none, Option, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import * as PdfDocument from "pdfkit";
-import { log } from "../utils/logger";
+import * as tmp from "tmp";
 
 export default class DocumentService {
   public async generateDocument(
@@ -10,26 +10,29 @@ export default class DocumentService {
     documentPath: string
   ): Promise<Option<Error>> {
     return new Promise(resolve => {
-      const tempFilePath = `${process.hrtime().join("")}.pdf`;
-      const contract = new PdfDocument();
-      contract.text(content);
-      const stream = contract.pipe(fs.createWriteStream(tempFilePath));
-      contract.end();
-      stream.on("error", error => {
-        resolve(some(error));
-      });
-      stream.on("finish", async () => {
-        resolve(await this.convertToPdfA(tempFilePath, documentPath));
-        fs.unlink(tempFilePath, err => {
-          if (err) {
-            log.error(
-              "Error attempting to delete temp file %s. %s",
-              tempFilePath,
-              err
+      tmp.file(
+        { discardDescriptor: true },
+        (tempFileError, tempFilePath, ___, removeCallback) => {
+          if (tempFileError) {
+            return resolve(
+              some(
+                new Error("An error occurred during temporary file generation")
+              )
             );
           }
-        });
-      });
+          const contract = new PdfDocument();
+          contract.text(content);
+          const stream = contract.pipe(fs.createWriteStream(tempFilePath));
+          contract.end();
+          stream.on("error", error => {
+            resolve(some(error));
+          });
+          stream.on("finish", async () => {
+            resolve(await this.convertToPdfA(tempFilePath, documentPath));
+            removeCallback();
+          });
+        }
+      );
     });
   }
 
