@@ -199,7 +199,7 @@ describe("OrganizationController", () => {
     });
   });
 
-  describe("#getDocument()", () => {
+  describe.skip("#getDocument()", () => {
     const mockedOrganizationIpaCode = "something";
     const mockedExistingFileName = "mocked-document.pdf";
     const mockedExistingDocumentContent = Buffer.from([8, 6, 7, 5, 3, 0, 9]);
@@ -240,7 +240,7 @@ describe("OrganizationController", () => {
       });
     });
 
-    describe.skip("when the user has permission and the requested document exists", () => {
+    describe("when the user has permission and the requested document exists", () => {
       beforeEach(() => {
         const mockedExistingDocumentPath = `documents/${mockedOrganizationIpaCode}/${mockedExistingFileName}`;
         const mockedFsConfig = {
