@@ -28,8 +28,8 @@ import {
 import { withUserFromRequest } from "../types/user";
 import { log } from "../utils/logger";
 import {
-  IResponseSuccessPdf,
-  ResponseSuccessPdf,
+  IResponseDownload,
+  ResponseDownload,
   withCatchAsInternalError,
   withValidatedOrValidationError
 } from "../utils/responses";
@@ -139,7 +139,7 @@ export default class OrganizationController {
     | IResponseErrorForbiddenNotAuthorized
     | IResponseErrorNotFound
     | IResponseErrorInternal
-    | IResponseSuccessPdf
+    | IResponseDownload
   > {
     return withUserFromRequest(req, async user => {
       if (user.role !== UserRoleEnum.ORG_DELEGATE) {
@@ -148,20 +148,12 @@ export default class OrganizationController {
       const filePath = `./documents/${req.params.ipaCode}/${req.params.fileName}`;
       try {
         await fs.promises.access(filePath);
+        return ResponseDownload(filePath);
       } catch (error) {
         return ResponseErrorNotFound(
           "Not found",
           "The requested document does not exist"
         );
-      }
-      try {
-        const buffer = await fs.promises.readFile(
-          `./documents/${req.params.ipaCode}/${req.params.fileName}`
-        );
-        return ResponseSuccessPdf(buffer);
-      } catch (error) {
-        log.error("Error reading file. %s", error);
-        return ResponseErrorInternal("Could not read file");
       }
     });
   }

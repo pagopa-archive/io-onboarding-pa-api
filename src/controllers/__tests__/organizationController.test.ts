@@ -3,11 +3,7 @@ import * as mockFs from "mock-fs";
 
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
-import * as fs from "fs";
-import {
-  ResponseErrorNotFound,
-  ResponseSuccessRedirectToResource
-} from "italia-ts-commons/lib/responses";
+import { ResponseErrorNotFound, ResponseSuccessRedirectToResource } from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/request";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
@@ -255,36 +251,14 @@ describe("OrganizationController", () => {
       afterEach(() => {
         mockFs.restore();
       });
-      it("should return an internal server error if the reading of the requested document fails", async () => {
-        const mockFsReadFile = jest.spyOn(fs.promises, "readFile");
-        mockFsReadFile.mockImplementation(() => {
-          return Promise.reject(new Error("Error reading file"));
-        });
-        const mockFsAccess = jest.spyOn(fs.promises, "access");
-        mockFsAccess.mockImplementation(() => {
-          return Promise.resolve();
-        });
-        const req = mockReq();
-        req.user = mockedLoggedDelegate;
-        req.params = reqParams;
-        const organizationController = getOrganizationController();
-        const result = await organizationController.getDocument(req);
-        expect(result).toEqual({
-          apply: expect.any(Function),
-          detail: expect.any(String),
-          kind: "IResponseErrorInternal"
-        });
-        mockFsReadFile.mockRestore();
-        mockFsAccess.mockRestore();
-      });
 
-      it("should return an application/pdf response containing the file if the file exists and can be read", async () => {
+      it("should return the download of the required file", async () => {
         const req = mockReq();
         req.user = mockedLoggedDelegate;
         req.params = reqParams;
         const organizationController = getOrganizationController();
         const result = await organizationController.getDocument(req);
-        expect(result).toHaveProperty("kind", "IResponseSuccessPdf");
+        expect(result).toHaveProperty("kind", "IResponseDownload");
       });
     });
   });
