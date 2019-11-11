@@ -1,5 +1,5 @@
 import * as dotenv from "dotenv";
-import * as mockFs from "mock-fs";
+// import * as mockFs from "mock-fs";
 
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
@@ -245,14 +245,14 @@ describe.skip("OrganizationController", () => {
 
     describe("when the user has permission and the requested document exists", () => {
       beforeEach(() => {
-        const mockedExistingDocumentPath = `documents/${mockedOrganizationIpaCode}/${mockedExistingFileName}`;
-        const mockedFsConfig = {
-          [mockedExistingDocumentPath]: mockedExistingDocumentContent
-        };
-        mockFs(mockedFsConfig);
+        // const mockedExistingDocumentPath = `documents/${mockedOrganizationIpaCode}/${mockedExistingFileName}`;
+        // const mockedFsConfig = {
+        //   [mockedExistingDocumentPath]: mockedExistingDocumentContent
+        // };
+        // mockFs(mockedFsConfig);
       });
       afterEach(() => {
-        mockFs.restore();
+        // mockFs.restore();
       });
 
       it("should return the download of the required file", async () => {
