@@ -1,3 +1,4 @@
+import { Either, left, right } from "fp-ts/lib/Either";
 import { Errors } from "io-ts";
 import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
@@ -142,17 +143,20 @@ function mergePublicAdministrationsAndOrganizations(
  * Creates a new organization associated with its legal representative
  * and returns it in a success response.
  * @param newOrganizationParams The parameters required to create the organization
+ * @param user The user who is performing the operation
  */
 export async function registerOrganization(
   newOrganizationParams: OrganizationRegistrationParams,
   user: LoggedUser
 ): Promise<
-  // tslint:disable-next-line:max-union-size
-  | IResponseErrorInternal
-  | IResponseErrorConflict
-  | IResponseErrorNotFound
-  | IResponseErrorValidation
-  | IResponseSuccessRedirectToResource<Organization, Organization>
+  Either<
+    // tslint:disable-next-line:max-union-size
+    | IResponseErrorInternal
+    | IResponseErrorConflict
+    | IResponseErrorNotFound
+    | IResponseErrorValidation,
+    IResponseSuccessRedirectToResource<Organization, Organization>
+  >
 > {
   const genericError = "Error creating the new organization";
   try {
@@ -163,9 +167,11 @@ export async function registerOrganization(
       }
     );
     if (ipaPublicAdministrationModel === null) {
-      return ResponseErrorNotFound(
-        "Not found",
-        "IPA public administration does not exist"
+      return left(
+        ResponseErrorNotFound(
+          "Not found",
+          "IPA public administration does not exist"
+        )
       );
     }
     const errorsOrIpaPublicAdministration = IpaPublicAdministrationType.decode(
@@ -174,7 +180,9 @@ export async function registerOrganization(
       })
     );
     if (errorsOrIpaPublicAdministration.isLeft()) {
-      return ResponseErrorInternal("Invalid IPA public administration data");
+      return left(
+        ResponseErrorInternal("Invalid IPA public administration data")
+      );
     }
     const ipaPublicAdministration = errorsOrIpaPublicAdministration.value;
 
@@ -193,7 +201,9 @@ export async function registerOrganization(
       ) ||
       ipaPublicAdministration[emailTypePropName] !== "pec"
     ) {
-      return ResponseErrorValidation("Bad request", "Invalid selectedPecLabel");
+      return left(
+        ResponseErrorValidation("Bad request", "Invalid selectedPecLabel")
+      );
     }
 
     // Transactionally save the entities into the database
@@ -259,13 +269,17 @@ export async function registerOrganization(
             )
             .then(() => {
               return new Promise<
-                | IResponseSuccessRedirectToResource<Organization, Organization>
-                | IResponseErrorInternal
+                Either<
+                  IResponseErrorInternal,
+                  IResponseSuccessRedirectToResource<Organization, Organization>
+                >
               >(resolve => {
                 const validationErrorsHandler = (errors: Errors) => {
                   resolve(
-                    ResponseErrorInternal(
-                      errorsToReadableMessages(errors).join("/")
+                    left(
+                      ResponseErrorInternal(
+                        errorsToReadableMessages(errors).join("/")
+                      )
                     )
                   );
                 };
@@ -306,10 +320,12 @@ export async function registerOrganization(
                       })
                       .fold(validationErrorsHandler, organization => {
                         resolve(
-                          ResponseSuccessRedirectToResource(
-                            organization,
-                            resourceUrl,
-                            organization
+                          right(
+                            ResponseSuccessRedirectToResource(
+                              organization,
+                              resourceUrl,
+                              organization
+                            )
                           )
                         );
                       });
@@ -321,14 +337,14 @@ export async function registerOrganization(
       .catch(error => {
         log.error(`${genericError} %s`, error);
         if (error instanceof UniqueConstraintError) {
-          return ResponseErrorConflict(
-            "The organization is already registered"
+          return left(
+            ResponseErrorConflict("The organization is already registered")
           );
         }
-        return ResponseErrorInternal(genericError);
+        return left(ResponseErrorInternal(genericError));
       });
   } catch (error) {
     log.error(`${genericError} %s`, error);
-    return ResponseErrorInternal(genericError);
+    return left(ResponseErrorInternal(genericError));
   }
 }

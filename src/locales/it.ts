@@ -1,4 +1,12 @@
 export default {
+  organizationController: {
+    registerOrganization: {
+      contract:
+        "Contratto di adesione tra \"IO - L'app per i servizi pubblici\" e %s per l'utilizzo dei servizi forniti dalla piattaforma.",
+      delegation:
+        "Io sottoscritto %legalRepresentative%, in qualità di responsabile legale dell'ente %organizationName%, delego a %delegate% la gestione dell'attività dell'ente sulla piattaforma IO."
+    }
+  },
   profileController: {
     editProfile: {
       notificationEmail: {

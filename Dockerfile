@@ -1,5 +1,9 @@
 FROM circleci/node:10.14.1 as builder
 
+RUN sudo apt-get update
+RUN sudo apt-get --yes install ghostscript
+RUN sudo apt-get --yes install libgs-dev
+
 WORKDIR /usr/src/app
 
 COPY /src /usr/src/app/src
@@ -18,7 +22,7 @@ LABEL maintainer="https://teamdigitale.governo.it"
 # Install major CA certificates to cover
 # https://github.com/SparebankenVest/azure-key-vault-to-kubernetes integration
 RUN apk update && \
-    apk add ca-certificates
+    apk add ca-certificates ghostscript ghostscript-dev
 
 WORKDIR /usr/src/app
 COPY /package.json /usr/src/app/package.json
