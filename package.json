@@ -60,7 +60,7 @@
     "io-ts": "1.8.5",
     "io-ts-types": "^0.4.7",
     "italia-ts-commons": "^5.1.5",
-    "italia-utils": "teamdigitale/io-utils-build-oas3",
+    "italia-utils": "teamdigitale/io-utils-build-oas3#4.1.1-beta.3",
     "logform": "^2.1.2",
     "node-cron": "^2.0.3",
     "node-fetch": "^2.6.0",
