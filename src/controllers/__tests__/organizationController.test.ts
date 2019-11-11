@@ -1,7 +1,4 @@
 import * as dotenv from "dotenv";
-dotenv.config({ path: ".env.example" });
-// import * as mockFs from "mock-fs";
-
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
 import {
@@ -20,6 +17,9 @@ import DocumentService from "../../services/documentService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
 import OrganizationController from "../organizationController";
+
+dotenv.config({ path: ".env.example" });
+// import * as mockFs from "mock-fs";
 
 const mockedLoggedDelegate: LoggedUser = {
   createdAt: new Date(1518010929530),
@@ -90,8 +90,8 @@ function getOrganizationController(): OrganizationController {
   return new OrganizationController(new DocumentService());
 }
 
-describe.skip("OrganizationController", () => {
-  describe.skip("#registerOrganization()", () => {
+describe("OrganizationController", () => {
+  describe("#registerOrganization()", () => {
     it("should return a forbidden error respose if the user is not a delegate", async () => {
       const mockedLoggedUser: LoggedUser = {
         ...mockedLoggedDelegate,
@@ -201,7 +201,7 @@ describe.skip("OrganizationController", () => {
     });
   });
 
-  describe.skip("#getDocument()", () => {
+  describe("#getDocument()", () => {
     const mockedOrganizationIpaCode = "something";
     const mockedExistingFileName = "mocked-document.pdf";
     const mockedExistingDocumentContent = Buffer.from([8, 6, 7, 5, 3, 0, 9]);
