@@ -190,6 +190,12 @@ function registerRoutes(
   );
 
   app.get(
+    "/organizations/:ipaCode/documents/:fileName",
+    bearerTokenAuth,
+    toExpressHandler(organizationController.getDocument, organizationController)
+  );
+
+  app.get(
     "/public-administrations",
     toExpressHandler(
       organizationController.findPublicAdministration,

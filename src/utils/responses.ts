@@ -5,6 +5,7 @@ import {
   ResponseErrorInternal,
   ResponseErrorValidation
 } from "italia-ts-commons/lib/responses";
+import { log } from "./logger";
 
 /**
  * Interface for a no content response returning a empty object.
@@ -12,6 +13,32 @@ import {
 export interface IResponseNoContent extends IResponse<"IResponseNoContent"> {
   readonly value: {};
 }
+
+/**
+ * Interface for response returning a PDF file.
+ */
+export interface IResponseDownload extends IResponse<"IResponseDownload"> {}
+
+/**
+ * Returns a pdf document.
+ */
+export const ResponseDownload = (
+  path: string,
+  detail = "Internal server error"
+): IResponseDownload => {
+  return {
+    apply: res =>
+      res.status(200).download(path, error => {
+        if (error) {
+          log.error("Error sending file. %s", error);
+          if (!res.headersSent) {
+            ResponseErrorInternal(detail).apply(res);
+          }
+        }
+      }),
+    kind: "IResponseDownload"
+  };
+};
 
 /**
  * Transforms async failures into internal errors

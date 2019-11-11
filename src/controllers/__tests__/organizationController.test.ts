@@ -1,12 +1,6 @@
-import * as dotenv from "dotenv";
-dotenv.config({ path: ".env.example" });
-
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
-import {
-  ResponseErrorNotFound,
-  ResponseSuccessRedirectToResource
-} from "italia-ts-commons/lib/responses";
+import { ResponseErrorNotFound, ResponseSuccessRedirectToResource } from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/request";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
@@ -19,6 +13,8 @@ import DocumentService from "../../services/documentService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
 import OrganizationController from "../organizationController";
+
+import * as mockFs from "mock-fs";
 
 const mockedLoggedDelegate: LoggedUser = {
   createdAt: new Date(1518010929530),
@@ -196,6 +192,70 @@ describe("OrganizationController", () => {
         kind: "IResponseSuccessRedirectToResource",
         payload: mockedRegisteredOrganization,
         resource: mockedRegisteredOrganization
+      });
+    });
+  });
+
+  describe("#getDocument()", () => {
+    const mockedOrganizationIpaCode = "something";
+    const mockedExistingFileName = "mocked-document.pdf";
+    const mockedExistingDocumentContent = Buffer.from([8, 6, 7, 5, 3, 0, 9]);
+    const reqParams = {
+      fileName: mockedExistingFileName,
+      ipaCode: "something"
+    };
+    it("should return a forbidden error respose if the user is not a delegate", async () => {
+      const mockedLoggedUser: LoggedUser = {
+        ...mockedLoggedDelegate,
+        role: UserRoleEnum.DEVELOPER
+      };
+      const req = mockReq();
+      req.user = mockedLoggedUser;
+      req.params = reqParams;
+      const organizationController = getOrganizationController();
+      const result = await organizationController.getDocument(req);
+      expect(result).toEqual({
+        apply: expect.any(Function),
+        detail: expect.any(String),
+        kind: "IResponseErrorForbiddenNotAuthorized"
+      });
+    });
+
+    it("should return a not found error if the requested document does not exist", async () => {
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      req.params = {
+        ...reqParams,
+        fileName: "not-existing-file"
+      };
+      const organizationController = getOrganizationController();
+      const result = await organizationController.getDocument(req);
+      expect(result).toEqual({
+        apply: expect.any(Function),
+        detail: expect.any(String),
+        kind: "IResponseErrorNotFound"
+      });
+    });
+
+    describe("when the user has permission and the requested document exists", () => {
+      beforeEach(() => {
+        const mockedExistingDocumentPath = `documents/${mockedOrganizationIpaCode}/${mockedExistingFileName}`;
+        const mockedFsConfig = {
+          [mockedExistingDocumentPath]: mockedExistingDocumentContent
+        };
+        mockFs(mockedFsConfig);
+      });
+      afterEach(() => {
+        mockFs.restore();
+      });
+
+      it("should return the download of the required file", async () => {
+        const req = mockReq();
+        req.user = mockedLoggedDelegate;
+        req.params = reqParams;
+        const organizationController = getOrganizationController();
+        const result = await organizationController.getDocument(req);
+        expect(result).toHaveProperty("kind", "IResponseDownload");
       });
     });
   });
