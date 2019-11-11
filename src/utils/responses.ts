@@ -14,6 +14,25 @@ export interface IResponseNoContent extends IResponse<"IResponseNoContent"> {
 }
 
 /**
+ * Interface for response returning a PDF file.
+ */
+export interface IResponseSuccessPdf extends IResponse<"IResponseSuccessPdf"> {}
+
+/**
+ * Returns a pdf document.
+ */
+export const ResponseSuccessPdf = (buffer: Buffer): IResponseSuccessPdf => {
+  return {
+    apply: res =>
+      res
+        .status(200)
+        .set("Content-Type", "application/pdf")
+        .send(buffer),
+    kind: "IResponseSuccessPdf"
+  };
+};
+
+/**
  * Transforms async failures into internal errors
  */
 export const withCatchAsInternalError = <T>(

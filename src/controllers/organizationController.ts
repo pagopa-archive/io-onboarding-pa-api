@@ -11,6 +11,7 @@ import {
   IResponseSuccessRedirectToResource,
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorInternal,
+  ResponseErrorNotFound,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
@@ -27,6 +28,8 @@ import {
 import { withUserFromRequest } from "../types/user";
 import { log } from "../utils/logger";
 import {
+  IResponseSuccessPdf,
+  ResponseSuccessPdf,
   withCatchAsInternalError,
   withValidatedOrValidationError
 } from "../utils/responses";
@@ -125,6 +128,41 @@ export default class OrganizationController {
           }).value;
         }
       );
+    });
+  }
+
+  public getDocument(
+    req: Request
+  ): Promise<
+    // tslint:disable-next-line:max-union-size
+    | IResponseErrorValidation
+    | IResponseErrorForbiddenNotAuthorized
+    | IResponseErrorNotFound
+    | IResponseErrorInternal
+    | IResponseSuccessPdf
+  > {
+    return withUserFromRequest(req, async user => {
+      if (user.role !== UserRoleEnum.ORG_DELEGATE) {
+        return ResponseErrorForbiddenNotAuthorized;
+      }
+      const filePath = `./documents/${req.params.ipaCode}/${req.params.fileName}`;
+      try {
+        await fs.promises.access(filePath);
+      } catch (error) {
+        return ResponseErrorNotFound(
+          "Not found",
+          "The requested document does not exist"
+        );
+      }
+      try {
+        const buffer = await fs.promises.readFile(
+          `./documents/${req.params.ipaCode}/${req.params.fileName}`
+        );
+        return ResponseSuccessPdf(buffer);
+      } catch (error) {
+        log.error("Error reading file. %s", error);
+        return ResponseErrorInternal("Could not read file");
+      }
     });
   }
 }
