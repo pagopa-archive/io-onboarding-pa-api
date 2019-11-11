@@ -25,6 +25,7 @@ export default class DocumentService {
           const stream = contract.pipe(fs.createWriteStream(tempFilePath));
           contract.end();
           stream.on("error", error => {
+            removeCallback();
             resolve(some(error));
           });
           stream.on("finish", async () => {
