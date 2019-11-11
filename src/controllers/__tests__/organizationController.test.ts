@@ -1,4 +1,5 @@
 import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.example" });
 // import * as mockFs from "mock-fs";
 
 import { left, right } from "fp-ts/lib/Either";
@@ -19,8 +20,6 @@ import DocumentService from "../../services/documentService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
 import OrganizationController from "../organizationController";
-
-dotenv.config({ path: ".env.example" });
 
 const mockedLoggedDelegate: LoggedUser = {
   createdAt: new Date(1518010929530),
