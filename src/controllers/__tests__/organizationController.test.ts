@@ -1,9 +1,6 @@
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
-import {
-  ResponseErrorNotFound,
-  ResponseSuccessRedirectToResource
-} from "italia-ts-commons/lib/responses";
+import { ResponseErrorNotFound, ResponseSuccessRedirectToResource } from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/request";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
@@ -17,7 +14,7 @@ import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
 import OrganizationController from "../organizationController";
 
-// import * as mockFs from "mock-fs";
+import * as mockFs from "mock-fs";
 
 const mockedLoggedDelegate: LoggedUser = {
   createdAt: new Date(1518010929530),
@@ -242,14 +239,14 @@ describe("OrganizationController", () => {
 
     describe("when the user has permission and the requested document exists", () => {
       beforeEach(() => {
-        // const mockedExistingDocumentPath = `documents/${mockedOrganizationIpaCode}/${mockedExistingFileName}`;
-        // const mockedFsConfig = {
-        //   [mockedExistingDocumentPath]: mockedExistingDocumentContent
-        // };
-        // mockFs(mockedFsConfig);
+        const mockedExistingDocumentPath = `documents/${mockedOrganizationIpaCode}/${mockedExistingFileName}`;
+        const mockedFsConfig = {
+          [mockedExistingDocumentPath]: mockedExistingDocumentContent
+        };
+        mockFs(mockedFsConfig);
       });
       afterEach(() => {
-        // mockFs.restore();
+        mockFs.restore();
       });
 
       it("should return the download of the required file", async () => {
