@@ -240,7 +240,7 @@ describe("OrganizationController", () => {
       });
     });
 
-    describe("when the user has permission and the requested document exists", () => {
+    describe.skip("when the user has permission and the requested document exists", () => {
       beforeEach(() => {
         const mockedExistingDocumentPath = `documents/${mockedOrganizationIpaCode}/${mockedExistingFileName}`;
         const mockedFsConfig = {
