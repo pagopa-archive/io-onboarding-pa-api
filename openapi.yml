@@ -38,6 +38,8 @@ x-commons:
   common-responses: &common-responses
     400:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
+    401:
+      description: Unauthorized
     429:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
     503:
@@ -109,6 +111,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Organization"
+  /organizations/{ipaCode}/documents/{documentName}:
+    get:
+      description: Returns the requested document
+      operationId: getDocument
+      security:
+        - bearerAuth: []
+        - tokenQueryAuth: []
+      parameters:
+        - name: ipaCode
+          in: path
+          required: true
+          description: The IPA code of the organization the document belongs to
+          schema:
+            <<: *non-empty-string
+        - name: documentName
+          in: path
+          required: true
+          description: The file name of the requested document
+          schema:
+            <<: *non-empty-string
+      responses:
+        <<: *common-responses
+        200:
+          description: The document
+          content:
+            application/pdf:
+              schema:
+                $ref: '#/components/schemas/BinaryFile'
+        403:
+          description: Forbidden
+        404:
+          description: File not found
   /profile:
     get:
       description: |-
@@ -169,6 +203,9 @@ paths:
                 $ref: '#/components/schemas/AdministrationSearchResult'
 components:
   schemas:
+    BinaryFile:
+      type: string
+      format: binary
     EmailAddress:
       type: string
       format: email
@@ -541,3 +578,7 @@ components:
       type: apiKey
       name: Authorization
       in: header
+    tokenQueryAuth:
+      type: apiKey
+      name: access_token
+      in: query
