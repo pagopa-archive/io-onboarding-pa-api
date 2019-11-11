@@ -1,4 +1,3 @@
-import * as dotenv from "dotenv";
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
 import {
@@ -18,7 +17,6 @@ import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
 import OrganizationController from "../organizationController";
 
-dotenv.config({ path: ".env.example" });
 // import * as mockFs from "mock-fs";
 
 const mockedLoggedDelegate: LoggedUser = {
