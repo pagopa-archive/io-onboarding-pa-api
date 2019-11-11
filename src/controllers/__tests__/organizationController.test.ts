@@ -3,7 +3,10 @@ import * as mockFs from "mock-fs";
 
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
-import { ResponseErrorNotFound, ResponseSuccessRedirectToResource } from "italia-ts-commons/lib/responses";
+import {
+  ResponseErrorNotFound,
+  ResponseSuccessRedirectToResource
+} from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/request";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
