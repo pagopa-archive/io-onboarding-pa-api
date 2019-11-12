@@ -117,6 +117,7 @@ The table lists the environment variables needed by the application, that may be
 | EMAIL_SMTP_PORT                        | The port of the SMTP server                                                       | int    |
 | EMAIL_SMTP_SECURE                      | If set to true, uses TLS in SMTP connection                                       | boolean|
 | EMAIL_SENDER                           | The email address of the sender                                                   | string |
+| INDICEPA_ADMINISTRATIONS_URL           | The URL to download the public administrations info from                              | string |
 
 ## Production deployments
 
