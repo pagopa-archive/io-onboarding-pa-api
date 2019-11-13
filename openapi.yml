@@ -111,6 +111,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Organization"
+  /organizations/{ipaCode}/signed-documents:
+    post:
+      description: Send via email the registration documents of the organization
+      operationId: sendDocuments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ipaCode
+          in: path
+          required: true
+          description: The IPA code of the organization the documents belong to
+          schema:
+            <<: *non-empty-string
+      responses:
+        <<: *common-responses
+        204:
+          description: No content
+        403:
+          description: Forbidden
+        404:
+          description: Organization not found
   /organizations/{ipaCode}/documents/{documentName}:
     get:
       description: Returns the requested document
