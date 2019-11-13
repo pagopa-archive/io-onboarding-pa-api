@@ -1,7 +1,11 @@
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
-import { ResponseErrorNotFound, ResponseSuccessRedirectToResource } from "italia-ts-commons/lib/responses";
+import {
+  ResponseErrorNotFound,
+  ResponseSuccessRedirectToResource
+} from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
+import * as nodemailer from "nodemailer";
 import mockReq from "../../__mocks__/request";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
 import { Organization } from "../../generated/Organization";
@@ -15,6 +19,7 @@ import { LoggedUser } from "../../types/user";
 import OrganizationController from "../organizationController";
 
 import * as mockFs from "mock-fs";
+import EmailService from "../../services/emailService";
 
 const mockedLoggedDelegate: LoggedUser = {
   createdAt: new Date(1518010929530),
@@ -81,8 +86,22 @@ jest.mock("../../services/documentService", () => ({
   }))
 }));
 
-function getOrganizationController(): OrganizationController {
-  return new OrganizationController(new DocumentService());
+async function getOrganizationController(): Promise<OrganizationController> {
+  const testEmailAccount = await nodemailer.createTestAccount();
+  const transporterConfig = {
+    auth: {
+      pass: testEmailAccount.pass,
+      user: testEmailAccount.user
+    },
+    from: "sender@email.com",
+    host: testEmailAccount.smtp.host,
+    port: testEmailAccount.smtp.port,
+    secure: testEmailAccount.smtp.secure
+  };
+  return new OrganizationController(
+    new DocumentService(),
+    new EmailService(transporterConfig)
+  );
 }
 
 describe("OrganizationController", () => {
@@ -95,7 +114,7 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedUser;
       req.body = mockedOrganizationRegistrationParams;
-      const organizationController = getOrganizationController();
+      const organizationController = await getOrganizationController();
       const result = await organizationController.registerOrganization(req);
       expect(result).toEqual({
         apply: expect.any(Function),
@@ -111,7 +130,7 @@ describe("OrganizationController", () => {
         ...mockedOrganizationRegistrationParams,
         scope: "INTERNATIONAL"
       };
-      const organizationController = getOrganizationController();
+      const organizationController = await getOrganizationController();
       const result = await organizationController.registerOrganization(req);
       expect(result).toEqual({
         apply: expect.any(Function),
@@ -134,7 +153,7 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
-      const organizationController = getOrganizationController();
+      const organizationController = await getOrganizationController();
       const result = await organizationController.registerOrganization(req);
       expect(result).toEqual({
         apply: expect.any(Function),
@@ -159,7 +178,7 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
-      const organizationController = getOrganizationController();
+      const organizationController = await getOrganizationController();
       const result = await organizationController.registerOrganization(req);
       expect(result).toEqual({
         apply: expect.any(Function),
@@ -184,7 +203,7 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
-      const organizationController = getOrganizationController();
+      const organizationController = await getOrganizationController();
       const result = await organizationController.registerOrganization(req);
       expect(result).toEqual({
         apply: expect.any(Function),
@@ -212,7 +231,7 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedUser;
       req.params = reqParams;
-      const organizationController = getOrganizationController();
+      const organizationController = await getOrganizationController();
       const result = await organizationController.getDocument(req);
       expect(result).toEqual({
         apply: expect.any(Function),
@@ -228,7 +247,7 @@ describe("OrganizationController", () => {
         ...reqParams,
         fileName: "not-existing-file"
       };
-      const organizationController = getOrganizationController();
+      const organizationController = await getOrganizationController();
       const result = await organizationController.getDocument(req);
       expect(result).toEqual({
         apply: expect.any(Function),
@@ -253,7 +272,7 @@ describe("OrganizationController", () => {
         const req = mockReq();
         req.user = mockedLoggedDelegate;
         req.params = reqParams;
-        const organizationController = getOrganizationController();
+        const organizationController = await getOrganizationController();
         const result = await organizationController.getDocument(req);
         expect(result).toHaveProperty("kind", "IResponseDownload");
       });
