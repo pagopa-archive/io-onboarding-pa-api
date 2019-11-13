@@ -13,6 +13,7 @@ import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { UserRoleEnum } from "../../generated/UserRole";
+import { Organization as OrganizationModel } from "../../models/Organization";
 import DocumentService from "../../services/documentService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
@@ -40,6 +41,11 @@ const mockedLoggedDelegate: LoggedUser = {
 const mockRegisterOrganization = jest.spyOn(
   organizationService,
   "registerOrganization"
+);
+
+const mockGetOrganizationInstanceFromDelegateEmail = jest.spyOn(
+  organizationService,
+  "getOrganizationInstanceFromDelegateEmail"
 );
 
 const mockedOrganizationRegistrationParams = {
@@ -275,6 +281,100 @@ describe("OrganizationController", () => {
         const organizationController = await getOrganizationController();
         const result = await organizationController.getDocument(req);
         expect(result).toHaveProperty("kind", "IResponseDownload");
+      });
+    });
+  });
+});
+
+describe("OrganizationController#sendDocuments()", () => {
+  it("should return a forbidden error response if the user is not a delegate", async () => {
+    const mockedLoggedUser: LoggedUser = {
+      ...mockedLoggedDelegate,
+      role: UserRoleEnum.DEVELOPER
+    };
+    const req = mockReq();
+    req.user = mockedLoggedUser;
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.sendDocuments(req);
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorForbiddenNotAuthorized"
+    });
+  });
+
+  it("should return an internal error if the reading of the organization from the db fails", async () => {
+    mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+      Promise.resolve(left(new Error("an error occurred")))
+    );
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.sendDocuments(req);
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorInternal"
+    });
+  });
+
+  it("should return a not found error response if no organization is found for the user", async () => {
+    mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+      Promise.resolve(right(none))
+    );
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.sendDocuments(req);
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorNotFound"
+    });
+  });
+
+  describe("when the organization is found", () => {
+    const mockedOrganizationModel = ({
+      fiscalCode: "86000470830",
+      ipaCode: "c_e043",
+      legalRepresentative: {
+        email: "fake.address@email.pec.it",
+        familyName: "Spano'",
+        fiscalCode: "BCDFGH12A21Z123D",
+        givenName: "Ignazio Alfonso",
+        phoneNumber: "5550000000",
+        role: "ORG_MANAGER"
+      },
+      name: "Comune di Gioiosa Marea",
+      pec: "fake.address@email.pec.it",
+      scope: "NATIONAL"
+    } as unknown) as OrganizationModel;
+    beforeEach(() => {
+      const mockedContractPath = `documents/${mockedOrganizationModel.ipaCode}/contract.pdf`;
+      const mockedMandatePath = `documents/${
+        mockedOrganizationModel.ipaCode
+      }/mandate-${mockedLoggedDelegate.fiscalCode.toLocaleLowerCase()}.pdf`;
+      const mockedFsConfig = {
+        [mockedContractPath]: Buffer.from([8, 6, 7, 5, 3, 0, 9]),
+        [mockedMandatePath]: Buffer.from([5, 3, 1, 7, 3, 2, 2])
+      };
+      mockFs(mockedFsConfig);
+    });
+    afterEach(() => {
+      mockFs.restore();
+    });
+    it("should send an email and return a no content response", async () => {
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+        Promise.resolve(right(some(mockedOrganizationModel)))
+      );
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      const organizationController = await getOrganizationController();
+      const result = await organizationController.sendDocuments(req);
+      expect(result).toEqual({
+        apply: expect.any(Function),
+        kind: "IResponseNoContent",
+        value: {}
       });
     });
   });
