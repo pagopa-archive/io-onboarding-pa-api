@@ -359,6 +359,7 @@ export async function getOrganizationInstanceFromDelegateEmail(
         {
           as: "users",
           model: User,
+          required: true,
           through: { where: { email: userEmail } }
         },
         {
