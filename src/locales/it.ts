@@ -5,6 +5,13 @@ export default {
         "Contratto di adesione tra \"IO - L'app per i servizi pubblici\" e %s per l'utilizzo dei servizi forniti dalla piattaforma.",
       delegation:
         "Io sottoscritto %legalRepresentative%, in qualità di responsabile legale dell'ente %organizationName%, delego a %delegate% la gestione dell'attività dell'ente sulla piattaforma IO."
+    },
+    sendDocuments: {
+      registrationEmail: {
+        content:
+          "In allegato la documentazione necessaria per la registrazione di questo ente presso la piattaforma IO.",
+        subject: "Registrazione presso la piattaforma IO"
+      }
     }
   },
   profileController: {

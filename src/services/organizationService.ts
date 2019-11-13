@@ -1,6 +1,7 @@
 import { Either, left, right } from "fp-ts/lib/Either";
-import { Errors } from "io-ts";
+import { none, Option, some } from "fp-ts/lib/Option";
 import * as t from "io-ts";
+import { Errors } from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import {
   IResponseErrorConflict,
@@ -346,5 +347,30 @@ export async function registerOrganization(
   } catch (error) {
     log.error(`${genericError} %s`, error);
     return left(ResponseErrorInternal(genericError));
+  }
+}
+
+export async function getOrganizationInstanceFromDelegateEmail(
+  userEmail: string
+): Promise<Either<Error, Option<OrganizationModel>>> {
+  try {
+    const organizationInstance = await OrganizationModel.findOne({
+      include: [
+        {
+          as: "users",
+          model: User,
+          through: { where: { email: userEmail } }
+        },
+        {
+          as: "legalRepresentative",
+          model: User
+        }
+      ]
+    });
+    return right(
+      organizationInstance === null ? none : some(organizationInstance)
+    );
+  } catch (error) {
+    return left(error);
   }
 }
