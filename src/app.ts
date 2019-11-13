@@ -4,14 +4,27 @@ import * as express from "express";
 import { Express, NextFunction, Request, Response } from "express";
 import { fromNullable } from "fp-ts/lib/Option";
 import * as fs from "fs";
-import { getErrorCodeFromResponse, SamlAttribute, SpidPassportBuilder } from "io-spid-commons";
+import {
+  getErrorCodeFromResponse,
+  SamlAttribute,
+  SpidPassportBuilder
+} from "io-spid-commons";
 import * as passport from "passport";
 
 import { init as initIpaPublicAdministration } from "./models/IpaPublicAdministration";
-import { createAssociations as createOrganizationAssociations, init as initOrganization } from "./models/Organization";
+import {
+  createAssociations as createOrganizationAssociations,
+  init as initOrganization
+} from "./models/Organization";
 import { init as initOrganizationUser } from "./models/OrganizationUser";
-import { createAssociations as createSessionAssociations, init as initSession } from "./models/Session";
-import { createAssociations as createUserAssociations, init as initUser } from "./models/User";
+import {
+  createAssociations as createSessionAssociations,
+  init as initSession
+} from "./models/Session";
+import {
+  createAssociations as createUserAssociations,
+  init as initUser
+} from "./models/User";
 import { log } from "./utils/logger";
 
 import AuthenticationController from "./controllers/authenticationController";
