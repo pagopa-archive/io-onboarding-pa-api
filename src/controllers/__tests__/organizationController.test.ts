@@ -5,6 +5,7 @@ import {
   ResponseSuccessRedirectToResource
 } from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
+import * as mockFs from "mock-fs";
 import * as nodemailer from "nodemailer";
 import mockReq from "../../__mocks__/request";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
@@ -15,12 +16,10 @@ import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { UserRoleEnum } from "../../generated/UserRole";
 import { Organization as OrganizationModel } from "../../models/Organization";
 import DocumentService from "../../services/documentService";
+import EmailService from "../../services/emailService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
 import OrganizationController from "../organizationController";
-
-import * as mockFs from "mock-fs";
-import EmailService from "../../services/emailService";
 
 const mockedLoggedDelegate: LoggedUser = {
   createdAt: new Date(1518010929530),
