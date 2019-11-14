@@ -374,7 +374,7 @@ components:
           description: Agency URL
     AdministrationSearchParam:
       type: string
-      pattern: ^[0-9A-Za-z ]{3,}$
+      pattern: ^.{5,}$
       example: comune gioiosa
     AdministrationSearchResult:
       type: object
