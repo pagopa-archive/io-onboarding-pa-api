@@ -1,4 +1,5 @@
 import { isLeft, isRight } from "fp-ts/lib/Either";
+import { isSome } from "fp-ts/lib/Option";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Sequelize } from "sequelize";
 import { EmailAddress } from "../../generated/EmailAddress";
@@ -8,7 +9,10 @@ import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { UserRoleEnum } from "../../generated/UserRole";
-import { registerOrganization } from "../organizationService";
+import {
+  getOrganizationInstanceFromDelegateEmail,
+  registerOrganization
+} from "../organizationService";
 
 jest.mock("../../database/db", () => ({
   default: new Sequelize({
@@ -58,6 +62,8 @@ const userInfo = {
 
 // tslint:disable-next-line:no-let
 let user: LoggedUser;
+// tslint:disable-next-line:no-let
+let userInstance: UserModel;
 
 beforeAll(async () => {
   initIpaPublicAdministration();
@@ -75,14 +81,15 @@ beforeAll(async () => {
   createUserAssociations();
   createSessionAssociations();
 
-  user = (await UserModel.create(userInfo, {
+  userInstance = await UserModel.create(userInfo, {
     include: [
       {
         as: "session",
         model: SessionModel
       }
     ]
-  })).get({ plain: true }) as LoggedUser;
+  });
+  user = userInstance.get({ plain: true }) as LoggedUser;
 });
 
 afterAll(async () => {
@@ -275,5 +282,93 @@ describe("OrganizationService", () => {
         expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");
       });
     });
+  });
+});
+
+describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () => {
+  const organizationEmail = "test@email.pec.it";
+  const legalRepresentativeInfo = {
+    email: organizationEmail,
+    familyName: "Legale" as NonEmptyString,
+    fiscalCode: "RPPLGL66S11G1239" as FiscalCode,
+    givenName: "Rappresentante" as NonEmptyString,
+    phoneNumber: "3330000000" as NonEmptyString,
+    role: UserRoleEnum.ORG_MANAGER
+  };
+  const organizationInfo = {
+    fiscalCode: "02438750586",
+    ipaCode: "org-code",
+    name: "test organization",
+    pec: organizationEmail,
+    scope: "NATIONAL"
+  };
+  beforeEach(async () => {
+    const legalRepresentativeInstance = await UserModel.create(
+      legalRepresentativeInfo
+    );
+    const organizationInstance = await OrganizationModel.create(
+      organizationInfo
+    );
+    await organizationInstance.addUser(userInstance, {
+      through: {
+        createdAt: Date.now(),
+        organizationIpaCode: organizationInstance.ipaCode,
+        updatedAt: Date.now(),
+        userEmail: user.email,
+        userRole: UserRoleEnum.ORG_DELEGATE
+      }
+    });
+    await organizationInstance.setLegalRepresentative(
+      legalRepresentativeInstance
+    );
+  });
+
+  afterEach(async () => {
+    await OrganizationUserModel.destroy({
+      force: true,
+      where: {
+        organizationIpaCode: organizationInfo.ipaCode
+      }
+    });
+    await UserModel.destroy({
+      force: true,
+      where: { email: organizationEmail }
+    });
+    await OrganizationModel.destroy({
+      force: true,
+      where: {
+        ipaCode: organizationInfo.ipaCode
+      }
+    });
+  });
+
+  it("should return a right value with some organization model if the user is the delegate of an organization", async () => {
+    const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
+      userInfo.email
+    );
+    expect(maybeOrganizationModel).not.toBeNull();
+    expect(isRight(maybeOrganizationModel)).toBeTruthy();
+    maybeOrganizationModel.fold(
+      () => fail(new Error("organizationModel was left instead of right")),
+      organizationModel => {
+        expect(isSome(organizationModel)).toBeTruthy();
+        expect(organizationModel.toNullable()).not.toBeNull();
+      }
+    );
+  });
+
+  it("should return a right value with none if the user is not the delegate of an organization", async () => {
+    const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
+      "not-delegate@email.net"
+    );
+    expect(maybeOrganizationModel).not.toBeNull();
+    expect(isRight(maybeOrganizationModel)).toBeTruthy();
+    maybeOrganizationModel.fold(
+      () => fail(new Error("organizationModel was left instead of right")),
+      organizationModel => {
+        expect(isSome(organizationModel)).toBeFalsy();
+        expect(organizationModel.toNullable()).toBeNull();
+      }
+    );
   });
 });

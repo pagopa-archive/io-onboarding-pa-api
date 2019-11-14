@@ -21,21 +21,29 @@ import { OrganizationRegistrationParams } from "../generated/OrganizationRegistr
 import { UserRoleEnum } from "../generated/UserRole";
 import localeIt from "../locales/it";
 import DocumentService from "../services/documentService";
+import EmailService from "../services/emailService";
 import {
   findPublicAdministrationsByName,
+  getOrganizationInstanceFromDelegateEmail,
   registerOrganization
 } from "../services/organizationService";
 import { withUserFromRequest } from "../types/user";
 import { log } from "../utils/logger";
 import {
   IResponseDownload,
+  IResponseNoContent,
   ResponseDownload,
+  ResponseNoContent,
   withCatchAsInternalError,
   withValidatedOrValidationError
 } from "../utils/responses";
 
 export default class OrganizationController {
-  constructor(private readonly documentService: DocumentService) {}
+  constructor(
+    private readonly documentService: DocumentService,
+    private readonly emailService: EmailService
+  ) {}
+
   public async findPublicAdministration(
     req: Request
   ): Promise<
@@ -155,6 +163,74 @@ export default class OrganizationController {
           "The requested document does not exist"
         );
       }
+    });
+  }
+
+  public async sendDocuments(
+    req: Request
+  ): Promise<
+    // tslint:disable-next-line:max-union-size
+    | IResponseErrorValidation
+    | IResponseErrorForbiddenNotAuthorized
+    | IResponseErrorNotFound
+    | IResponseErrorInternal
+    | IResponseNoContent
+  > {
+    return withUserFromRequest(req, async user => {
+      if (user.role !== UserRoleEnum.ORG_DELEGATE) {
+        return ResponseErrorForbiddenNotAuthorized;
+      }
+      const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
+        user.email
+      );
+      return errorOrMaybeOrganizationInstance.fold(
+        async error => {
+          log.error("An error occurred reading from db. %s", error);
+          return ResponseErrorInternal("An error occurred reading from db");
+        },
+        async maybeOrganizationInstance => {
+          if (maybeOrganizationInstance.isNone()) {
+            return ResponseErrorNotFound(
+              "Not found",
+              "The administration is not registered"
+            );
+          }
+          const organizationInstance = maybeOrganizationInstance.value;
+          // TODO:
+          //  the documents must be digitally signed before being sent via email.
+          //  @see https://www.pivotaltracker.com/story/show/169726141
+          try {
+            await this.emailService.send({
+              attachments: [
+                {
+                  filename: "contratto.pdf",
+                  path: `./documents/${organizationInstance.ipaCode}/contract.pdf`
+                },
+                {
+                  filename: `delega-${user.fiscalCode.toLocaleLowerCase()}.pdf`,
+                  path: `./documents/${
+                    organizationInstance.ipaCode
+                  }/mandate-${user.fiscalCode.toLocaleLowerCase()}.pdf`
+                }
+              ],
+              html:
+                localeIt.organizationController.sendDocuments.registrationEmail
+                  .content,
+              subject:
+                localeIt.organizationController.sendDocuments.registrationEmail
+                  .subject,
+              text:
+                localeIt.organizationController.sendDocuments.registrationEmail
+                  .content,
+              to: organizationInstance.pec
+            });
+            return ResponseNoContent();
+          } catch (error) {
+            log.error("An error occurred sending email. %s", error);
+            return ResponseErrorInternal("An error occurred sending email");
+          }
+        }
+      );
     });
   }
 }

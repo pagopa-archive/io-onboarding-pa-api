@@ -1,3 +1,4 @@
+import { Response } from "express";
 import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import {
@@ -12,6 +13,17 @@ import { log } from "./logger";
  */
 export interface IResponseNoContent extends IResponse<"IResponseNoContent"> {
   readonly value: {};
+}
+
+/**
+ * Returns a no content json response.
+ */
+export function ResponseNoContent(): IResponseNoContent {
+  return {
+    apply: (res: Response) => res.status(204).json({}),
+    kind: "IResponseNoContent",
+    value: {}
+  };
 }
 
 /**

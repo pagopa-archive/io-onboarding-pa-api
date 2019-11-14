@@ -178,7 +178,10 @@ function registerRoutes(
   );
 
   const documentService = new DocumentService();
-  const organizationController = new OrganizationController(documentService);
+  const organizationController = new OrganizationController(
+    documentService,
+    emailServiceInstance
+  );
 
   app.post(
     "/organizations",
@@ -193,6 +196,15 @@ function registerRoutes(
     "/organizations/:ipaCode/documents/:fileName",
     bearerTokenAuth,
     toExpressHandler(organizationController.getDocument, organizationController)
+  );
+
+  app.post(
+    "/organizations/:ipaCode/signed-documents",
+    bearerTokenAuth,
+    toExpressHandler(
+      organizationController.sendDocuments,
+      organizationController
+    )
   );
 
   app.get(
