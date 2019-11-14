@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { isSome } from "fp-ts/lib/Option";
+import { isSome, none, Option, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import {
   IResponseErrorConflict,
@@ -196,21 +196,34 @@ export default class OrganizationController {
             );
           }
           const organizationInstance = maybeOrganizationInstance.value;
-          // TODO:
-          //  the documents must be digitally signed before being sent via email.
-          //  @see https://www.pivotaltracker.com/story/show/169726141
+          const unsignedContractPath = `./documents/${organizationInstance.ipaCode}/contract.pdf`;
+          const signedContractPath = `./documents/${organizationInstance.ipaCode}/signed-contract.pdf`;
+          const unsignedMandatePath = `./documents/${
+            organizationInstance.ipaCode
+          }/mandate-${user.fiscalCode.toLocaleLowerCase()}.pdf`;
+          const signedMandatePath = `./documents/${
+            organizationInstance.ipaCode
+          }/signed-mandate-${user.fiscalCode.toLocaleLowerCase()}.pdf`;
+
+          const arrayOfMaybeError = await Promise.all([
+            this.createSignedDocument(unsignedContractPath, signedContractPath),
+            this.createSignedDocument(unsignedMandatePath, signedMandatePath)
+          ]);
+          if (arrayOfMaybeError.some(isSome)) {
+            return ResponseErrorInternal(
+              "An error occurred while signing documents"
+            );
+          }
           try {
             await this.emailService.send({
               attachments: [
                 {
                   filename: "contratto.pdf",
-                  path: `./documents/${organizationInstance.ipaCode}/contract.pdf`
+                  path: signedContractPath
                 },
                 {
                   filename: `delega-${user.fiscalCode.toLocaleLowerCase()}.pdf`,
-                  path: `./documents/${
-                    organizationInstance.ipaCode
-                  }/mandate-${user.fiscalCode.toLocaleLowerCase()}.pdf`
+                  path: signedMandatePath
                 }
               ],
               html:
@@ -232,5 +245,42 @@ export default class OrganizationController {
         }
       );
     });
+  }
+
+  private async createSignedDocument(
+    inputPath: string,
+    outputPath: string
+  ): Promise<Option<Error>> {
+    try {
+      const unsignedContentBase64 = await fs.promises.readFile(inputPath, {
+        encoding: "base64"
+      });
+      const errorOrSignedContentBase64 = await this.documentService.signDocument(
+        unsignedContentBase64
+      );
+      return errorOrSignedContentBase64.fold(
+        async error => {
+          log.error("An error occurred while signing document. %s", error);
+          return some(error);
+        },
+        async signedContentBase64 => {
+          try {
+            await fs.promises.writeFile(outputPath, signedContentBase64, {
+              encoding: "base64"
+            });
+            return none;
+          } catch (error) {
+            log.error(
+              "An error occurred while saving signed document. %s",
+              error
+            );
+            return some(error);
+          }
+        }
+      );
+    } catch (error) {
+      log.error("An error occurred while reading unsigned document. %s", error);
+      return Promise.resolve(some(error));
+    }
   }
 }

@@ -1,8 +1,11 @@
 import { spawn } from "child_process";
+import { Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import * as PdfDocument from "pdfkit";
+import * as soap from "soap";
 import * as tmp from "tmp";
+import { getRequiredEnvVar } from "../utils/environment";
 
 export default class DocumentService {
   public async generateDocument(
@@ -35,6 +38,36 @@ export default class DocumentService {
         }
       );
     });
+  }
+
+  public async signDocument(
+    unsignedContentBase64: string
+  ): Promise<Either<Error, string>> {
+    try {
+      const soapClient: soap.Client = await soap.createClientAsync(
+        getRequiredEnvVar("ARSS_WSDL_URL")
+      );
+      const result = await soapClient.pdfsignatureV2Async({
+        SignRequestV2: {
+          certID: "AS0",
+          identity: {
+            otpPwd: getRequiredEnvVar("ARSS_IDENTITY_OTP_PWD"),
+            typeOtpAuth: getRequiredEnvVar("ARSS_IDENTITY_TYPE_OTP_AUTH"),
+            user: getRequiredEnvVar("ARSS_IDENTITY_USER"),
+            userPWD: getRequiredEnvVar("ARSS_IDENTITY_USER_PWD")
+          },
+          requiredmark: false,
+          stream: unsignedContentBase64,
+          transport: "STREAM"
+        }
+      });
+      const responseContent = result[0].return;
+      return responseContent.status === "OK"
+        ? right(responseContent.stream as string)
+        : left(new Error(result.description));
+    } catch (error) {
+      return left(error);
+    }
   }
 
   private convertToPdfA(input: string, output: string): Promise<Option<Error>> {
