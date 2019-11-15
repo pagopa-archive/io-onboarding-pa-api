@@ -8,6 +8,8 @@ import * as tmp from "tmp";
 import { getRequiredEnvVar } from "../utils/environment";
 
 export default class DocumentService {
+  constructor(private arssClient: soap.Client) {}
+
   public async generateDocument(
     content: string,
     documentPath: string
@@ -44,10 +46,7 @@ export default class DocumentService {
     unsignedContentBase64: string
   ): Promise<Either<Error, string>> {
     try {
-      const soapClient: soap.Client = await soap.createClientAsync(
-        getRequiredEnvVar("ARSS_WSDL_URL")
-      );
-      const result = await soapClient.pdfsignatureV2Async({
+      const result = await this.arssClient.pdfsignatureV2Async({
         SignRequestV2: {
           certID: "AS0",
           identity: {

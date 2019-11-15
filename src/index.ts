@@ -1,4 +1,5 @@
 import { schedule } from "node-cron";
+import * as soap from "soap";
 import newApp from "./app";
 import EmailService from "./services/emailService";
 import { upsertFromIpa } from "./services/ipaPublicAdministrationService";
@@ -16,11 +17,13 @@ const emailService = new EmailService({
   secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
 });
 
-emailService
-  .verifyTransport()
-  .then(() => {
-    log.info("SMTP server is ready to accept messages");
-    return newApp(emailService)
+Promise.all([
+  emailService.verifyTransport(),
+  soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL"))
+])
+  .then(results => {
+    const [_, arssClient] = results;
+    return newApp(emailService, arssClient)
       .then(app => {
         app.listen(app.get("port"), () => {
           log.info(
@@ -34,7 +37,7 @@ emailService
       .catch(error => log.error("Error loading app: %s", error));
   })
   .catch(error => {
-    log.error("Error on SMTP transport creation. %s", error);
+    log.error("Error on app init. %s", error);
     process.exit(1);
   });
 
