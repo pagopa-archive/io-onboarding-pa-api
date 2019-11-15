@@ -7,6 +7,7 @@ import {
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import * as mockFs from "mock-fs";
 import * as nodemailer from "nodemailer";
+import * as soap from "soap";
 import mockReq from "../../__mocks__/mockRequest";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
 import { Organization } from "../../generated/Organization";
@@ -19,6 +20,7 @@ import DocumentService from "../../services/documentService";
 import EmailService from "../../services/emailService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
+import { getRequiredEnvVar } from "../../utils/environment";
 import OrganizationController from "../organizationController";
 
 const mockedLoggedDelegate: LoggedUser = {
@@ -112,7 +114,9 @@ async function getOrganizationController(): Promise<OrganizationController> {
     secure: testEmailAccount.smtp.secure
   };
   return new OrganizationController(
-    new DocumentService(),
+    new DocumentService(
+      await soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL"))
+    ),
     new EmailService(transporterConfig)
   );
 }
