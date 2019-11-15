@@ -47,8 +47,10 @@ export default class DocumentService {
   ): Promise<Either<Error, string>> {
     try {
       const result = await this.arssClient.pdfsignatureV2Async({
+        // For details about the parameters of pdfsignatureV2 method of ARSS,
+        // @see https://doc.demo.firma-automatica.it/manuali/manuale_arss.pdf
         SignRequestV2: {
-          certID: "AS0",
+          certID: "AS0", // Reserved by Aruba for future use, its value must be currently set to `AS0`
           identity: {
             otpPwd: getRequiredEnvVar("ARSS_IDENTITY_OTP_PWD"),
             typeOtpAuth: getRequiredEnvVar("ARSS_IDENTITY_TYPE_OTP_AUTH"),
