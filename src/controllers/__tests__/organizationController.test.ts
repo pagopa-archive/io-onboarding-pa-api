@@ -85,9 +85,11 @@ const mockedRegisteredOrganization: Organization = {
   scope: "NATIONAL" as OrganizationScopeEnum
 };
 const mockGenerateDocument = jest.fn();
+const mockSignDocument = jest.fn();
 jest.mock("../../services/documentService", () => ({
   default: jest.fn().mockImplementation(() => ({
-    generateDocument: mockGenerateDocument
+    generateDocument: mockGenerateDocument,
+    signDocument: mockSignDocument
   }))
 }));
 
@@ -348,24 +350,39 @@ describe("OrganizationController#sendDocuments()", () => {
       pec: "fake.address@email.pec.it",
       scope: "NATIONAL"
     } as unknown) as OrganizationModel;
+    const contractContent = "contract-content";
+    const mandateContent = "mandate-content";
+    function getSignedVersionBase64(
+      unsignedContentBase64String: string
+    ): string {
+      const decodedString = Buffer.from(
+        unsignedContentBase64String,
+        "base64"
+      );
+      return Buffer.from(`signed-${decodedString}`).toString("base64");
+    }
     beforeEach(() => {
       const mockedContractPath = `documents/${mockedOrganizationModel.ipaCode}/contract.pdf`;
       const mockedMandatePath = `documents/${
         mockedOrganizationModel.ipaCode
       }/mandate-${mockedLoggedDelegate.fiscalCode.toLocaleLowerCase()}.pdf`;
       const mockedFsConfig = {
-        [mockedContractPath]: Buffer.from([8, 6, 7, 5, 3, 0, 9]),
-        [mockedMandatePath]: Buffer.from([5, 3, 1, 7, 3, 2, 2])
+        [mockedContractPath]: Buffer.from(contractContent),
+        [mockedMandatePath]: Buffer.from(mandateContent)
       };
       mockFs(mockedFsConfig);
     });
     afterEach(() => {
       mockFs.restore();
     });
-    it("should send an email and return a no content response", async () => {
+
+    it("should send an email with signed attachments and return a no content response", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         Promise.resolve(right(some(mockedOrganizationModel)))
       );
+      mockSignDocument.mockImplementation(contentBase64 => {
+        return Promise.resolve(right(getSignedVersionBase64(contentBase64)));
+      });
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       const organizationController = await getOrganizationController();
