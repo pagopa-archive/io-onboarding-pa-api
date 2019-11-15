@@ -86,10 +86,16 @@ const mockedRegisteredOrganization: Organization = {
 };
 const mockGenerateDocument = jest.fn();
 const mockSignDocument = jest.fn();
+const mockSendEmail = jest.fn();
 jest.mock("../../services/documentService", () => ({
   default: jest.fn().mockImplementation(() => ({
     generateDocument: mockGenerateDocument,
     signDocument: mockSignDocument
+  }))
+}));
+jest.mock("../../services/emailService", () => ({
+  default: jest.fn().mockImplementation(() => ({
+    send: mockSendEmail
   }))
 }));
 
@@ -113,7 +119,7 @@ async function getOrganizationController(): Promise<OrganizationController> {
 
 describe("OrganizationController", () => {
   describe("#registerOrganization()", () => {
-    it("should return a forbidden error respose if the user is not a delegate", async () => {
+    it("should return a forbidden error response if the user is not a delegate", async () => {
       const mockedLoggedUser: LoggedUser = {
         ...mockedLoggedDelegate,
         role: UserRoleEnum.DEVELOPER
@@ -230,7 +236,7 @@ describe("OrganizationController", () => {
       fileName: mockedExistingFileName,
       ipaCode: "something"
     };
-    it("should return a forbidden error respose if the user is not a delegate", async () => {
+    it("should return a forbidden error response if the user is not a delegate", async () => {
       const mockedLoggedUser: LoggedUser = {
         ...mockedLoggedDelegate,
         role: UserRoleEnum.DEVELOPER
@@ -352,15 +358,14 @@ describe("OrganizationController#sendDocuments()", () => {
     } as unknown) as OrganizationModel;
     const contractContent = "contract-content";
     const mandateContent = "mandate-content";
+
     function getSignedVersionBase64(
       unsignedContentBase64String: string
     ): string {
-      const decodedString = Buffer.from(
-        unsignedContentBase64String,
-        "base64"
-      );
+      const decodedString = Buffer.from(unsignedContentBase64String, "base64");
       return Buffer.from(`signed-${decodedString}`).toString("base64");
     }
+
     beforeEach(() => {
       const mockedContractPath = `documents/${mockedOrganizationModel.ipaCode}/contract.pdf`;
       const mockedMandatePath = `documents/${
@@ -374,6 +379,7 @@ describe("OrganizationController#sendDocuments()", () => {
     });
     afterEach(() => {
       mockFs.restore();
+      mockSendEmail.mockReset();
     });
 
     it("should send an email with signed attachments and return a no content response", async () => {
@@ -383,6 +389,7 @@ describe("OrganizationController#sendDocuments()", () => {
       mockSignDocument.mockImplementation(contentBase64 => {
         return Promise.resolve(right(getSignedVersionBase64(contentBase64)));
       });
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       const organizationController = await getOrganizationController();
@@ -392,6 +399,42 @@ describe("OrganizationController#sendDocuments()", () => {
         kind: "IResponseNoContent",
         value: {}
       });
+      expect(mockSendEmail).toHaveBeenCalledWith({
+        attachments: [
+          {
+            filename: expect.any(String),
+            path: expect.any(String)
+          },
+          {
+            filename: expect.any(String),
+            path: expect.any(String)
+          }
+        ],
+        html: expect.any(String),
+        subject: expect.any(String),
+        text: expect.any(String),
+        to: mockedOrganizationModel.pec
+      });
+    });
+
+    it("should return an internal server error response if the documents signing fails", async () => {
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+        Promise.resolve(right(some(mockedOrganizationModel)))
+      );
+      mockSignDocument.mockImplementation(() =>
+        Promise.resolve(left(new Error("document signing failed")))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      const organizationController = await getOrganizationController();
+      const result = await organizationController.sendDocuments(req);
+      expect(result).toEqual({
+        apply: expect.any(Function),
+        detail: expect.any(String),
+        kind: "IResponseErrorInternal"
+      });
+      expect(mockSendEmail).not.toHaveBeenCalled();
     });
   });
 });
