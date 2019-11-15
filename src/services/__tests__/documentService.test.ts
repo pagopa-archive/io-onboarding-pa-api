@@ -1,3 +1,4 @@
+import { isLeft, isRight } from "fp-ts/lib/Either";
 import { isSome, none, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import DocumentService from "../documentService";
@@ -43,5 +44,21 @@ describe("DocumentService", () => {
         expect(error).not.toBeNull();
       });
     });
+  });
+});
+
+describe("DocumentService#signDocument()", () => {
+  it("should return a right string if the signing succeeds", async () => {
+    const base64string = await fs.promises.readFile(
+      "./src/__mocks__/mockUnsignedFile.pdf",
+      "base64"
+    );
+    const result = await documentService.signDocument(base64string);
+    expect(isRight(result)).toBeTruthy();
+  });
+
+  it("should return a left error if the signing fails", async () => {
+    const result = await documentService.signDocument("");
+    expect(isLeft(result)).toBeTruthy();
   });
 });

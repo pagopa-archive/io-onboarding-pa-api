@@ -10,7 +10,7 @@ import {
   FiscalCode,
   NonEmptyString
 } from "italia-ts-commons/lib/strings";
-import mockReq from "../../__mocks__/request";
+import mockReq from "../../__mocks__/mockRequest";
 import { UserProfile } from "../../generated/UserProfile";
 import { UserRoleEnum } from "../../generated/UserRole";
 import EmailService from "../../services/emailService";

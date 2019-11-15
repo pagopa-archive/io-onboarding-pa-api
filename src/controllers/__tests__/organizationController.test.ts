@@ -7,7 +7,7 @@ import {
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import * as mockFs from "mock-fs";
 import * as nodemailer from "nodemailer";
-import mockReq from "../../__mocks__/request";
+import mockReq from "../../__mocks__/mockRequest";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
 import { Organization } from "../../generated/Organization";
 import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
