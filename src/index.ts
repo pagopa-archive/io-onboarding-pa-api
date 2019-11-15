@@ -18,11 +18,11 @@ const emailService = new EmailService({
 });
 
 Promise.all([
-  emailService.verifyTransport(),
-  soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL"))
+  soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL")),
+  emailService.verifyTransport()
 ])
   .then(results => {
-    const [_, arssClient] = results;
+    const [arssClient] = results;
     return newApp(emailService, arssClient)
       .then(app => {
         app.listen(app.get("port"), () => {
