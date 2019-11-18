@@ -284,7 +284,7 @@ export default class OrganizationController {
       );
     } catch (error) {
       log.error("An error occurred while reading unsigned document. %s", error);
-      return Promise.resolve(some(error));
+      return some(error);
     }
   }
 }
