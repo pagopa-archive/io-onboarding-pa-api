@@ -8,8 +8,8 @@ import {
   NonEmptyString
 } from "italia-ts-commons/lib/strings";
 
-import mockReq from "../../__mocks__/request";
-import mockRes from "../../__mocks__/response";
+import mockReq from "../../__mocks__/mockRequest";
+import mockRes from "../../__mocks__/mockResponse";
 import { UserRoleEnum } from "../../generated/UserRole";
 import SessionStorage from "../../services/sessionStorage";
 import TokenService from "../../services/tokenService";

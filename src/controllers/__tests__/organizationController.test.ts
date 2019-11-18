@@ -7,7 +7,8 @@ import {
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import * as mockFs from "mock-fs";
 import * as nodemailer from "nodemailer";
-import mockReq from "../../__mocks__/request";
+import * as soap from "soap";
+import mockReq from "../../__mocks__/mockRequest";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
 import { Organization } from "../../generated/Organization";
 import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
@@ -19,6 +20,7 @@ import DocumentService from "../../services/documentService";
 import EmailService from "../../services/emailService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
+import { getRequiredEnvVar } from "../../utils/environment";
 import OrganizationController from "../organizationController";
 
 const mockedLoggedDelegate: LoggedUser = {
@@ -85,9 +87,17 @@ const mockedRegisteredOrganization: Organization = {
   scope: "NATIONAL" as OrganizationScopeEnum
 };
 const mockGenerateDocument = jest.fn();
+const mockSignDocument = jest.fn();
+const mockSendEmail = jest.fn();
 jest.mock("../../services/documentService", () => ({
   default: jest.fn().mockImplementation(() => ({
-    generateDocument: mockGenerateDocument
+    generateDocument: mockGenerateDocument,
+    signDocument: mockSignDocument
+  }))
+}));
+jest.mock("../../services/emailService", () => ({
+  default: jest.fn().mockImplementation(() => ({
+    send: mockSendEmail
   }))
 }));
 
@@ -104,14 +114,16 @@ async function getOrganizationController(): Promise<OrganizationController> {
     secure: testEmailAccount.smtp.secure
   };
   return new OrganizationController(
-    new DocumentService(),
+    new DocumentService(
+      await soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL"))
+    ),
     new EmailService(transporterConfig)
   );
 }
 
 describe("OrganizationController", () => {
   describe("#registerOrganization()", () => {
-    it("should return a forbidden error respose if the user is not a delegate", async () => {
+    it("should return a forbidden error response if the user is not a delegate", async () => {
       const mockedLoggedUser: LoggedUser = {
         ...mockedLoggedDelegate,
         role: UserRoleEnum.DEVELOPER
@@ -228,7 +240,7 @@ describe("OrganizationController", () => {
       fileName: mockedExistingFileName,
       ipaCode: "something"
     };
-    it("should return a forbidden error respose if the user is not a delegate", async () => {
+    it("should return a forbidden error response if the user is not a delegate", async () => {
       const mockedLoggedUser: LoggedUser = {
         ...mockedLoggedDelegate,
         role: UserRoleEnum.DEVELOPER
@@ -348,24 +360,40 @@ describe("OrganizationController#sendDocuments()", () => {
       pec: "fake.address@email.pec.it",
       scope: "NATIONAL"
     } as unknown) as OrganizationModel;
+    const contractContent = "contract-content";
+    const mandateContent = "mandate-content";
+
+    function getSignedVersionBase64(
+      unsignedContentBase64String: string
+    ): string {
+      const decodedString = Buffer.from(unsignedContentBase64String, "base64");
+      return Buffer.from(`signed-${decodedString}`).toString("base64");
+    }
+
     beforeEach(() => {
       const mockedContractPath = `documents/${mockedOrganizationModel.ipaCode}/contract.pdf`;
       const mockedMandatePath = `documents/${
         mockedOrganizationModel.ipaCode
       }/mandate-${mockedLoggedDelegate.fiscalCode.toLocaleLowerCase()}.pdf`;
       const mockedFsConfig = {
-        [mockedContractPath]: Buffer.from([8, 6, 7, 5, 3, 0, 9]),
-        [mockedMandatePath]: Buffer.from([5, 3, 1, 7, 3, 2, 2])
+        [mockedContractPath]: Buffer.from(contractContent),
+        [mockedMandatePath]: Buffer.from(mandateContent)
       };
       mockFs(mockedFsConfig);
     });
     afterEach(() => {
       mockFs.restore();
+      mockSendEmail.mockReset();
     });
-    it("should send an email and return a no content response", async () => {
+
+    it("should send an email with signed attachments and return a no content response", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         Promise.resolve(right(some(mockedOrganizationModel)))
       );
+      mockSignDocument.mockImplementation(contentBase64 => {
+        return Promise.resolve(right(getSignedVersionBase64(contentBase64)));
+      });
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       const organizationController = await getOrganizationController();
@@ -375,6 +403,42 @@ describe("OrganizationController#sendDocuments()", () => {
         kind: "IResponseNoContent",
         value: {}
       });
+      expect(mockSendEmail).toHaveBeenCalledWith({
+        attachments: [
+          {
+            filename: expect.any(String),
+            path: expect.any(String)
+          },
+          {
+            filename: expect.any(String),
+            path: expect.any(String)
+          }
+        ],
+        html: expect.any(String),
+        subject: expect.any(String),
+        text: expect.any(String),
+        to: mockedOrganizationModel.pec
+      });
+    });
+
+    it("should return an internal server error response if the documents signing fails", async () => {
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+        Promise.resolve(right(some(mockedOrganizationModel)))
+      );
+      mockSignDocument.mockImplementation(() =>
+        Promise.resolve(left(new Error("document signing failed")))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      const organizationController = await getOrganizationController();
+      const result = await organizationController.sendDocuments(req);
+      expect(result).toEqual({
+        apply: expect.any(Function),
+        detail: expect.any(String),
+        kind: "IResponseErrorInternal"
+      });
+      expect(mockSendEmail).not.toHaveBeenCalled();
     });
   });
 });

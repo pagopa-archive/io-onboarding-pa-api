@@ -10,6 +10,7 @@ import {
   SpidPassportBuilder
 } from "io-spid-commons";
 import * as passport from "passport";
+import * as soap from "soap";
 
 import { init as initIpaPublicAdministration } from "./models/IpaPublicAdministration";
 import {
@@ -79,7 +80,8 @@ const TOKEN_DURATION_IN_SECONDS = Number(
 );
 
 export default async function newApp(
-  emailService: EmailService
+  emailService: EmailService,
+  arssClient: soap.Client
 ): Promise<Express> {
   // Create Express server
   const app = express();
@@ -97,7 +99,7 @@ export default async function newApp(
   passport.use(bearerTokenStrategy());
   app.use(passport.initialize());
 
-  registerRoutes(app, emailService);
+  registerRoutes(app, emailService, arssClient);
 
   try {
     const spidPassport = new SpidPassportBuilder(app, "/login", "/metadata", {
@@ -156,7 +158,8 @@ export default async function newApp(
 
 function registerRoutes(
   app: Express,
-  emailServiceInstance: EmailService
+  emailServiceInstance: EmailService,
+  arssClient: soap.Client
 ): void {
   const bearerTokenAuth = passport.authenticate("bearer", { session: false });
 
@@ -177,7 +180,7 @@ function registerRoutes(
     toExpressHandler(profileController.editProfile, profileController)
   );
 
-  const documentService = new DocumentService();
+  const documentService = new DocumentService(arssClient);
   const organizationController = new OrganizationController(
     documentService,
     emailServiceInstance

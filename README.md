@@ -117,7 +117,12 @@ The table lists the environment variables needed by the application, that may be
 | EMAIL_SMTP_PORT                        | The port of the SMTP server                                                       | int    |
 | EMAIL_SMTP_SECURE                      | If set to true, uses TLS in SMTP connection                                       | boolean|
 | EMAIL_SENDER                           | The email address of the sender                                                   | string |
-| INDICEPA_ADMINISTRATIONS_URL           | The URL to download the public administrations info from                              | string |
+| INDICEPA_ADMINISTRATIONS_URL           | The URL to download the public administrations info from                          | string |
+| ARSS_WSDL_URL                          | The WSDL URL of Aruba Remote Sign Service                                         | string |
+| ARSS_IDENTITY_OTP_PWD                  | The valid user OTP for the ARSS signature transaction                             | string |
+| ARSS_IDENTITY_TYPE_OTP_AUTH            | The authentication domain of the ARSS user                                        | string |
+| ARSS_IDENTITY_USER                     | The username of the ARSS user                                                     | string |
+| ARSS_IDENTITY_USER_PWD                 | The password of the ARSS user                                                     | string |
 
 ## Production deployments
 

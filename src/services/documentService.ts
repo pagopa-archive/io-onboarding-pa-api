@@ -1,10 +1,15 @@
 import { spawn } from "child_process";
+import { Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import * as PdfDocument from "pdfkit";
+import * as soap from "soap";
 import * as tmp from "tmp";
+import { getRequiredEnvVar } from "../utils/environment";
 
 export default class DocumentService {
+  constructor(private arssClient: soap.Client) {}
+
   public async generateDocument(
     content: string,
     documentPath: string
@@ -35,6 +40,35 @@ export default class DocumentService {
         }
       );
     });
+  }
+
+  public async signDocument(
+    unsignedContentBase64: string
+  ): Promise<Either<Error, string>> {
+    try {
+      const result = await this.arssClient.pdfsignatureV2Async({
+        // For details about the parameters of pdfsignatureV2 method of ARSS,
+        // @see https://doc.demo.firma-automatica.it/manuali/manuale_arss.pdf
+        SignRequestV2: {
+          certID: "AS0", // Reserved by Aruba for future use, its value must be currently set to `AS0`
+          identity: {
+            otpPwd: getRequiredEnvVar("ARSS_IDENTITY_OTP_PWD"),
+            typeOtpAuth: getRequiredEnvVar("ARSS_IDENTITY_TYPE_OTP_AUTH"),
+            user: getRequiredEnvVar("ARSS_IDENTITY_USER"),
+            userPWD: getRequiredEnvVar("ARSS_IDENTITY_USER_PWD")
+          },
+          requiredmark: false,
+          stream: unsignedContentBase64,
+          transport: "STREAM"
+        }
+      });
+      const responseContent = result[0].return;
+      return responseContent.status === "OK"
+        ? right(responseContent.stream as string)
+        : left(new Error(result.description));
+    } catch (error) {
+      return left(error);
+    }
   }
 
   private convertToPdfA(input: string, output: string): Promise<Option<Error>> {
