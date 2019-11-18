@@ -209,7 +209,11 @@ export default class OrganizationController {
             this.createSignedDocument(unsignedContractPath, signedContractPath),
             this.createSignedDocument(unsignedMandatePath, signedMandatePath)
           ]);
-          if (arrayOfMaybeError.some(isSome)) {
+          const errorsArray = arrayOfMaybeError.filter(isSome);
+          errorsArray.forEach(error =>
+            log.error("An error occurred while signing documents. %s", error)
+          );
+          if (errorsArray.length > 0) {
             return ResponseErrorInternal(
               "An error occurred while signing documents"
             );
