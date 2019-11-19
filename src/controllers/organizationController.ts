@@ -27,6 +27,7 @@ import { Organization as OrganizationModel } from "../models/Organization";
 import DocumentService from "../services/documentService";
 import EmailService from "../services/emailService";
 import {
+  deleteOrganization,
   findPublicAdministrationsByName,
   getOrganizationInstanceFromDelegateEmail,
   registerOrganization
@@ -90,6 +91,12 @@ export default class OrganizationController {
         async (
           organizationRegistrationParams: OrganizationRegistrationParams
         ) => {
+          const maybeResponse = await this.deleteAssociatedDraftOrganization(
+            user.email
+          );
+          if (maybeResponse.isSome()) {
+            return maybeResponse.value;
+          }
           const errorResponseOrSuccessResponse = await registerOrganization(
             organizationRegistrationParams,
             user
@@ -217,6 +224,55 @@ export default class OrganizationController {
         }
       );
     });
+  }
+
+  private async deleteAssociatedDraftOrganization(
+    userEmail: string
+  ): Promise<Option<IResponseErrorInternal | IResponseErrorConflict>> {
+    const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
+      userEmail
+    );
+    if (errorOrMaybeOrganizationInstance.isLeft()) {
+      log.error(
+        "An error occurred reading data from db. %s",
+        errorOrMaybeOrganizationInstance.value
+      );
+      return some(
+        ResponseErrorInternal("An error occurred reading data from DB")
+      );
+    }
+    const organizationInstance = errorOrMaybeOrganizationInstance.value.toNullable();
+    if (organizationInstance) {
+      if (
+        organizationInstance.registrationStatus !==
+          OrganizationRegistrationStatusEnum.PRE_DRAFT &&
+        organizationInstance.registrationStatus !==
+          OrganizationRegistrationStatusEnum.DRAFT
+      ) {
+        return some(
+          ResponseErrorConflict(
+            "There is already a registered organization associated to your account"
+          )
+        );
+      } else {
+        // The organization already associated to the user
+        // is still in draft or pre-draft status,
+        // so its registration process must be canceled
+        const maybeError = await deleteOrganization(organizationInstance);
+        if (maybeError.isSome()) {
+          log.error(
+            `An error occurred when canceling the registration process for the organization ${organizationInstance.ipaCode}. %s`,
+            maybeError.value
+          );
+          return some(
+            ResponseErrorInternal(
+              `An error occurred when canceling the previous registration process for the organization ${organizationInstance.ipaCode}`
+            )
+          );
+        }
+      }
+    }
+    return none;
   }
 
   private async signAndSendDocuments(

@@ -142,6 +142,37 @@ function mergePublicAdministrationsAndOrganizations(
 }
 
 /**
+ * Given an organization instance, forcefully deletes from the database
+ * the organization and its legal representative
+ * @param organizationInstance The instance of the organization to be deleted.
+ */
+export async function deleteOrganization(
+  organizationInstance: OrganizationModel
+): Promise<Option<Error>> {
+  try {
+    await sequelize.transaction(transaction => {
+      return OrganizationUserModel.destroy({
+        force: true,
+        transaction,
+        where: { organizationIpaCode: organizationInstance.ipaCode }
+      })
+        .then(() => {
+          return organizationInstance.destroy({ force: true, transaction });
+        })
+        .then(() => {
+          return organizationInstance.legalRepresentative.destroy({
+            force: true,
+            transaction
+          });
+        });
+    });
+    return none;
+  } catch (error) {
+    return some(error);
+  }
+}
+
+/**
  * Creates a new organization associated with its legal representative
  * and returns it in a success response.
  * @param newOrganizationParams The parameters required to create the organization
@@ -356,10 +387,10 @@ export async function registerOrganization(
 
 export async function getOrganizationInstanceFromDelegateEmail(
   userEmail: string,
-  ipaCode: string
+  ipaCode?: string
 ): Promise<Either<Error, Option<OrganizationModel>>> {
   try {
-    const organizationInstance = await OrganizationModel.findOne({
+    const organizationInstances = await OrganizationModel.findAll({
       include: [
         {
           as: "users",
@@ -372,10 +403,17 @@ export async function getOrganizationInstanceFromDelegateEmail(
           model: User
         }
       ],
-      where: { ipaCode }
+      where: ipaCode ? { ipaCode } : undefined
     });
+    if (organizationInstances.length > 1) {
+      return left(
+        Error(
+          `DB conflict error: multiple organizations associated to the user ${userEmail}`
+        )
+      );
+    }
     return right(
-      organizationInstance === null ? none : some(organizationInstance)
+      organizationInstances.length === 0 ? none : some(organizationInstances[0])
     );
   } catch (error) {
     return left(error);

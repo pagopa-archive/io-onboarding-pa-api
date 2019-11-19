@@ -159,6 +159,9 @@ describe("OrganizationController", () => {
     });
 
     it("should return a not found error if the public administration does not exist", async () => {
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+        Promise.resolve(right(none))
+      );
       mockRegisterOrganization.mockReturnValue(
         Promise.resolve(
           left(
@@ -207,6 +210,9 @@ describe("OrganizationController", () => {
     });
 
     it("should return a success response if the registration process completes successfully", async () => {
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+        Promise.resolve(right(none))
+      );
       mockRegisterOrganization.mockReturnValue(
         Promise.resolve(
           right(
