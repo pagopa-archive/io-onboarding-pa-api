@@ -494,7 +494,7 @@ components:
         - legal_representative
         - links
         - pecs
-        - registration_status:
+        - registration_status
         - scope
         - selected_pec_label
       example:
