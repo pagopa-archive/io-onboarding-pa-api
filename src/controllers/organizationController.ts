@@ -9,6 +9,7 @@ import {
   IResponseErrorValidation,
   IResponseSuccessJson,
   IResponseSuccessRedirectToResource,
+  ResponseErrorConflict,
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorInternal,
   ResponseErrorNotFound,
@@ -16,10 +17,13 @@ import {
 } from "italia-ts-commons/lib/responses";
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
+import { FiscalCode } from "../generated/FiscalCode";
 import { Organization } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
+import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { UserRoleEnum } from "../generated/UserRole";
 import localeIt from "../locales/it";
+import { Organization as OrganizationModel } from "../models/Organization";
 import DocumentService from "../services/documentService";
 import EmailService from "../services/emailService";
 import {
@@ -173,6 +177,7 @@ export default class OrganizationController {
     | IResponseErrorValidation
     | IResponseErrorForbiddenNotAuthorized
     | IResponseErrorNotFound
+    | IResponseErrorConflict
     | IResponseErrorInternal
     | IResponseNoContent
   > {
@@ -181,7 +186,8 @@ export default class OrganizationController {
         return ResponseErrorForbiddenNotAuthorized;
       }
       const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
-        user.email
+        user.email,
+        req.params.ipaCode
       );
       return errorOrMaybeOrganizationInstance.fold(
         async error => {
@@ -196,59 +202,85 @@ export default class OrganizationController {
             );
           }
           const organizationInstance = maybeOrganizationInstance.value;
-          const unsignedContractPath = `./documents/${organizationInstance.ipaCode}/contract.pdf`;
-          const signedContractPath = `./documents/${organizationInstance.ipaCode}/signed-contract.pdf`;
-          const unsignedMandatePath = `./documents/${
-            organizationInstance.ipaCode
-          }/mandate-${user.fiscalCode.toLocaleLowerCase()}.pdf`;
-          const signedMandatePath = `./documents/${
-            organizationInstance.ipaCode
-          }/signed-mandate-${user.fiscalCode.toLocaleLowerCase()}.pdf`;
-
-          const arrayOfMaybeError = await Promise.all([
-            this.createSignedDocument(unsignedContractPath, signedContractPath),
-            this.createSignedDocument(unsignedMandatePath, signedMandatePath)
-          ]);
-          const errorsArray = arrayOfMaybeError.filter(isSome);
-          errorsArray.forEach(error =>
-            log.error("An error occurred while signing documents. %s", error)
-          );
-          if (errorsArray.length > 0) {
-            return ResponseErrorInternal(
-              "An error occurred while signing documents"
+          if (
+            organizationInstance.registrationStatus ===
+            OrganizationRegistrationStatusEnum.REGISTERED
+          ) {
+            return ResponseErrorConflict(
+              "The required documents have already been sent and countersigned"
             );
           }
-          try {
-            await this.emailService.send({
-              attachments: [
-                {
-                  filename: "contratto.pdf",
-                  path: signedContractPath
-                },
-                {
-                  filename: `delega-${user.fiscalCode.toLocaleLowerCase()}.pdf`,
-                  path: signedMandatePath
-                }
-              ],
-              html:
-                localeIt.organizationController.sendDocuments.registrationEmail
-                  .content,
-              subject:
-                localeIt.organizationController.sendDocuments.registrationEmail
-                  .subject,
-              text:
-                localeIt.organizationController.sendDocuments.registrationEmail
-                  .content,
-              to: organizationInstance.pec
-            });
-            return ResponseNoContent();
-          } catch (error) {
-            log.error("An error occurred sending email. %s", error);
-            return ResponseErrorInternal("An error occurred sending email");
-          }
+          return this.signAndSendDocuments(
+            user.fiscalCode,
+            organizationInstance
+          );
         }
       );
     });
+  }
+
+  private async signAndSendDocuments(
+    delegateFiscalCode: FiscalCode,
+    organizationInstance: OrganizationModel
+  ): Promise<IResponseErrorInternal | IResponseNoContent> {
+    const unsignedContractPath = `./documents/${organizationInstance.ipaCode}/contract.pdf`;
+    const signedContractPath = `./documents/${organizationInstance.ipaCode}/signed-contract.pdf`;
+    const unsignedMandatePath = `./documents/${
+      organizationInstance.ipaCode
+    }/mandate-${delegateFiscalCode.toLocaleLowerCase()}.pdf`;
+    const signedMandatePath = `./documents/${
+      organizationInstance.ipaCode
+    }/signed-mandate-${delegateFiscalCode.toLocaleLowerCase()}.pdf`;
+
+    const arrayOfMaybeError = await Promise.all([
+      this.createSignedDocument(unsignedContractPath, signedContractPath),
+      this.createSignedDocument(unsignedMandatePath, signedMandatePath)
+    ]);
+    const errorsArray = arrayOfMaybeError.filter(isSome);
+    errorsArray.forEach(error =>
+      log.error("An error occurred while signing documents. %s", error)
+    );
+    if (errorsArray.length > 0) {
+      return ResponseErrorInternal("An error occurred while signing documents");
+    }
+    try {
+      await organizationInstance.update({
+        registrationStatus: OrganizationRegistrationStatusEnum.DRAFT
+      });
+    } catch (error) {
+      log.error("An error occurred updating registration status. %s", error);
+      return ResponseErrorInternal(
+        "An error occurred updating registration status"
+      );
+    }
+    try {
+      await this.emailService.send({
+        attachments: [
+          {
+            filename: "contratto.pdf",
+            path: signedContractPath
+          },
+          {
+            filename: `delega-${delegateFiscalCode.toLocaleLowerCase()}.pdf`,
+            path: signedMandatePath
+          }
+        ],
+        html:
+          localeIt.organizationController.sendDocuments.registrationEmail
+            .content,
+        subject:
+          localeIt.organizationController.sendDocuments.registrationEmail
+            .subject,
+        text:
+          localeIt.organizationController.sendDocuments.registrationEmail
+            .content,
+        to: organizationInstance.pec
+      });
+    } catch (error) {
+      log.error("An error occurred sending email. %s", error);
+      return ResponseErrorInternal("An error occurred sending email");
+    }
+    return ResponseNoContent();
   }
 
   private async createSignedDocument(

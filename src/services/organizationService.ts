@@ -21,6 +21,7 @@ import { FoundAdministration } from "../generated/FoundAdministration";
 import { LegalRepresentative } from "../generated/LegalRepresentative";
 import { Organization } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
+import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { UserRoleEnum } from "../generated/UserRole";
 import { IpaPublicAdministration as IpaPublicAdministrationModel } from "../models/IpaPublicAdministration";
 import { Organization as OrganizationModel } from "../models/Organization";
@@ -228,6 +229,7 @@ export async function registerOrganization(
             },
             name: ipaPublicAdministration.des_amm,
             pec: ipaPublicAdministration[emailPropName],
+            registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
             scope: newOrganizationParams.scope
           },
           {
@@ -317,6 +319,8 @@ export async function registerOrganization(
                         ],
                         name: createdOrganization.name,
                         pec: createdOrganization.pec,
+                        registration_status:
+                          createdOrganization.registrationStatus,
                         scope: createdOrganization.scope
                       })
                       .fold(validationErrorsHandler, organization => {

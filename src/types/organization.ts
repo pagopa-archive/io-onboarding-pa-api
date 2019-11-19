@@ -28,6 +28,7 @@ export function fromOrganizationModelToFoundAdministration(
     ],
     name: organizationModel.name,
     pecs: { "1": organizationModel.pec },
+    registration_status: organizationModel.registrationStatus,
     scope: organizationModel.scope,
     selected_pec_label: "1"
   }).fold(

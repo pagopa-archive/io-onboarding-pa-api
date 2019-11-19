@@ -7,6 +7,7 @@ import { FiscalCode } from "../../generated/FiscalCode";
 import { Organization } from "../../generated/Organization";
 import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
+import { OrganizationRegistrationStatusEnum } from "../../generated/OrganizationRegistrationStatus";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { UserRoleEnum } from "../../generated/UserRole";
 import {
@@ -186,6 +187,7 @@ describe("OrganizationService", () => {
           ],
           name: validPublicAdministrationAttributes.des_amm as NonEmptyString,
           pec: validPublicAdministrationAttributes.mail1 as EmailAddress,
+          registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
           scope: newOrganizationParams.scope
         };
         const result = await registerOrganization(newOrganizationParams, user);
@@ -257,6 +259,7 @@ describe("OrganizationService", () => {
           ipaCode: ipaCodeOfRegisteredPublicAdministration,
           name: validPublicAdministrationAttributes.des_amm,
           pec: validPublicAdministrationAttributes.mail1,
+          registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
           scope: OrganizationScopeEnum.LOCAL
         });
       });
@@ -300,6 +303,7 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
     ipaCode: "org-code",
     name: "test organization",
     pec: organizationEmail,
+    registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
     scope: "NATIONAL"
   };
   beforeEach(async () => {
