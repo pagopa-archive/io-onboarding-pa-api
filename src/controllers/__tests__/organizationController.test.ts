@@ -307,6 +307,7 @@ describe("OrganizationController#sendDocuments()", () => {
     };
     const req = mockReq();
     req.user = mockedLoggedUser;
+    req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
     const organizationController = await getOrganizationController();
     const result = await organizationController.sendDocuments(req);
     expect(result).toEqual({
@@ -322,6 +323,7 @@ describe("OrganizationController#sendDocuments()", () => {
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
     const organizationController = await getOrganizationController();
     const result = await organizationController.sendDocuments(req);
     expect(result).toEqual({
@@ -337,6 +339,7 @@ describe("OrganizationController#sendDocuments()", () => {
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
     const organizationController = await getOrganizationController();
     const result = await organizationController.sendDocuments(req);
     expect(result).toEqual({
@@ -403,6 +406,7 @@ describe("OrganizationController#sendDocuments()", () => {
       );
       const req = mockReq();
       req.user = mockedLoggedDelegate;
+      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({
@@ -429,6 +433,7 @@ describe("OrganizationController#sendDocuments()", () => {
       );
       const req = mockReq();
       req.user = mockedLoggedDelegate;
+      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({
@@ -456,6 +461,7 @@ describe("OrganizationController#sendDocuments()", () => {
       mockSendEmail.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
+      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({
@@ -491,6 +497,7 @@ describe("OrganizationController#sendDocuments()", () => {
       mockSendEmail.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
+      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({

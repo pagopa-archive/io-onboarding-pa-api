@@ -348,7 +348,8 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
 
   it("should return a right value with some organization model if the user is the delegate of an organization", async () => {
     const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
-      userInfo.email
+      userInfo.email,
+      organizationInfo.ipaCode
     );
     expect(maybeOrganizationModel).not.toBeNull();
     expect(isRight(maybeOrganizationModel)).toBeTruthy();
@@ -363,7 +364,8 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
 
   it("should return a right value with none if the user is not the delegate of an organization", async () => {
     const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
-      "not-delegate@email.net"
+      "not-delegate@email.net",
+      organizationInfo.ipaCode
     );
     expect(maybeOrganizationModel).not.toBeNull();
     expect(isRight(maybeOrganizationModel)).toBeTruthy();

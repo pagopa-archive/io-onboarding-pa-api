@@ -355,7 +355,8 @@ export async function registerOrganization(
 }
 
 export async function getOrganizationInstanceFromDelegateEmail(
-  userEmail: string
+  userEmail: string,
+  ipaCode: string
 ): Promise<Either<Error, Option<OrganizationModel>>> {
   try {
     const organizationInstance = await OrganizationModel.findOne({
@@ -370,7 +371,8 @@ export async function getOrganizationInstanceFromDelegateEmail(
           as: "legalRepresentative",
           model: User
         }
-      ]
+      ],
+      where: { ipaCode }
     });
     return right(
       organizationInstance === null ? none : some(organizationInstance)
