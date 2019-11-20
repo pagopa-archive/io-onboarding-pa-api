@@ -277,6 +277,9 @@ export default class OrganizationController {
     delegateFiscalCode: FiscalCode,
     organizationInstance: OrganizationModel
   ): Promise<IResponseErrorInternal | IResponseNoContent> {
+    // TODO:
+    //  the documents must be stored on cloud (Azure Blob Storage).
+    //  @see https://www.pivotaltracker.com/story/show/169644958
     const unsignedContractPath = `./documents/${organizationInstance.ipaCode}/contract.pdf`;
     const signedContractPath = `./documents/${organizationInstance.ipaCode}/signed-contract.pdf`;
     const unsignedMandatePath = `./documents/${
