@@ -143,7 +143,11 @@ function mergePublicAdministrationsAndOrganizations(
 
 /**
  * Given an organization instance, forcefully deletes from the database
- * the organization and its legal representative
+ * the organization and its legal representative.
+ * NOTE: this method should be used only in order to cancel
+ * a registration process in a pre-draft status. When in such status,
+ * both the organization and its legal representative can be safely hardly deleted
+ * because their existence has no value outside the context of their registration process.
  * @param organizationInstance The instance of the organization to be deleted.
  */
 export async function deleteOrganization(
