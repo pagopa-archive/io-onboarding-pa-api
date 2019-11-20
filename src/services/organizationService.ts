@@ -1,5 +1,6 @@
 import { Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
+import * as fs from "fs";
 import * as t from "io-ts";
 import { Errors } from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
@@ -142,8 +143,9 @@ function mergePublicAdministrationsAndOrganizations(
 }
 
 /**
- * Given an organization instance, forcefully deletes from the database
- * the organization and its legal representative.
+ * Given an organization instance,
+ * forcefully deletes from the database the organization and its legal representative
+ * and deletes the related documents.
  * NOTE: this method should be used only in order to cancel
  * a registration process in a pre-draft status. When in such status,
  * both the organization and its legal representative can be safely hardly deleted
@@ -170,6 +172,31 @@ export async function deleteOrganization(
           });
         });
     });
+    // TODO:
+    //  the documents must be stored on cloud (Azure Blob Storage).
+    //  @see https://www.pivotaltracker.com/story/show/169644958
+    const organizationDocumentsRoot = `./documents/${organizationInstance.ipaCode}`;
+    await fs.promises
+      .access(organizationDocumentsRoot)
+      .then(() =>
+        fs.promises
+          .readdir(organizationDocumentsRoot)
+          .then(documentsArray =>
+            Promise.all(
+              documentsArray.map(documentName =>
+                fs.promises.unlink(
+                  `${organizationDocumentsRoot}/${documentName}`
+                )
+              )
+            ).then(() => fs.promises.rmdir(organizationDocumentsRoot))
+          )
+      )
+      .catch(error => {
+        log.error(
+          "An error occurred deleting the documents of a deleted organization. %s",
+          error
+        );
+      });
     return none;
   } catch (error) {
     return some(error);
