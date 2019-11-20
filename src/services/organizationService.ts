@@ -173,6 +173,66 @@ export async function deleteOrganization(
 }
 
 /**
+ * Checks if the registration process for a given administration has already started
+ * and deletes it if it's still in a pre-draft status. Returns an optional error response
+ * if the user can not start a new registration process for the given administration.
+ * @param ipaCode The ipaCode of the administration to be checked
+ */
+async function checkAndDeletePreviousRegistration(
+  ipaCode: string
+): Promise<Option<IResponseErrorConflict | IResponseErrorInternal>> {
+  try {
+    const oldOrganizationInstance = await OrganizationModel.findOne({
+      include: [
+        {
+          as: "users",
+          model: User,
+          required: true
+        },
+        {
+          as: "legalRepresentative",
+          model: User
+        }
+      ],
+      where: { ipaCode }
+    });
+    if (oldOrganizationInstance !== null) {
+      if (
+        oldOrganizationInstance.registrationStatus !==
+        OrganizationRegistrationStatusEnum.PRE_DRAFT
+      ) {
+        return some(
+          ResponseErrorConflict("The organization is already registered")
+        );
+      }
+      const maybeError = await deleteOrganization(oldOrganizationInstance);
+      if (maybeError.isSome()) {
+        log.error(
+          "An error occurred while deleting a registration in pre-draft status. %s",
+          maybeError.value
+        );
+        return some(
+          ResponseErrorInternal(
+            "The previous registration for this administration is in a pre-draft status and could not be deleted."
+          )
+        );
+      }
+    }
+    return none;
+  } catch (error) {
+    log.error(
+      "An error occurred while verifying that the organization was not already registered. %s",
+      error
+    );
+    return some(
+      ResponseErrorInternal(
+        "Could not verify that the administration is available for registration"
+      )
+    );
+  }
+}
+
+/**
  * Creates a new organization associated with its legal representative
  * and returns it in a success response.
  * @param newOrganizationParams The parameters required to create the organization
@@ -237,6 +297,13 @@ export async function registerOrganization(
       return left(
         ResponseErrorValidation("Bad request", "Invalid selectedPecLabel")
       );
+    }
+
+    const maybeErrorResponse = await checkAndDeletePreviousRegistration(
+      newOrganizationParams.ipa_code
+    );
+    if (maybeErrorResponse.isSome()) {
+      return left(maybeErrorResponse.value);
     }
 
     // Transactionally save the entities into the database
