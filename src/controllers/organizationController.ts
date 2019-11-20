@@ -91,7 +91,7 @@ export default class OrganizationController {
         async (
           organizationRegistrationParams: OrganizationRegistrationParams
         ) => {
-          const maybeResponse = await this.deleteAssociatedDraftOrganization(
+          const maybeResponse = await this.deleteAssociatedPreDraftOrganization(
             user.email
           );
           if (maybeResponse.isSome()) {
@@ -226,7 +226,7 @@ export default class OrganizationController {
     });
   }
 
-  private async deleteAssociatedDraftOrganization(
+  private async deleteAssociatedPreDraftOrganization(
     userEmail: string
   ): Promise<Option<IResponseErrorInternal | IResponseErrorConflict>> {
     const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
@@ -245,9 +245,7 @@ export default class OrganizationController {
     if (organizationInstance) {
       if (
         organizationInstance.registrationStatus !==
-          OrganizationRegistrationStatusEnum.PRE_DRAFT &&
-        organizationInstance.registrationStatus !==
-          OrganizationRegistrationStatusEnum.DRAFT
+        OrganizationRegistrationStatusEnum.PRE_DRAFT
       ) {
         return some(
           ResponseErrorConflict(
