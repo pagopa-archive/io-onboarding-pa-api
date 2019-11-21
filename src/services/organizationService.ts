@@ -150,6 +150,9 @@ function mergePublicAdministrationsAndOrganizations(
  * a registration process in a pre-draft status. When in such status,
  * both the organization and its legal representative can be safely hardly deleted
  * because their existence has no value outside the context of their registration process.
+ * @todo:
+ *  the current hard deletion must be refactored into a soft deletion,
+ *  see https://www.pivotaltracker.com/story/show/169889085
  * @param organizationInstance The instance of the organization to be deleted.
  */
 export async function deleteOrganization(
