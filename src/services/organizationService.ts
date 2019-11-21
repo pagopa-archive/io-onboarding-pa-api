@@ -143,17 +143,16 @@ function mergePublicAdministrationsAndOrganizations(
 }
 
 /**
- * Given an organization instance,
- * forcefully deletes from the database the organization and its legal representative
- * and deletes the related documents.
- * NOTE: this method should be used only in order to cancel
- * a registration process in a pre-draft status. When in such status,
- * both the organization and its legal representative can be safely hardly deleted
+ * Given an organization instance, forcefully deletes from the database
+ * the organization, its legal representative and the related documents.
+ *
+ * NOTE: this method must be used only in order to cancel
+ * a registration process in a `PRE_DRAFT` status. When in such status,
+ * both the organization and its legal representative can be safely removed
  * because their existence has no value outside the context of their registration process.
- * @todo:
- *  the current hard deletion must be refactored into a soft deletion,
- *  see https://www.pivotaltracker.com/story/show/169889085
- * @param organizationInstance The instance of the organization to be deleted.
+ *
+ * @todo: the current removal process must be refactored using a soft delete
+ * @see https://www.pivotaltracker.com/story/show/169889085
  */
 export async function deleteOrganization(
   organizationInstance: OrganizationModel
