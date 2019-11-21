@@ -180,19 +180,15 @@ export async function deleteOrganization(
     const organizationDocumentsRoot = `./documents/${organizationInstance.ipaCode}`;
     await fs.promises
       .access(organizationDocumentsRoot)
-      .then(() =>
-        fs.promises
-          .readdir(organizationDocumentsRoot)
-          .then(documentsArray =>
-            Promise.all(
-              documentsArray.map(documentName =>
-                fs.promises.unlink(
-                  `${organizationDocumentsRoot}/${documentName}`
-                )
-              )
-            ).then(() => fs.promises.rmdir(organizationDocumentsRoot))
+      .then(() => fs.promises.readdir(organizationDocumentsRoot))
+      .then(documentsArray =>
+        Promise.all(
+          documentsArray.map(documentName =>
+            fs.promises.unlink(`${organizationDocumentsRoot}/${documentName}`)
           )
+        )
       )
+      .then(() => fs.promises.rmdir(organizationDocumentsRoot))
       .catch(error => {
         log.error(
           "An error occurred deleting the documents of a deleted organization. %s",
