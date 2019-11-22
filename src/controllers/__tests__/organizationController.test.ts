@@ -13,6 +13,7 @@ import { LegalRepresentative } from "../../generated/LegalRepresentative";
 import { Organization } from "../../generated/Organization";
 import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
+import { OrganizationRegistrationStatusEnum } from "../../generated/OrganizationRegistrationStatus";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { UserRoleEnum } from "../../generated/UserRole";
 import { Organization as OrganizationModel } from "../../models/Organization";
@@ -84,6 +85,7 @@ const mockedRegisteredOrganization: Organization = {
   ],
   name: "Comune di Gioiosa Marea" as NonEmptyString,
   pec: "indirizzo00@email.pec.it" as EmailString,
+  registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
   scope: "NATIONAL" as OrganizationScopeEnum
 };
 const mockGenerateDocument = jest.fn();
@@ -157,6 +159,9 @@ describe("OrganizationController", () => {
     });
 
     it("should return a not found error if the public administration does not exist", async () => {
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+        Promise.resolve(right(none))
+      );
       mockRegisterOrganization.mockReturnValue(
         Promise.resolve(
           left(
@@ -205,6 +210,9 @@ describe("OrganizationController", () => {
     });
 
     it("should return a success response if the registration process completes successfully", async () => {
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+        Promise.resolve(right(none))
+      );
       mockRegisterOrganization.mockReturnValue(
         Promise.resolve(
           right(
@@ -305,6 +313,7 @@ describe("OrganizationController#sendDocuments()", () => {
     };
     const req = mockReq();
     req.user = mockedLoggedUser;
+    req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
     const organizationController = await getOrganizationController();
     const result = await organizationController.sendDocuments(req);
     expect(result).toEqual({
@@ -320,6 +329,7 @@ describe("OrganizationController#sendDocuments()", () => {
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
     const organizationController = await getOrganizationController();
     const result = await organizationController.sendDocuments(req);
     expect(result).toEqual({
@@ -335,6 +345,7 @@ describe("OrganizationController#sendDocuments()", () => {
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
     const organizationController = await getOrganizationController();
     const result = await organizationController.sendDocuments(req);
     expect(result).toEqual({
@@ -345,7 +356,7 @@ describe("OrganizationController#sendDocuments()", () => {
   });
 
   describe("when the organization is found", () => {
-    const mockedOrganizationModel = ({
+    const mockedOrganizationParams = {
       fiscalCode: "86000470830",
       ipaCode: "c_e043",
       legalRepresentative: {
@@ -358,8 +369,10 @@ describe("OrganizationController#sendDocuments()", () => {
       },
       name: "Comune di Gioiosa Marea",
       pec: "fake.address@email.pec.it",
+      registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
       scope: "NATIONAL"
-    } as unknown) as OrganizationModel;
+    };
+    const mockedOrganizationModel = mockedOrganizationParams as OrganizationModel;
     const contractContent = "contract-content";
     const mandateContent = "mandate-content";
 
@@ -386,16 +399,75 @@ describe("OrganizationController#sendDocuments()", () => {
       mockSendEmail.mockReset();
     });
 
-    it("should send an email with signed attachments and return a no content response", async () => {
+    it("should return a conflict error response if the registration status is REGISTERED", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        Promise.resolve(right(some(mockedOrganizationModel)))
+        Promise.resolve(
+          right(
+            some({
+              ...mockedOrganizationParams,
+              registrationStatus: OrganizationRegistrationStatusEnum.REGISTERED
+            } as OrganizationModel)
+          )
+        )
       );
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
+      const organizationController = await getOrganizationController();
+      const result = await organizationController.sendDocuments(req);
+      expect(result).toEqual({
+        apply: expect.any(Function),
+        detail: expect.any(String),
+        kind: "IResponseErrorConflict"
+      });
+    });
+
+    it("should return an internal error response if the registration status cannot be updated", async () => {
+      mockSignDocument.mockImplementation(contentBase64 => {
+        return Promise.resolve(right(getSignedVersionBase64(contentBase64)));
+      });
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+        Promise.resolve(
+          right(
+            some({
+              ...mockedOrganizationParams,
+              update: (params: { registrationStatus: string }) =>
+                Promise.reject(new Error("organization update failed"))
+            } as OrganizationModel)
+          )
+        )
+      );
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
+      const organizationController = await getOrganizationController();
+      const result = await organizationController.sendDocuments(req);
+      expect(result).toEqual({
+        apply: expect.any(Function),
+        detail: expect.any(String),
+        kind: "IResponseErrorInternal"
+      });
+    });
+
+    it("should send an email with signed attachments and return a no content response", async () => {
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() => {
+        return Promise.resolve(
+          right(
+            some({
+              ...mockedOrganizationParams,
+              update: (params: { registrationStatus: string }) =>
+                Promise.resolve(mockedOrganizationModel)
+            } as OrganizationModel)
+          )
+        );
+      });
       mockSignDocument.mockImplementation(contentBase64 => {
         return Promise.resolve(right(getSignedVersionBase64(contentBase64)));
       });
       mockSendEmail.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
+      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({
@@ -431,6 +503,7 @@ describe("OrganizationController#sendDocuments()", () => {
       mockSendEmail.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
+      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({

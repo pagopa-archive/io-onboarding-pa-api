@@ -1,5 +1,6 @@
 import { Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
+import * as fs from "fs";
 import * as t from "io-ts";
 import { Errors } from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
@@ -21,6 +22,7 @@ import { FoundAdministration } from "../generated/FoundAdministration";
 import { LegalRepresentative } from "../generated/LegalRepresentative";
 import { Organization } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
+import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { UserRoleEnum } from "../generated/UserRole";
 import { IpaPublicAdministration as IpaPublicAdministrationModel } from "../models/IpaPublicAdministration";
 import { Organization as OrganizationModel } from "../models/Organization";
@@ -141,6 +143,125 @@ function mergePublicAdministrationsAndOrganizations(
 }
 
 /**
+ * Given an organization instance, forcefully deletes from the database
+ * the organization, its legal representative and the related documents.
+ *
+ * NOTE: this method must be used only in order to cancel
+ * a registration process in a `PRE_DRAFT` status. When in such status,
+ * both the organization and its legal representative can be safely removed
+ * because their existence has no value outside the context of their registration process.
+ *
+ * @todo: the current removal process must be refactored using a soft delete
+ * @see https://www.pivotaltracker.com/story/show/169889085
+ */
+export async function deleteOrganization(
+  organizationInstance: OrganizationModel
+): Promise<Option<Error>> {
+  try {
+    await sequelize.transaction(transaction => {
+      return OrganizationUserModel.destroy({
+        force: true,
+        transaction,
+        where: { organizationIpaCode: organizationInstance.ipaCode }
+      })
+        .then(() => {
+          return organizationInstance.destroy({ force: true, transaction });
+        })
+        .then(() => {
+          return organizationInstance.legalRepresentative.destroy({
+            force: true,
+            transaction
+          });
+        });
+    });
+    // TODO:
+    //  the documents must be stored on cloud (Azure Blob Storage).
+    //  @see https://www.pivotaltracker.com/story/show/169644958
+    const organizationDocumentsRoot = `./documents/${organizationInstance.ipaCode}`;
+    await fs.promises
+      .access(organizationDocumentsRoot)
+      .then(() => fs.promises.readdir(organizationDocumentsRoot))
+      .then(documentsArray =>
+        Promise.all(
+          documentsArray.map(documentName =>
+            fs.promises.unlink(`${organizationDocumentsRoot}/${documentName}`)
+          )
+        )
+      )
+      .then(() => fs.promises.rmdir(organizationDocumentsRoot))
+      .catch(error => {
+        log.error(
+          "An error occurred deleting the documents of a deleted organization. %s",
+          error
+        );
+      });
+    return none;
+  } catch (error) {
+    return some(error);
+  }
+}
+
+/**
+ * Checks if the registration process for a given administration has already started
+ * and deletes it if it's still in a pre-draft status. Returns an optional error response
+ * if the user can not start a new registration process for the given administration.
+ * @param ipaCode The ipaCode of the administration to be checked
+ */
+async function checkAndDeletePreviousRegistration(
+  ipaCode: string
+): Promise<Option<IResponseErrorConflict | IResponseErrorInternal>> {
+  try {
+    const oldOrganizationInstance = await OrganizationModel.findOne({
+      include: [
+        {
+          as: "users",
+          model: User,
+          required: true
+        },
+        {
+          as: "legalRepresentative",
+          model: User
+        }
+      ],
+      where: { ipaCode }
+    });
+    if (oldOrganizationInstance !== null) {
+      if (
+        oldOrganizationInstance.registrationStatus !==
+        OrganizationRegistrationStatusEnum.PRE_DRAFT
+      ) {
+        return some(
+          ResponseErrorConflict("The organization is already registered")
+        );
+      }
+      const maybeError = await deleteOrganization(oldOrganizationInstance);
+      if (maybeError.isSome()) {
+        log.error(
+          "An error occurred while deleting a registration in pre-draft status. %s",
+          maybeError.value
+        );
+        return some(
+          ResponseErrorInternal(
+            "The previous registration for this administration is in a pre-draft status and could not be deleted."
+          )
+        );
+      }
+    }
+    return none;
+  } catch (error) {
+    log.error(
+      "An error occurred while verifying that the organization was not already registered. %s",
+      error
+    );
+    return some(
+      ResponseErrorInternal(
+        "Could not verify that the administration is available for registration"
+      )
+    );
+  }
+}
+
+/**
  * Creates a new organization associated with its legal representative
  * and returns it in a success response.
  * @param newOrganizationParams The parameters required to create the organization
@@ -207,6 +328,13 @@ export async function registerOrganization(
       );
     }
 
+    const maybeErrorResponse = await checkAndDeletePreviousRegistration(
+      newOrganizationParams.ipa_code
+    );
+    if (maybeErrorResponse.isSome()) {
+      return left(maybeErrorResponse.value);
+    }
+
     // Transactionally save the entities into the database
     return sequelize
       .transaction(transaction =>
@@ -228,6 +356,7 @@ export async function registerOrganization(
             },
             name: ipaPublicAdministration.des_amm,
             pec: ipaPublicAdministration[emailPropName],
+            registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
             scope: newOrganizationParams.scope
           },
           {
@@ -317,6 +446,8 @@ export async function registerOrganization(
                         ],
                         name: createdOrganization.name,
                         pec: createdOrganization.pec,
+                        registration_status:
+                          createdOrganization.registrationStatus,
                         scope: createdOrganization.scope
                       })
                       .fold(validationErrorsHandler, organization => {
@@ -351,10 +482,11 @@ export async function registerOrganization(
 }
 
 export async function getOrganizationInstanceFromDelegateEmail(
-  userEmail: string
+  userEmail: string,
+  ipaCode?: string
 ): Promise<Either<Error, Option<OrganizationModel>>> {
   try {
-    const organizationInstance = await OrganizationModel.findOne({
+    const organizationInstances = await OrganizationModel.findAll({
       include: [
         {
           as: "users",
@@ -366,10 +498,18 @@ export async function getOrganizationInstanceFromDelegateEmail(
           as: "legalRepresentative",
           model: User
         }
-      ]
+      ],
+      where: ipaCode ? { ipaCode } : undefined
     });
+    if (organizationInstances.length > 1) {
+      return left(
+        Error(
+          `DB conflict error: multiple organizations associated to the user ${userEmail}`
+        )
+      );
+    }
     return right(
-      organizationInstance === null ? none : some(organizationInstance)
+      organizationInstances.length === 0 ? none : some(organizationInstances[0])
     );
   } catch (error) {
     return left(error);
