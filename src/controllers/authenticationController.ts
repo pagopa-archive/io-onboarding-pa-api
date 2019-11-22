@@ -11,22 +11,23 @@ import {
   IResponseErrorInternal,
   IResponseErrorValidation,
   IResponsePermanentRedirect,
-  IResponseSuccessJson,
   ResponseErrorInternal,
   ResponseErrorValidation,
-  ResponsePermanentRedirect,
-  ResponseSuccessJson
+  ResponsePermanentRedirect
 } from "italia-ts-commons/lib/responses";
 import { UrlFromString } from "italia-ts-commons/lib/url";
 
 import SessionStorage from "../services/sessionStorage";
 import TokenService from "../services/tokenService";
-import { SuccessResponse } from "../types/commons";
 import { SessionToken } from "../types/token";
 import { validateSpidUser, withUserFromRequest } from "../types/user";
 import { getRequiredEnvVar } from "../utils/environment";
 import { log } from "../utils/logger";
-import { withCatchAsInternalError } from "../utils/responses";
+import {
+  IResponseNoContent,
+  ResponseNoContent,
+  withCatchAsInternalError
+} from "../utils/responses";
 
 export default class AuthenticationController {
   constructor(
@@ -99,9 +100,7 @@ export default class AuthenticationController {
   public async logout(
     req: Request
   ): Promise<
-    | IResponseErrorInternal
-    | IResponseErrorValidation
-    | IResponseSuccessJson<SuccessResponse>
+    IResponseErrorInternal | IResponseErrorValidation | IResponseNoContent
   > {
     return withUserFromRequest(req, user =>
       withCatchAsInternalError(async () => {
@@ -112,7 +111,7 @@ export default class AuthenticationController {
           return ResponseErrorInternal(error.message);
         }
 
-        return ResponseSuccessJson({ message: "ok" });
+        return ResponseNoContent();
       })
     );
   }
