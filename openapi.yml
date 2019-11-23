@@ -86,6 +86,20 @@ paths:
         200:
           description: Successful response
   /organizations:
+    get:
+      description: |-
+        Returns all the organizations related to the user
+      operationId: getOrganizations
+      security:
+        - bearerAuth: []
+      responses:
+        <<: *common-responses
+        200:
+          description: The organizations related to the user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetOrganizationResults"
     post:
       description: |-
         Creates a new organization associated with its legal responsible,
@@ -541,6 +555,10 @@ components:
           $ref: "#/components/schemas/OrganizationRegistrationStatus"
         scope:
           $ref: '#/components/schemas/OrganizationScope'
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationUser'
       required:
         - fiscal_code
         - ipa_code
@@ -608,6 +626,36 @@ components:
           "scope": "NATIONAL",
           "selected_pec_label": "1"
         }
+    GetOrganizationResults:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Organization"
+      required:
+        - items
+    OrganizationUser:
+      type: object
+      properties:
+        email:
+          $ref: "#/components/schemas/EmailAddress"
+        family_name:
+          <<: *non-empty-string
+        fiscal_code:
+          $ref: "#/components/schemas/FiscalCode"
+        given_name:
+          <<: *non-empty-string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        work_email:
+          $ref: "#/components/schemas/EmailAddress"
+      required:
+        - email
+        - family_name
+        - fiscal_code
+        - given_name
+        - role
   securitySchemes:
     bearerAuth:
       type: apiKey

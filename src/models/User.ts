@@ -16,6 +16,8 @@ export class User extends Model {
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
+  public readonly organizations?: ReadonlyArray<Organization>;
+
   // An array of session associated to the user,
   // its value will be populated only when explicitly requested in code
   // according to the inclusion of the relation.
@@ -76,6 +78,7 @@ export function init(): void {
 
 export function createAssociations(): void {
   User.belongsToMany(Organization, {
+    as: "organizations",
     foreignKey: { name: "email", field: "userEmail" },
     otherKey: { name: "ipaCode", field: "organizationIpaCode" },
     through: OrganizationUser

@@ -18,6 +18,7 @@ import {
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
 import { FiscalCode } from "../generated/FiscalCode";
+import { GetOrganizationResults } from "../generated/GetOrganizationResults";
 import { Organization } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
@@ -29,6 +30,8 @@ import EmailService from "../services/emailService";
 import {
   deleteOrganization,
   findPublicAdministrationsByName,
+  getAllRegisteredOrganizations,
+  getOrganizationFromUserEmail,
   getOrganizationInstanceFromDelegateEmail,
   registerOrganization
 } from "../services/organizationService";
@@ -147,6 +150,67 @@ export default class OrganizationController {
           }).value;
         }
       );
+    });
+  }
+
+  public getOrganizations(
+    req: Request
+  ): Promise<
+    // tslint:disable-next-line:max-union-size
+    | IResponseErrorValidation
+    | IResponseErrorInternal
+    | IResponseErrorForbiddenNotAuthorized
+    | IResponseSuccessJson<GetOrganizationResults>
+  > {
+    return withUserFromRequest(req, async user => {
+      const handleError = (error: Error) => {
+        log.error(
+          "An error occurred while reading from the database. %s",
+          error
+        );
+        return ResponseErrorInternal(
+          "An error occurred while reading from the database."
+        );
+      };
+      switch (user.role) {
+        case UserRoleEnum.ADMIN: // can see all the organizations
+          const errorOrOrganizations = await getAllRegisteredOrganizations();
+          return errorOrOrganizations.fold<
+            | IResponseErrorInternal
+            | IResponseSuccessJson<{ items: ReadonlyArray<Organization> }>
+          >(handleError, organizations => {
+            return ResponseSuccessJson({
+              items: organizations
+            });
+          });
+        case UserRoleEnum.ORG_MANAGER: // can see only his represented organization
+        case UserRoleEnum.ORG_DELEGATE: // can see only his delegating organization
+          const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
+            user.email
+          );
+          return errorOrMaybeOrganization.fold<
+            | IResponseErrorInternal
+            | IResponseSuccessJson<GetOrganizationResults>
+          >(handleError, maybeOrganization =>
+            maybeOrganization
+              .map<
+                | IResponseErrorInternal
+                | IResponseSuccessJson<GetOrganizationResults>
+              >(organization =>
+                ResponseSuccessJson({
+                  items: [organization]
+                })
+              )
+              .getOrElse(
+                ResponseErrorInternal(
+                  "Could not find the organization associated to the user"
+                )
+              )
+          );
+        default:
+          // can see no organization
+          return ResponseErrorForbiddenNotAuthorized;
+      }
     });
   }
 
@@ -293,7 +357,9 @@ export default class OrganizationController {
       this.createSignedDocument(unsignedContractPath, signedContractPath),
       this.createSignedDocument(unsignedMandatePath, signedMandatePath)
     ]);
-    const errorsArray = arrayOfMaybeError.filter(isSome);
+    const errorsArray = arrayOfMaybeError.filter(maybeError =>
+      maybeError.isSome()
+    );
     if (errorsArray.length > 0) {
       errorsArray.forEach(error =>
         log.error("An error occurred while signing documents. %s", error)

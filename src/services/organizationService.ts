@@ -1,4 +1,4 @@
-import { Either, left, right } from "fp-ts/lib/Either";
+import { Either, isLeft, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import * as t from "io-ts";
@@ -29,6 +29,7 @@ import { Organization as OrganizationModel } from "../models/Organization";
 import { OrganizationUser as OrganizationUserModel } from "../models/OrganizationUser";
 import { User } from "../models/User";
 import {
+  fromOrganizationInstanceToOrganizationObject,
   fromOrganizationModelToFoundAdministration,
   fromPublicAdministrationToFoundAdministration
 } from "../types/organization";
@@ -510,6 +511,97 @@ export async function getOrganizationInstanceFromDelegateEmail(
     }
     return right(
       organizationInstances.length === 0 ? none : some(organizationInstances[0])
+    );
+  } catch (error) {
+    return left(error);
+  }
+}
+
+export async function getOrganizationFromUserEmail(
+  userEmail: string
+): Promise<Either<Error, Option<Organization>>> {
+  try {
+    const userInstance = await User.findOne({
+      include: [
+        {
+          as: "organizations",
+          include: [
+            {
+              as: "users",
+              model: User
+            },
+            {
+              as: "legalRepresentative",
+              model: User
+            }
+          ],
+          model: OrganizationModel,
+          required: true,
+          through: { where: { email: userEmail } }
+        }
+      ],
+      where: { email: userEmail }
+    });
+    if (userInstance === null || !userInstance.organizations) {
+      return left(new Error("Organization not found"));
+    }
+    if (userInstance.organizations.length > 1) {
+      return left(
+        new Error(
+          `DB conflict error: multiple organizations associated to the user ${userEmail}`
+        )
+      );
+    }
+    if (userInstance.organizations.length === 0) {
+      return right(none);
+    }
+    const errorsOrOrganization: Either<
+      Errors,
+      Organization
+    > = fromOrganizationInstanceToOrganizationObject(
+      userInstance.organizations[0]
+    );
+    return errorsOrOrganization.fold(
+      errors =>
+        left(
+          new Error(
+            "Invalid organization data. " +
+              errorsToReadableMessages(errors).join(" / ")
+          )
+        ),
+      org => right(some(org))
+    );
+  } catch (error) {
+    return left(error);
+  }
+}
+
+export async function getAllRegisteredOrganizations(): Promise<
+  Either<Error, ReadonlyArray<Organization>>
+> {
+  try {
+    const organizationInstances = await OrganizationModel.findAll({
+      include: [
+        {
+          as: "legalRepresentative",
+          model: User
+        }
+      ]
+    });
+
+    const errorsOrOrganizationEithers = organizationInstances.map(
+      fromOrganizationInstanceToOrganizationObject
+    );
+    return right(
+      errorsOrOrganizationEithers.reduce<ReadonlyArray<Organization> | never>(
+        (organizations, errorsOrOrganization) => {
+          if (isLeft(errorsOrOrganization)) {
+            throw new Error("One or more organizations are not a valid object");
+          }
+          return [...organizations, errorsOrOrganization.value];
+        },
+        []
+      )
     );
   } catch (error) {
     return left(error);

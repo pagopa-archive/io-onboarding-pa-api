@@ -186,6 +186,15 @@ function registerRoutes(
     emailServiceInstance
   );
 
+  app.get(
+    "/organizations",
+    bearerTokenAuth,
+    toExpressHandler(
+      organizationController.getOrganizations,
+      organizationController
+    )
+  );
+
   app.post(
     "/organizations",
     bearerTokenAuth,
