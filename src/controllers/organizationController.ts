@@ -1,5 +1,6 @@
 import { Request } from "express";
-import { isSome, none, Option, some } from "fp-ts/lib/Option";
+import { isLeft } from "fp-ts/lib/Either";
+import { isNone, isSome, none, Option, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import {
   IResponseErrorConflict,
@@ -97,7 +98,7 @@ export default class OrganizationController {
           const maybeResponse = await this.deleteAssociatedPreDraftOrganization(
             user.email
           );
-          if (maybeResponse.isSome()) {
+          if (isSome(maybeResponse)) {
             return maybeResponse.value;
           }
           const errorResponseOrSuccessResponse = await registerOrganization(
@@ -268,7 +269,7 @@ export default class OrganizationController {
           return ResponseErrorInternal("An error occurred reading from db");
         },
         async maybeOrganizationInstance => {
-          if (maybeOrganizationInstance.isNone()) {
+          if (isNone(maybeOrganizationInstance)) {
             return ResponseErrorNotFound(
               "Not found",
               "The administration is not registered"
@@ -298,7 +299,7 @@ export default class OrganizationController {
     const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
       userEmail
     );
-    if (errorOrMaybeOrganizationInstance.isLeft()) {
+    if (isLeft(errorOrMaybeOrganizationInstance)) {
       log.error(
         "An error occurred reading data from db. %s",
         errorOrMaybeOrganizationInstance.value
@@ -323,7 +324,7 @@ export default class OrganizationController {
         // is still in draft or pre-draft status,
         // so its registration process must be canceled
         const maybeError = await deleteOrganization(organizationInstance);
-        if (maybeError.isSome()) {
+        if (isSome(maybeError)) {
           log.error(
             `An error occurred when canceling the registration process for the organization ${organizationInstance.ipaCode}. %s`,
             maybeError.value
@@ -359,9 +360,7 @@ export default class OrganizationController {
       this.createSignedDocument(unsignedContractPath, signedContractPath),
       this.createSignedDocument(unsignedMandatePath, signedMandatePath)
     ]);
-    const errorsArray = arrayOfMaybeError.filter(maybeError =>
-      maybeError.isSome()
-    );
+    const errorsArray = arrayOfMaybeError.filter(isSome);
     if (errorsArray.length > 0) {
       errorsArray.forEach(error =>
         log.error("An error occurred while signing documents. %s", error)
