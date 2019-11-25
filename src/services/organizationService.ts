@@ -1,5 +1,7 @@
-import { Either, isLeft, left, right } from "fp-ts/lib/Either";
+import { array } from "fp-ts/lib/Array";
+import { either, Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
+import { tryCatch } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
 import * as t from "io-ts";
 import { Errors } from "io-ts";
@@ -578,32 +580,26 @@ export async function getOrganizationFromUserEmail(
 export async function getAllRegisteredOrganizations(): Promise<
   Either<Error, ReadonlyArray<Organization>>
 > {
-  try {
-    const organizationInstances = await OrganizationModel.findAll({
-      include: [
-        {
-          as: "legalRepresentative",
-          model: User
-        }
-      ]
-    });
+  const errorOrOrganizationInstances = await tryCatch(
+    async () =>
+      OrganizationModel.findAll({
+        include: [
+          {
+            as: "legalRepresentative",
+            model: User
+          }
+        ]
+      }),
+    error => error as Error
+  ).run();
 
-    return right(
-      organizationInstances
-        .map(toOrganizationObject)
-        .reduce<ReadonlyArray<Organization> | never>(
-          (organizations, errorsOrOrganization) => {
-            if (isLeft(errorsOrOrganization)) {
-              throw new Error(
-                "One or more organizations are not a valid object"
-              );
-            }
-            return [...organizations, errorsOrOrganization.value];
-          },
-          []
+  return errorOrOrganizationInstances.fold(
+    error => left(error),
+    organizationInstances =>
+      array
+        .traverse(either)(organizationInstances, toOrganizationObject)
+        .mapLeft(
+          errors => new Error(errorsToReadableMessages(errors).join(" / "))
         )
-    );
-  } catch (error) {
-    return left(error);
-  }
+  );
 }
