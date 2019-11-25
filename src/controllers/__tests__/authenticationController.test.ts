@@ -226,8 +226,8 @@ describe("AuthenticationController#logout", () => {
     expect(mockDel).toHaveBeenCalledWith(mockSessionToken);
     expect(response).toEqual({
       apply: expect.any(Function),
-      kind: "IResponseSuccessJson",
-      value: { message: "ok" }
+      kind: "IResponseNoContent",
+      value: {}
     });
   });
 

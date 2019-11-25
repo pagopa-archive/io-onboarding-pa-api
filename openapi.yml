@@ -83,8 +83,8 @@ paths:
         - bearerAuth: []
       responses:
         <<: *common-responses
-        200:
-          description: Successful response
+        204:
+          description: No content
   /organizations:
     get:
       description: |-
