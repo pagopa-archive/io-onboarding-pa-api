@@ -87,7 +87,7 @@ export function fromPublicAdministrationToFoundAdministration(
   );
 }
 
-export function fromOrganizationInstanceToOrganizationObject(
+export function toOrganizationObject(
   organizationInstance: OrganizationModel
 ): Either<Errors, Organization> {
   const legalRepresentative = {

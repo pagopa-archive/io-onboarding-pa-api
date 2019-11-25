@@ -29,9 +29,9 @@ import { Organization as OrganizationModel } from "../models/Organization";
 import { OrganizationUser as OrganizationUserModel } from "../models/OrganizationUser";
 import { User } from "../models/User";
 import {
-  fromOrganizationInstanceToOrganizationObject,
   fromOrganizationModelToFoundAdministration,
-  fromPublicAdministrationToFoundAdministration
+  fromPublicAdministrationToFoundAdministration,
+  toOrganizationObject
 } from "../types/organization";
 import {
   IpaPublicAdministration as IpaPublicAdministrationType,
@@ -559,9 +559,7 @@ export async function getOrganizationFromUserEmail(
     const errorsOrOrganization: Either<
       Errors,
       Organization
-    > = fromOrganizationInstanceToOrganizationObject(
-      userInstance.organizations[0]
-    );
+    > = toOrganizationObject(userInstance.organizations[0]);
     return errorsOrOrganization.fold(
       errors =>
         left(
@@ -591,7 +589,7 @@ export async function getAllRegisteredOrganizations(): Promise<
     });
 
     const errorsOrOrganizationEithers = organizationInstances.map(
-      fromOrganizationInstanceToOrganizationObject
+      toOrganizationObject
     );
     return right(
       errorsOrOrganizationEithers.reduce<ReadonlyArray<Organization> | never>(
