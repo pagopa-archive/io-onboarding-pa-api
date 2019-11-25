@@ -538,15 +538,22 @@ export async function getOrganizationFromUserEmail(
             }
           ],
           model: OrganizationModel,
-          through: { where: { email: userEmail } }
+          through: {
+            where: {
+              email: userEmail
+            }
+          },
+          where: {
+            registrationStatus: {
+              [Op.ne]: OrganizationRegistrationStatusEnum.PRE_DRAFT
+            }
+          }
         }
       ],
       where: { email: userEmail }
     });
     if (userInstance === null || !userInstance.organizations) {
-      return left(
-        new Error("An error occurred while reading from the database.")
-      );
+      return right(none);
     }
     if (userInstance.organizations.length > 1) {
       return left(
@@ -577,7 +584,7 @@ export async function getOrganizationFromUserEmail(
   }
 }
 
-export async function getAllRegisteredOrganizations(): Promise<
+export async function getAllOrganizations(): Promise<
   Either<Error, ReadonlyArray<Organization>>
 > {
   const errorOrOrganizationInstances = await tryCatch(
@@ -588,7 +595,12 @@ export async function getAllRegisteredOrganizations(): Promise<
             as: "legalRepresentative",
             model: User
           }
-        ]
+        ],
+        where: {
+          registrationStatus: {
+            [Op.ne]: OrganizationRegistrationStatusEnum.PRE_DRAFT
+          }
+        }
       }),
     error => error as Error
   ).run();

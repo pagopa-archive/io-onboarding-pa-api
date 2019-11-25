@@ -30,7 +30,7 @@ import EmailService from "../services/emailService";
 import {
   deleteOrganization,
   findPublicAdministrationsByName,
-  getAllRegisteredOrganizations,
+  getAllOrganizations,
   getOrganizationFromUserEmail,
   getOrganizationInstanceFromDelegateEmail,
   registerOrganization
@@ -174,7 +174,7 @@ export default class OrganizationController {
       };
       switch (user.role) {
         case UserRoleEnum.ADMIN: // can see all the organizations
-          const errorOrOrganizations = await getAllRegisteredOrganizations();
+          const errorOrOrganizations = await getAllOrganizations();
           return errorOrOrganizations.fold<
             | IResponseErrorInternal
             | IResponseSuccessJson<OrganizationCollection>
