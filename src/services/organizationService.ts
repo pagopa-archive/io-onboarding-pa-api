@@ -519,7 +519,7 @@ export async function getOrganizationInstanceFromDelegateEmail(
 
 export async function getOrganizationFromUserEmail(
   userEmail: string
-): Promise<Either<Error, Organization>> {
+): Promise<Either<Error, Option<Organization>>> {
   try {
     const userInstance = await User.findOne({
       include: [
@@ -536,14 +536,15 @@ export async function getOrganizationFromUserEmail(
             }
           ],
           model: OrganizationModel,
-          required: true,
           through: { where: { email: userEmail } }
         }
       ],
       where: { email: userEmail }
     });
     if (userInstance === null || !userInstance.organizations) {
-      return left(new Error("Organization not found"));
+      return left(
+        new Error("An error occurred while reading from the database.")
+      );
     }
     if (userInstance.organizations.length > 1) {
       return left(
@@ -552,18 +553,24 @@ export async function getOrganizationFromUserEmail(
         )
       );
     }
+    if (userInstance.organizations.length === 0) {
+      return right(none);
+    }
     const errorsOrOrganization: Either<
       Errors,
       Organization
     > = fromOrganizationInstanceToOrganizationObject(
       userInstance.organizations[0]
     );
-    return errorsOrOrganization.mapLeft(
+    return errorsOrOrganization.fold(
       errors =>
-        new Error(
-          "Invalid organization data. " +
-            errorsToReadableMessages(errors).join(" / ")
-        )
+        left(
+          new Error(
+            "Invalid organization data. " +
+              errorsToReadableMessages(errors).join(" / ")
+          )
+        ),
+      organization => right(some(organization))
     );
   } catch (error) {
     return left(error);

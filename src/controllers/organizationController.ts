@@ -185,16 +185,29 @@ export default class OrganizationController {
           });
         case UserRoleEnum.ORG_MANAGER: // can see only his represented organization
         case UserRoleEnum.ORG_DELEGATE: // can see only his delegating organization
-          const errorOrOrganization = await getOrganizationFromUserEmail(
+          const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
             user.email
           );
-          return errorOrOrganization.fold<
+          return errorOrMaybeOrganization.fold<
             | IResponseErrorInternal
             | IResponseSuccessJson<GetOrganizationResults>
-          >(handleError, organization =>
-            ResponseSuccessJson({
-              items: [organization]
-            })
+          >(handleError, maybeOrganization =>
+            maybeOrganization
+              .map<
+                | IResponseErrorInternal
+                | IResponseSuccessJson<GetOrganizationResults>
+              >(organization =>
+                ResponseSuccessJson({
+                  items: [organization]
+                })
+              )
+              .getOrElse(
+                user.role === UserRoleEnum.ORG_MANAGER
+                  ? ResponseErrorInternal(
+                      "Could not find the organization associated to the user"
+                    )
+                  : ResponseSuccessJson({ items: [] })
+              )
           );
         default:
           // can see no organization
