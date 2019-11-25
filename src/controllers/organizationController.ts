@@ -18,8 +18,8 @@ import {
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
 import { FiscalCode } from "../generated/FiscalCode";
-import { GetOrganizationResults } from "../generated/GetOrganizationResults";
 import { Organization } from "../generated/Organization";
+import { OrganizationCollection } from "../generated/OrganizationCollection";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { UserRoleEnum } from "../generated/UserRole";
@@ -160,7 +160,7 @@ export default class OrganizationController {
     | IResponseErrorValidation
     | IResponseErrorInternal
     | IResponseErrorForbiddenNotAuthorized
-    | IResponseSuccessJson<GetOrganizationResults>
+    | IResponseSuccessJson<OrganizationCollection>
   > {
     return withUserFromRequest(req, async user => {
       const handleError = (error: Error) => {
@@ -177,7 +177,7 @@ export default class OrganizationController {
           const errorOrOrganizations = await getAllRegisteredOrganizations();
           return errorOrOrganizations.fold<
             | IResponseErrorInternal
-            | IResponseSuccessJson<{ items: ReadonlyArray<Organization> }>
+            | IResponseSuccessJson<OrganizationCollection>
           >(handleError, organizations => {
             return ResponseSuccessJson({
               items: organizations
@@ -190,12 +190,12 @@ export default class OrganizationController {
           );
           return errorOrMaybeOrganization.fold<
             | IResponseErrorInternal
-            | IResponseSuccessJson<GetOrganizationResults>
+            | IResponseSuccessJson<OrganizationCollection>
           >(handleError, maybeOrganization =>
             maybeOrganization
               .map<
                 | IResponseErrorInternal
-                | IResponseSuccessJson<GetOrganizationResults>
+                | IResponseSuccessJson<OrganizationCollection>
               >(organization =>
                 ResponseSuccessJson({
                   items: [organization]

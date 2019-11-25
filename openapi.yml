@@ -99,7 +99,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetOrganizationResults"
+                $ref: "#/components/schemas/OrganizationCollection"
     post:
       description: |-
         Creates a new organization associated with its legal responsible,
@@ -626,7 +626,7 @@ components:
           "scope": "NATIONAL",
           "selected_pec_label": "1"
         }
-    GetOrganizationResults:
+    OrganizationCollection:
       type: object
       properties:
         items:
