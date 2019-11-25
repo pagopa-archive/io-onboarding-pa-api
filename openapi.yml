@@ -88,7 +88,12 @@ paths:
   /organizations:
     get:
       description: |-
-        Returns all the organizations related to the user
+        Returns a list of all the organizations in a not pre-draft registration status,
+        according to the user role. That is:
+        - for an administrator, returns a list with all the organization in a not pre-draft registration status
+        - for a delegate, returns a list with the single organization by which the user has been delegated
+        - for a legal representative, returns a list with the single organization which the user represents
+        - for a developer returns a forbidden error
       operationId: getOrganizations
       security:
         - bearerAuth: []
@@ -100,6 +105,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrganizationCollection"
+        403:
+          description: Forbidden
     post:
       description: |-
         Creates a new organization associated with its legal responsible,
