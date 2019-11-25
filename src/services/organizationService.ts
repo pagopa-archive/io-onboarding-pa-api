@@ -588,19 +588,20 @@ export async function getAllRegisteredOrganizations(): Promise<
       ]
     });
 
-    const errorsOrOrganizationEithers = organizationInstances.map(
-      toOrganizationObject
-    );
     return right(
-      errorsOrOrganizationEithers.reduce<ReadonlyArray<Organization> | never>(
-        (organizations, errorsOrOrganization) => {
-          if (isLeft(errorsOrOrganization)) {
-            throw new Error("One or more organizations are not a valid object");
-          }
-          return [...organizations, errorsOrOrganization.value];
-        },
-        []
-      )
+      organizationInstances
+        .map(toOrganizationObject)
+        .reduce<ReadonlyArray<Organization> | never>(
+          (organizations, errorsOrOrganization) => {
+            if (isLeft(errorsOrOrganization)) {
+              throw new Error(
+                "One or more organizations are not a valid object"
+              );
+            }
+            return [...organizations, errorsOrOrganization.value];
+          },
+          []
+        )
     );
   } catch (error) {
     return left(error);
