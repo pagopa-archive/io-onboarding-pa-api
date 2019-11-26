@@ -1,5 +1,5 @@
-import { isLeft, isRight } from "fp-ts/lib/Either";
-import { isSome } from "fp-ts/lib/Option";
+import { isLeft, isRight, right } from "fp-ts/lib/Either";
+import { isNone, isSome, some } from "fp-ts/lib/Option";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Sequelize } from "sequelize";
 import { EmailAddress } from "../../generated/EmailAddress";
@@ -11,6 +11,8 @@ import { OrganizationRegistrationStatusEnum } from "../../generated/Organization
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { UserRoleEnum } from "../../generated/UserRole";
 import {
+  getAllOrganizations,
+  getOrganizationFromUserEmail,
   getOrganizationInstanceFromDelegateEmail,
   registerOrganization
 } from "../organizationService";
@@ -45,6 +47,7 @@ import {
   init as initUser,
   User as UserModel
 } from "../../models/User";
+import { toOrganizationObject } from "../../types/organization";
 import { SessionToken } from "../../types/token";
 import { LoggedUser } from "../../types/user";
 
@@ -61,10 +64,97 @@ const userInfo = {
   }
 };
 
+// Administrator user
+const adminParams = {
+  email: "admin@example.com",
+  familyName: "Bianchi",
+  fiscalCode: "DMNGPP58S05A012Z",
+  givenName: "Giuseppe",
+  role: UserRoleEnum.ADMIN
+};
+
+// Registered organization and associated users
+const registeredOrgDelegateParams1 = {
+  email: "delegate1@example.com",
+  familyName: "Rossi",
+  fiscalCode: "DLGNNN53S15A012S",
+  givenName: "Carlo",
+  role: UserRoleEnum.ORG_DELEGATE,
+  workEmail: "work1@example.com"
+};
+const registeredOrgDelegateParams2 = {
+  email: "delegate2@example.com",
+  familyName: "Rossi",
+  fiscalCode: "DLGTTT34S12A012G",
+  givenName: "Matteo",
+  phoneNumber: "020202020202",
+  role: UserRoleEnum.ORG_DELEGATE,
+  workEmail: "work2@example.com"
+};
+const registeredOrgLegalRepresentativeParams = {
+  email: "registered-org-legal-representative@example.com",
+  familyName: "Rossi",
+  fiscalCode: "LGLRPR67A23A012V",
+  givenName: "Mario",
+  phoneNumber: "0606060606",
+  role: UserRoleEnum.ORG_MANAGER
+};
+const mockRegisteredOrganizationParams = {
+  fiscalCode: "00000000001",
+  ipaCode: "org1",
+  legalRepresentative: registeredOrgLegalRepresentativeParams,
+  name: "Organizzazione 1",
+  pec: "org1@example.com",
+  registrationStatus: OrganizationRegistrationStatusEnum.REGISTERED,
+  scope: OrganizationScopeEnum.LOCAL
+};
+
+// PRE_DRAFT organization and associated users
+const preDraftOrgDelegateParams = {
+  email: "delegate-of-pre-draft-org@example.com",
+  familyName: "Rossi",
+  fiscalCode: "DLGLGU34S12A012F",
+  givenName: "Luigi",
+  phoneNumber: "0000000000",
+  role: UserRoleEnum.ORG_DELEGATE,
+  workEmail: "work2@example.com"
+};
+const preDraftOrgLegalRepresentativeParams = {
+  email: "pre-draft-org-legal-representative@example.com",
+  familyName: "Rossi",
+  fiscalCode: "LGLRPR67A23A012V",
+  givenName: "Mario",
+  phoneNumber: "0606060606",
+  role: UserRoleEnum.ORG_MANAGER
+};
+const mockPreDraftOrganizationParams = {
+  fiscalCode: "00000000002",
+  ipaCode: "org2",
+  legalRepresentative: preDraftOrgLegalRepresentativeParams,
+  name: "Organizzazione 2",
+  pec: "org2@example.com",
+  registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
+  scope: OrganizationScopeEnum.LOCAL
+};
+// Delegate with no association associated
+const noOrgDelegateParams = {
+  email: "delegate-with-no-org@example.com",
+  familyName: "Rossi",
+  fiscalCode: "DLGCLR66L22A012D",
+  givenName: "Carlo",
+  phoneNumber: "9999999999",
+  role: UserRoleEnum.ORG_DELEGATE,
+  workEmail: "no-work@example.com"
+};
+
 // tslint:disable-next-line:no-let
 let user: LoggedUser;
 // tslint:disable-next-line:no-let
 let userInstance: UserModel;
+// tslint:disable-next-line:no-let
+let registeredOrgDelegate1: UserModel;
+// tslint:disable-next-line:no-let
+let registeredOrgDelegate2: UserModel;
 
 beforeAll(async () => {
   initIpaPublicAdministration();
@@ -91,9 +181,75 @@ beforeAll(async () => {
     ]
   });
   user = userInstance.get({ plain: true }) as LoggedUser;
+
+  [registeredOrgDelegate1, registeredOrgDelegate2] = await UserModel.bulkCreate(
+    [registeredOrgDelegateParams1, registeredOrgDelegateParams2]
+  );
+
+  const [
+    registeredOrgLegalRepresentative,
+    preDraftOrgDelegate,
+    admin,
+    noOrgDelegate
+  ] = await UserModel.bulkCreate([
+    registeredOrgLegalRepresentativeParams,
+    preDraftOrgDelegateParams,
+    adminParams,
+    noOrgDelegateParams
+  ]);
+  const [
+    mockRegisteredOrganization,
+    mockPreDraftOrganization
+  ] = await OrganizationModel.bulkCreate([
+    mockRegisteredOrganizationParams,
+    mockPreDraftOrganizationParams
+  ]);
+  await mockRegisteredOrganization.addUser(registeredOrgDelegate1, {
+    through: {
+      createdAt: Date.now(),
+      organizationIpaCode: mockRegisteredOrganization.ipaCode,
+      updatedAt: Date.now(),
+      userEmail: registeredOrgDelegate1.email,
+      userRole: UserRoleEnum.ORG_DELEGATE
+    }
+  });
+  await mockRegisteredOrganization.addUser(registeredOrgDelegate2, {
+    through: {
+      createdAt: Date.now(),
+      organizationIpaCode: mockRegisteredOrganization.ipaCode,
+      updatedAt: Date.now(),
+      userEmail: registeredOrgDelegate2.email,
+      userRole: UserRoleEnum.ORG_DELEGATE
+    }
+  });
+  await mockRegisteredOrganization.addUser(registeredOrgLegalRepresentative, {
+    through: {
+      createdAt: Date.now(),
+      organizationIpaCode: mockRegisteredOrganization.ipaCode,
+      updatedAt: Date.now(),
+      userEmail: registeredOrgLegalRepresentative.email,
+      userRole: UserRoleEnum.ORG_DELEGATE
+    }
+  });
+  await mockRegisteredOrganization.setLegalRepresentative(
+    registeredOrgLegalRepresentative
+  );
+  await mockPreDraftOrganization.addUser(preDraftOrgDelegate, {
+    through: {
+      createdAt: Date.now(),
+      organizationIpaCode: mockPreDraftOrganization.ipaCode,
+      updatedAt: Date.now(),
+      userEmail: preDraftOrgDelegate.email,
+      userRole: UserRoleEnum.ORG_DELEGATE
+    }
+  });
 });
 
 afterAll(async () => {
+  await OrganizationUserModel.destroy({
+    force: true,
+    truncate: true
+  });
   await SessionModel.destroy({
     force: true,
     where: { userEmail: userInfo.email }
@@ -101,6 +257,10 @@ afterAll(async () => {
   await UserModel.destroy({
     force: true,
     where: { email: userInfo.email }
+  });
+  await OrganizationModel.destroy({
+    force: true,
+    truncate: true
   });
 });
 
@@ -376,5 +536,85 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
         expect(organizationModel.toNullable()).toBeNull();
       }
     );
+  });
+});
+
+describe("OrganizationService#getOrganizationFromUserEmail()", () => {
+  it("should return a right value with none if the delegate has no association with any organization", async () => {
+    // this is the case of a user logged it with SPID who never started any registration process
+    const errorOrSomeOrganization = await getOrganizationFromUserEmail(
+      noOrgDelegateParams.email
+    );
+    expect(errorOrSomeOrganization).not.toBeNull();
+    expect(isRight(errorOrSomeOrganization)).toBeTruthy();
+    errorOrSomeOrganization.fold(
+      () => fail(new Error("value was left instead of right")),
+      someOrganization => {
+        expect(isNone(someOrganization)).toBeTruthy();
+      }
+    );
+  });
+
+  it("should return a right value with none if the delegate is associated with an organization in a PRE_DRAFT registration status", async () => {
+    // this is the case of a user logged it with SPID who never started any registration process
+    const errorOrSomeOrganization = await getOrganizationFromUserEmail(
+      preDraftOrgDelegateParams.email
+    );
+    expect(errorOrSomeOrganization).not.toBeNull();
+    expect(isRight(errorOrSomeOrganization)).toBeTruthy();
+    errorOrSomeOrganization.fold(
+      () => fail(new Error("value was left instead of right")),
+      someOrganization => {
+        expect(isNone(someOrganization)).toBeTruthy();
+      }
+    );
+  });
+
+  it("should return a right value with some organization it the user is associated to an organization", async () => {
+    const expectedValue = right(
+      some(
+        toOrganizationObject(({
+          ...mockRegisteredOrganizationParams,
+          legalRepresentative: registeredOrgLegalRepresentativeParams,
+          users: [registeredOrgDelegate1, registeredOrgDelegate2]
+        } as unknown) as OrganizationModel).fold(
+          () => {
+            fail("toOrganizationObject error");
+          },
+          value => value
+        )
+      )
+    );
+
+    const errorOrSomeOrganizationForDelegate1 = await getOrganizationFromUserEmail(
+      registeredOrgDelegateParams1.email
+    );
+    expect(errorOrSomeOrganizationForDelegate1).toEqual(expectedValue);
+
+    const errorOrSomeOrganizationForLegalRepresentative = await getOrganizationFromUserEmail(
+      registeredOrgLegalRepresentativeParams.email
+    );
+    expect(errorOrSomeOrganizationForLegalRepresentative).toEqual(
+      expectedValue
+    );
+  });
+});
+
+describe("OrganizationService#getOrganizationFromUserEmail()", () => {
+  it("should return a right value with organizations", async () => {
+    const expectedValue = right([
+      toOrganizationObject(({
+        ...mockRegisteredOrganizationParams,
+        legalRepresentative: registeredOrgLegalRepresentativeParams
+      } as unknown) as OrganizationModel).fold(
+        () => {
+          fail("toOrganizationObject error");
+        },
+        value => value
+      )
+    ]);
+
+    const errorOrOrganizations = await getAllOrganizations();
+    expect(errorOrOrganizations).toEqual(expectedValue);
   });
 });
