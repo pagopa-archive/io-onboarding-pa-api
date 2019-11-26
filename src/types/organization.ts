@@ -127,5 +127,5 @@ export function toOrganizationObject(
     registration_status: organizationInstance.registrationStatus,
     scope: organizationInstance.scope,
     users
-  }) as Either<Errors, Organization>; // without casting the transpilation stucks
+  });
 }
