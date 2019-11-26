@@ -565,7 +565,7 @@ components:
         users:
           type: array
           items:
-            $ref: '#/components/schemas/OrganizationUser'
+            $ref: '#/components/schemas/OrganizationDelegate'
       required:
         - fiscal_code
         - ipa_code
@@ -642,7 +642,7 @@ components:
             $ref: "#/components/schemas/Organization"
       required:
         - items
-    OrganizationUser:
+    OrganizationDelegate:
       type: object
       properties:
         email:

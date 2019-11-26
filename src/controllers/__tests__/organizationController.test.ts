@@ -11,6 +11,7 @@ import * as soap from "soap";
 import mockReq from "../../__mocks__/mockRequest";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
 import { Organization } from "../../generated/Organization";
+import { OrganizationDelegate } from "../../generated/OrganizationDelegate";
 import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationStatusEnum } from "../../generated/OrganizationRegistrationStatus";
@@ -50,6 +51,16 @@ const mockGetOrganizationInstanceFromDelegateEmail = jest.spyOn(
   "getOrganizationInstanceFromDelegateEmail"
 );
 
+const mockGetOrganizationFromUserEmail = jest.spyOn(
+  organizationService,
+  "getOrganizationFromUserEmail"
+);
+
+const mockGetAllOrganizations = jest.spyOn(
+  organizationService,
+  "getAllOrganizations"
+);
+
 const mockedOrganizationRegistrationParams = {
   ipa_code: "c_h501",
   legal_representative: {
@@ -62,7 +73,7 @@ const mockedOrganizationRegistrationParams = {
   selected_pec_label: "1"
 } as OrganizationRegistrationParams;
 
-const mockedRegisteredOrganization: Organization = {
+const mockedPreDraftOrganization: Organization = {
   fiscal_code: "86000470830" as OrganizationFiscalCode,
   ipa_code: "c_e043" as NonEmptyString,
   legal_representative: {
@@ -88,6 +99,74 @@ const mockedRegisteredOrganization: Organization = {
   registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
   scope: "NATIONAL" as OrganizationScopeEnum
 };
+const mockedRegisteredOrganization1: Organization = {
+  fiscal_code: "86000470830" as OrganizationFiscalCode,
+  ipa_code: "qwerty" as NonEmptyString,
+  legal_representative: {
+    email: "mocked-registered-organization-1@example.com",
+    family_name: "Rossi",
+    fiscal_code: "BCDFGH12A21Z123D",
+    given_name: "Ottavio",
+    phone_number: "6660000000",
+    role: "ORG_MANAGER"
+  } as LegalRepresentative,
+  links: [
+    {
+      href: "/organizations/qwerty",
+      rel: "self"
+    },
+    {
+      href: "/organizations/qwerty",
+      rel: "edit"
+    }
+  ],
+  name: "Organizzazione registrata numero 1" as NonEmptyString,
+  pec: "mocked-registered-organization-1@example.com" as EmailString,
+  registration_status: OrganizationRegistrationStatusEnum.REGISTERED,
+  scope: "NATIONAL" as OrganizationScopeEnum
+};
+const mockedRegisteredOrganization2: Organization = {
+  fiscal_code: "86000470345" as OrganizationFiscalCode,
+  ipa_code: "asd" as NonEmptyString,
+  legal_representative: {
+    email: "mocked-registered-organization-2@example.com",
+    family_name: "Rossi",
+    fiscal_code: "ZZZFGH12A21Z123D",
+    given_name: "Egidio",
+    phone_number: "6660000000",
+    role: "ORG_MANAGER"
+  } as LegalRepresentative,
+  links: [
+    {
+      href: "/organizations/asd",
+      rel: "self"
+    },
+    {
+      href: "/organizations/asd",
+      rel: "edit"
+    }
+  ],
+  name: "Organizzazione registrata numero 2" as NonEmptyString,
+  pec: "mocked-registered-organization-2@example.com" as EmailString,
+  registration_status: OrganizationRegistrationStatusEnum.REGISTERED,
+  scope: "NATIONAL" as OrganizationScopeEnum
+};
+const mockedDelegate1 = {
+  email: "delegate-1@example.com",
+  family_name: "Rossi",
+  fiscal_code: "DLGNNN53S15A012S",
+  given_name: "Carlo",
+  role: UserRoleEnum.ORG_DELEGATE,
+  work_email: "work1@example.com"
+} as OrganizationDelegate;
+const mockedDelegate2 = {
+  email: "delegate2@example.com",
+  family_name: "Rossi",
+  fiscal_code: "FSCNNN53S15A012S",
+  given_name: "Teobaldo",
+  role: UserRoleEnum.ORG_DELEGATE,
+  work_email: "work2@example.com"
+} as OrganizationDelegate;
 const mockGenerateDocument = jest.fn();
 const mockSignDocument = jest.fn();
 const mockSendEmail = jest.fn();
@@ -189,9 +268,9 @@ describe("OrganizationController", () => {
         Promise.resolve(
           right(
             ResponseSuccessRedirectToResource(
-              mockedRegisteredOrganization,
-              mockedRegisteredOrganization.links[0].href,
-              mockedRegisteredOrganization
+              mockedPreDraftOrganization,
+              mockedPreDraftOrganization.links[0].href,
+              mockedPreDraftOrganization
             )
           )
         )
@@ -217,9 +296,9 @@ describe("OrganizationController", () => {
         Promise.resolve(
           right(
             ResponseSuccessRedirectToResource(
-              mockedRegisteredOrganization,
-              mockedRegisteredOrganization.links[0].href,
-              mockedRegisteredOrganization
+              mockedPreDraftOrganization,
+              mockedPreDraftOrganization.links[0].href,
+              mockedPreDraftOrganization
             )
           )
         )
@@ -232,10 +311,10 @@ describe("OrganizationController", () => {
       const result = await organizationController.registerOrganization(req);
       expect(result).toEqual({
         apply: expect.any(Function),
-        detail: mockedRegisteredOrganization.links[0].href,
+        detail: mockedPreDraftOrganization.links[0].href,
         kind: "IResponseSuccessRedirectToResource",
-        payload: mockedRegisteredOrganization,
-        resource: mockedRegisteredOrganization
+        payload: mockedPreDraftOrganization,
+        resource: mockedPreDraftOrganization
       });
     });
   });
@@ -313,7 +392,7 @@ describe("OrganizationController#sendDocuments()", () => {
     };
     const req = mockReq();
     req.user = mockedLoggedUser;
-    req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
+    req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
     const organizationController = await getOrganizationController();
     const result = await organizationController.sendDocuments(req);
     expect(result).toEqual({
@@ -329,7 +408,7 @@ describe("OrganizationController#sendDocuments()", () => {
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
-    req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
+    req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
     const organizationController = await getOrganizationController();
     const result = await organizationController.sendDocuments(req);
     expect(result).toEqual({
@@ -345,7 +424,7 @@ describe("OrganizationController#sendDocuments()", () => {
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
-    req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
+    req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
     const organizationController = await getOrganizationController();
     const result = await organizationController.sendDocuments(req);
     expect(result).toEqual({
@@ -412,7 +491,7 @@ describe("OrganizationController#sendDocuments()", () => {
       );
       const req = mockReq();
       req.user = mockedLoggedDelegate;
-      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
+      req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({
@@ -439,7 +518,7 @@ describe("OrganizationController#sendDocuments()", () => {
       );
       const req = mockReq();
       req.user = mockedLoggedDelegate;
-      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
+      req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({
@@ -467,7 +546,7 @@ describe("OrganizationController#sendDocuments()", () => {
       mockSendEmail.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
-      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
+      req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({
@@ -503,7 +582,7 @@ describe("OrganizationController#sendDocuments()", () => {
       mockSendEmail.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
-      req.params = { ipaCode: mockedRegisteredOrganization.ipa_code };
+      req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
       const organizationController = await getOrganizationController();
       const result = await organizationController.sendDocuments(req);
       expect(result).toEqual({
@@ -512,6 +591,118 @@ describe("OrganizationController#sendDocuments()", () => {
         kind: "IResponseErrorInternal"
       });
       expect(mockSendEmail).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("OrganizationController#getOrganizations()", () => {
+  afterEach(() => {
+    jest.resetAllMocks();
+    jest.clearAllMocks();
+  });
+  it("should return a forbidden error response if the user is a developer", async () => {
+    const mockedLoggedUser: LoggedUser = {
+      ...mockedLoggedDelegate,
+      role: UserRoleEnum.DEVELOPER
+    };
+    const req = mockReq();
+    req.user = mockedLoggedUser;
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.getOrganizations(req);
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorForbiddenNotAuthorized"
+    });
+  });
+
+  it("should return a list with all the registered organizations if the user is an admin", async () => {
+    const registeredOrganizations: ReadonlyArray<Organization> = [
+      mockedRegisteredOrganization1,
+      mockedRegisteredOrganization2
+    ];
+    mockGetAllOrganizations.mockImplementation(() => {
+      return Promise.resolve(right(registeredOrganizations));
+    });
+    const mockedLoggedUser: LoggedUser = {
+      ...mockedLoggedDelegate,
+      role: UserRoleEnum.ADMIN
+    };
+    const req = mockReq();
+    req.user = mockedLoggedUser;
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.getOrganizations(req);
+    expect(mockGetAllOrganizations).toHaveBeenCalled();
+    expect(mockGetOrganizationFromUserEmail).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      kind: "IResponseSuccessJson",
+      value: { items: registeredOrganizations }
+    });
+  });
+
+  it("should return a list with the single organizations related to the delegate", async () => {
+    const delegateEmail = mockedDelegate1.email;
+    const registeredOrganization: Organization = {
+      ...mockedRegisteredOrganization1,
+      users: [mockedDelegate1, mockedDelegate2]
+    };
+    mockGetOrganizationFromUserEmail.mockImplementation(() => {
+      return Promise.resolve(right(some(registeredOrganization)));
+    });
+    const organizationController = await getOrganizationController();
+
+    const loggedDelegate: LoggedUser = {
+      ...mockedLoggedDelegate,
+      email: delegateEmail,
+      role: UserRoleEnum.ORG_DELEGATE
+    };
+    const reqFromDelegate = mockReq();
+    reqFromDelegate.user = loggedDelegate;
+    const resultForDelegate = await organizationController.getOrganizations(
+      reqFromDelegate
+    );
+    expect(mockGetAllOrganizations).not.toHaveBeenCalled();
+    expect(mockGetOrganizationFromUserEmail).toHaveBeenCalledWith(
+      delegateEmail
+    );
+    expect(resultForDelegate).toEqual({
+      apply: expect.any(Function),
+      kind: "IResponseSuccessJson",
+      value: { items: [registeredOrganization] }
+    });
+  });
+
+  it("should return a list with the single organizations related to the legal representative", async () => {
+    const legalRepresentativeEmail = mockedRegisteredOrganization1.legal_representative!
+      .email;
+    const registeredOrganization: Organization = {
+      ...mockedRegisteredOrganization1,
+      users: [mockedDelegate1, mockedDelegate2]
+    };
+    mockGetOrganizationFromUserEmail.mockImplementation(() => {
+      return Promise.resolve(right(some(registeredOrganization)));
+    });
+    const organizationController = await getOrganizationController();
+
+    const loggedLegalRepresentative: LoggedUser = {
+      ...mockedLoggedDelegate,
+      email: legalRepresentativeEmail,
+      role: UserRoleEnum.ORG_MANAGER
+    };
+    const reqFromLegalRepresentative = mockReq();
+    reqFromLegalRepresentative.user = loggedLegalRepresentative;
+    const resultForLegalRepresentative = await organizationController.getOrganizations(
+      reqFromLegalRepresentative
+    );
+    expect(mockGetAllOrganizations).not.toHaveBeenCalled();
+    expect(mockGetOrganizationFromUserEmail).toHaveBeenCalledWith(
+      legalRepresentativeEmail
+    );
+    expect(resultForLegalRepresentative).toEqual({
+      apply: expect.any(Function),
+      kind: "IResponseSuccessJson",
+      value: { items: [registeredOrganization] }
     });
   });
 });
