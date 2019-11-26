@@ -86,6 +86,27 @@ paths:
         204:
           description: No content
   /organizations:
+    get:
+      description: |-
+        Returns a list of all the organizations in a not pre-draft registration status,
+        according to the user role. That is:
+        - for an administrator, returns a list with all the organization in a not pre-draft registration status
+        - for a delegate, returns a list with the single organization by which the user has been delegated
+        - for a legal representative, returns a list with the single organization which the user represents
+        - for a developer returns a forbidden error
+      operationId: getOrganizations
+      security:
+        - bearerAuth: []
+      responses:
+        <<: *common-responses
+        200:
+          description: The organizations related to the user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationCollection"
+        403:
+          description: Forbidden
     post:
       description: |-
         Creates a new organization associated with its legal responsible,
@@ -541,6 +562,10 @@ components:
           $ref: "#/components/schemas/OrganizationRegistrationStatus"
         scope:
           $ref: '#/components/schemas/OrganizationScope'
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationDelegate'
       required:
         - fiscal_code
         - ipa_code
@@ -608,6 +633,36 @@ components:
           "scope": "NATIONAL",
           "selected_pec_label": "1"
         }
+    OrganizationCollection:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Organization"
+      required:
+        - items
+    OrganizationDelegate:
+      type: object
+      properties:
+        email:
+          $ref: "#/components/schemas/EmailAddress"
+        family_name:
+          <<: *non-empty-string
+        fiscal_code:
+          $ref: "#/components/schemas/FiscalCode"
+        given_name:
+          <<: *non-empty-string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        work_email:
+          $ref: "#/components/schemas/EmailAddress"
+      required:
+        - email
+        - family_name
+        - fiscal_code
+        - given_name
+        - role
   securitySchemes:
     bearerAuth:
       type: apiKey

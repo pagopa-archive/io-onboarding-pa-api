@@ -1,5 +1,7 @@
-import { Either, left, right } from "fp-ts/lib/Either";
+import { array } from "fp-ts/lib/Array";
+import { either, Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
+import { tryCatch } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
 import * as t from "io-ts";
 import { Errors } from "io-ts";
@@ -30,7 +32,8 @@ import { OrganizationUser as OrganizationUserModel } from "../models/Organizatio
 import { User } from "../models/User";
 import {
   fromOrganizationModelToFoundAdministration,
-  fromPublicAdministrationToFoundAdministration
+  fromPublicAdministrationToFoundAdministration,
+  toOrganizationObject
 } from "../types/organization";
 import {
   IpaPublicAdministration as IpaPublicAdministrationType,
@@ -514,4 +517,101 @@ export async function getOrganizationInstanceFromDelegateEmail(
   } catch (error) {
     return left(error);
   }
+}
+
+export async function getOrganizationFromUserEmail(
+  userEmail: string
+): Promise<Either<Error, Option<Organization>>> {
+  try {
+    const userInstance = await User.findOne({
+      include: [
+        {
+          as: "organizations",
+          include: [
+            {
+              as: "users",
+              model: User
+            },
+            {
+              as: "legalRepresentative",
+              model: User
+            }
+          ],
+          model: OrganizationModel,
+          through: {
+            where: {
+              email: userEmail
+            }
+          },
+          where: {
+            registrationStatus: {
+              [Op.ne]: OrganizationRegistrationStatusEnum.PRE_DRAFT
+            }
+          }
+        }
+      ],
+      where: { email: userEmail }
+    });
+    if (userInstance === null || !userInstance.organizations) {
+      return right(none);
+    }
+    if (userInstance.organizations.length > 1) {
+      return left(
+        new Error(
+          `DB conflict error: multiple organizations associated to the user ${userEmail}`
+        )
+      );
+    }
+    if (userInstance.organizations.length === 0) {
+      return right(none);
+    }
+    const errorsOrOrganization: Either<
+      Errors,
+      Organization
+    > = toOrganizationObject(userInstance.organizations[0]);
+    return errorsOrOrganization.fold(
+      errors =>
+        left(
+          new Error(
+            "Invalid organization data. " +
+              errorsToReadableMessages(errors).join(" / ")
+          )
+        ),
+      organization => right(some(organization))
+    );
+  } catch (error) {
+    return left(error);
+  }
+}
+
+export async function getAllOrganizations(): Promise<
+  Either<Error, ReadonlyArray<Organization>>
+> {
+  const errorOrOrganizationInstances = await tryCatch(
+    async () =>
+      OrganizationModel.findAll({
+        include: [
+          {
+            as: "legalRepresentative",
+            model: User
+          }
+        ],
+        where: {
+          registrationStatus: {
+            [Op.ne]: OrganizationRegistrationStatusEnum.PRE_DRAFT
+          }
+        }
+      }),
+    error => error as Error
+  ).run();
+
+  return errorOrOrganizationInstances.fold(
+    error => left(error),
+    organizationInstances =>
+      array
+        .traverse(either)(organizationInstances, toOrganizationObject)
+        .mapLeft(
+          errors => new Error(errorsToReadableMessages(errors).join(" / "))
+        )
+  );
 }

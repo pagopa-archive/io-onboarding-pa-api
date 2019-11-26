@@ -99,5 +99,8 @@
     ],
     "preset": "ts-jest",
     "testMatch": null
+  },
+  "resolutions": {
+    "fp-ts": "1.12.0"
   }
 }

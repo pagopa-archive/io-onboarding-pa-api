@@ -1,5 +1,6 @@
 import { Request } from "express";
-import { isSome, none, Option, some } from "fp-ts/lib/Option";
+import { isLeft } from "fp-ts/lib/Either";
+import { isNone, isSome, none, Option, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import {
   IResponseErrorConflict,
@@ -19,6 +20,7 @@ import { AdministrationSearchParam } from "../generated/AdministrationSearchPara
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
 import { FiscalCode } from "../generated/FiscalCode";
 import { Organization } from "../generated/Organization";
+import { OrganizationCollection } from "../generated/OrganizationCollection";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { UserRoleEnum } from "../generated/UserRole";
@@ -29,6 +31,8 @@ import EmailService from "../services/emailService";
 import {
   deleteOrganization,
   findPublicAdministrationsByName,
+  getAllOrganizations,
+  getOrganizationFromUserEmail,
   getOrganizationInstanceFromDelegateEmail,
   registerOrganization
 } from "../services/organizationService";
@@ -94,7 +98,7 @@ export default class OrganizationController {
           const maybeResponse = await this.deleteAssociatedPreDraftOrganization(
             user.email
           );
-          if (maybeResponse.isSome()) {
+          if (isSome(maybeResponse)) {
             return maybeResponse.value;
           }
           const errorResponseOrSuccessResponse = await registerOrganization(
@@ -150,6 +154,69 @@ export default class OrganizationController {
     });
   }
 
+  public getOrganizations(
+    req: Request
+  ): Promise<
+    // tslint:disable-next-line:max-union-size
+    | IResponseErrorValidation
+    | IResponseErrorInternal
+    | IResponseErrorForbiddenNotAuthorized
+    | IResponseSuccessJson<OrganizationCollection>
+  > {
+    return withUserFromRequest(req, async user => {
+      const handleError = (error: Error) => {
+        log.error(
+          "An error occurred while reading from the database. %s",
+          error
+        );
+        return ResponseErrorInternal(
+          "An error occurred while reading from the database."
+        );
+      };
+      switch (user.role) {
+        case UserRoleEnum.ADMIN: // can see all the organizations
+          const errorOrOrganizations = await getAllOrganizations();
+          return errorOrOrganizations.fold<
+            | IResponseErrorInternal
+            | IResponseSuccessJson<OrganizationCollection>
+          >(handleError, organizations => {
+            return ResponseSuccessJson({
+              items: organizations
+            });
+          });
+        case UserRoleEnum.ORG_MANAGER: // can see only his represented organization
+        case UserRoleEnum.ORG_DELEGATE: // can see only his delegating organization
+          const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
+            user.email
+          );
+          return errorOrMaybeOrganization.fold<
+            | IResponseErrorInternal
+            | IResponseSuccessJson<OrganizationCollection>
+          >(handleError, maybeOrganization =>
+            maybeOrganization
+              .map<
+                | IResponseErrorInternal
+                | IResponseSuccessJson<OrganizationCollection>
+              >(organization =>
+                ResponseSuccessJson({
+                  items: [organization]
+                })
+              )
+              .getOrElse(
+                user.role === UserRoleEnum.ORG_MANAGER
+                  ? ResponseErrorInternal(
+                      "Could not find the organization associated to the user"
+                    )
+                  : ResponseSuccessJson({ items: [] })
+              )
+          );
+        default:
+          // can see no organization
+          return ResponseErrorForbiddenNotAuthorized;
+      }
+    });
+  }
+
   public getDocument(
     req: Request
   ): Promise<
@@ -202,7 +269,7 @@ export default class OrganizationController {
           return ResponseErrorInternal("An error occurred reading from db");
         },
         async maybeOrganizationInstance => {
-          if (maybeOrganizationInstance.isNone()) {
+          if (isNone(maybeOrganizationInstance)) {
             return ResponseErrorNotFound(
               "Not found",
               "The administration is not registered"
@@ -232,7 +299,7 @@ export default class OrganizationController {
     const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
       userEmail
     );
-    if (errorOrMaybeOrganizationInstance.isLeft()) {
+    if (isLeft(errorOrMaybeOrganizationInstance)) {
       log.error(
         "An error occurred reading data from db. %s",
         errorOrMaybeOrganizationInstance.value
@@ -257,7 +324,7 @@ export default class OrganizationController {
         // is still in draft or pre-draft status,
         // so its registration process must be canceled
         const maybeError = await deleteOrganization(organizationInstance);
-        if (maybeError.isSome()) {
+        if (isSome(maybeError)) {
           log.error(
             `An error occurred when canceling the registration process for the organization ${organizationInstance.ipaCode}. %s`,
             maybeError.value
