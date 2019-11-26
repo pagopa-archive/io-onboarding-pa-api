@@ -641,10 +641,8 @@ describe("OrganizationController#getOrganizations()", () => {
     });
   });
 
-  it("should return a list with the single organizations related to the delegate or to the legal representative", async () => {
+  it("should return a list with the single organizations related to the delegate", async () => {
     const delegateEmail = mockedDelegate1.email;
-    const legalRepresentativeEmail = mockedRegisteredOrganization1.legal_representative!
-      .email;
     const registeredOrganization: Organization = {
       ...mockedRegisteredOrganization1,
       users: [mockedDelegate1, mockedDelegate2]
@@ -673,6 +671,19 @@ describe("OrganizationController#getOrganizations()", () => {
       kind: "IResponseSuccessJson",
       value: { items: [registeredOrganization] }
     });
+  });
+
+  it("should return a list with the single organizations related to the legal representative", async () => {
+    const legalRepresentativeEmail = mockedRegisteredOrganization1.legal_representative!
+      .email;
+    const registeredOrganization: Organization = {
+      ...mockedRegisteredOrganization1,
+      users: [mockedDelegate1, mockedDelegate2]
+    };
+    mockGetOrganizationFromUserEmail.mockImplementation(() => {
+      return Promise.resolve(right(some(registeredOrganization)));
+    });
+    const organizationController = await getOrganizationController();
 
     const loggedLegalRepresentative: LoggedUser = {
       ...mockedLoggedDelegate,
@@ -686,7 +697,7 @@ describe("OrganizationController#getOrganizations()", () => {
     );
     expect(mockGetAllOrganizations).not.toHaveBeenCalled();
     expect(mockGetOrganizationFromUserEmail).toHaveBeenCalledWith(
-      delegateEmail
+      legalRepresentativeEmail
     );
     expect(resultForLegalRepresentative).toEqual({
       apply: expect.any(Function),
