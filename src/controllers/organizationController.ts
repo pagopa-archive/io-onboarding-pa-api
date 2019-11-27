@@ -16,7 +16,11 @@ import {
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
-import accessControl from "../acl/acl";
+import accessControl, {
+  ORGANIZATION_RESOURCE,
+  SIGNED_DOCUMENT_RESOURCE,
+  UNSIGNED_DOCUMENT_RESOURCE
+} from "../acl/acl";
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
 import { FiscalCode } from "../generated/FiscalCode";
@@ -90,7 +94,7 @@ export default class OrganizationController {
     return withUserFromRequest(req, async user => {
       const userPermission = accessControl
         .can(user.role)
-        .createOwn("organization");
+        .createOwn(ORGANIZATION_RESOURCE);
       if (!userPermission.granted) {
         return ResponseErrorForbiddenNotAuthorized;
       }
@@ -177,7 +181,7 @@ export default class OrganizationController {
           "An error occurred while reading from the database."
         );
       };
-      if (accessControl.can(user.role).readAny("organization").granted) {
+      if (accessControl.can(user.role).readAny(ORGANIZATION_RESOURCE).granted) {
         const errorOrOrganizations = await getAllOrganizations();
         return errorOrOrganizations.fold<
           IResponseErrorInternal | IResponseSuccessJson<OrganizationCollection>
@@ -186,7 +190,9 @@ export default class OrganizationController {
             items: organizations
           });
         });
-      } else if (accessControl.can(user.role).readOwn("organization").granted) {
+      } else if (
+        accessControl.can(user.role).readOwn(ORGANIZATION_RESOURCE).granted
+      ) {
         const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
           user.email
         );
@@ -227,7 +233,10 @@ export default class OrganizationController {
     | IResponseDownload
   > {
     return withUserFromRequest(req, async user => {
-      if (!accessControl.can(user.role).readOwn("document").granted) {
+      if (
+        !accessControl.can(user.role).readOwn(UNSIGNED_DOCUMENT_RESOURCE)
+          .granted
+      ) {
         return ResponseErrorForbiddenNotAuthorized;
       }
       const filePath = `./documents/${req.params.ipaCode}/${req.params.fileName}`;
@@ -255,7 +264,10 @@ export default class OrganizationController {
     | IResponseNoContent
   > {
     return withUserFromRequest(req, async user => {
-      if (!accessControl.can(user.role).createOwn("signed-document").granted) {
+      if (
+        !accessControl.can(user.role).createOwn(SIGNED_DOCUMENT_RESOURCE)
+          .granted
+      ) {
         return ResponseErrorForbiddenNotAuthorized;
       }
       const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
