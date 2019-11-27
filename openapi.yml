@@ -37,15 +37,15 @@ x-commons:
   #  in the OAS.
   common-responses: &common-responses
     "400":
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
+      $ref: "#/components/responses/400BadRequest"
     "401":
-      description: Unauthorized
+      $ref: "#/components/responses/401Unauthorized"
     "429":
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
+      $ref: "#/components/responses/429TooManyRequests"
     "500":
       $ref: "#/components/responses/500InternalServerError"
     "503":
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
+      $ref: "#/components/responses/503ServiceUnavailable"
   non-empty-string: &non-empty-string
     type: string
     minLength: 1
@@ -142,7 +142,7 @@ paths:
         "403":
           $ref: "#/components/responses/403Forbidden"
         "404":
-          $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
+          $ref: "#/components/responses/404NotFound"
         "409":
           $ref: "#/components/responses/409Conflict"
   /organizations/{ipaCode}/signed-documents:
@@ -165,7 +165,7 @@ paths:
         "403":
           $ref: "#/components/responses/403Forbidden"
         "404":
-          $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
+          $ref: "#/components/responses/404NotFound"
         "409":
           $ref: "#/components/responses/409Conflict"
   /organizations/{ipaCode}/documents/{documentName}:
@@ -199,7 +199,7 @@ paths:
         "403":
           $ref: "#/components/responses/403Forbidden"
         "404":
-          $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
+          $ref: "#/components/responses/404NotFound"
   /profile:
     get:
       description: |-
@@ -236,7 +236,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
         "404":
-          $ref: "https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound"
+          $ref: "#/components/responses/404NotFound"
   /public-administrations:
     get:
       description: |-
@@ -262,15 +262,26 @@ paths:
                 $ref: '#/components/schemas/AdministrationSearchResult'
 components:
   responses:
+    400BadRequest:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
+    401Unauthorized:
+      description: Unauthorized
+      <<: *problem+json-content
     403Forbidden:
       description: Forbidden
       <<: *problem+json-content
+    404NotFound:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
     409Conflict:
       description: Conflict
       <<: *problem+json-content
+    429TooManyRequests:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
     500InternalServerError:
       description: Internal Server Error
       <<: *problem+json-content
+    503ServiceUnavailable:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
   schemas:
     BinaryFile:
       type: string
