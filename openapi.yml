@@ -42,11 +42,18 @@ x-commons:
       description: Unauthorized
     429:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
+    500:
+      $ref: "#/components/responses/500ErrorInternal"
     503:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
   non-empty-string: &non-empty-string
     type: string
     minLength: 1
+  problem+json-content: &problem+json-content
+    content:
+      application/problem+json:
+        schema:
+          $ref: "https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/schemas/Problem"
 paths:
   /login:
     get:
@@ -106,7 +113,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrganizationCollection"
         403:
-          description: Forbidden
+          $ref: "#/components/responses/403Forbidden"
     post:
       description: |-
         Creates a new organization associated with its legal responsible,
@@ -132,6 +139,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Organization"
+        403:
+          $ref: "#/components/responses/403Forbidden"
+        404:
+          $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
+        409:
+          $ref: "#/components/responses/409Conflict"
   /organizations/{ipaCode}/signed-documents:
     post:
       description: Send via email the registration documents of the organization
@@ -150,9 +163,11 @@ paths:
         204:
           description: No content
         403:
-          description: Forbidden
+          $ref: "#/components/responses/403Forbidden"
         404:
-          description: Organization not found
+          $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
+        409:
+          $ref: "#/components/responses/409Conflict"
   /organizations/{ipaCode}/documents/{documentName}:
     get:
       description: Returns the requested document
@@ -182,9 +197,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/BinaryFile'
         403:
-          description: Forbidden
+          $ref: "#/components/responses/403Forbidden"
         404:
-          description: File not found
+          $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
   /profile:
     get:
       description: |-
@@ -220,6 +235,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
+        404:
+          $ref: "https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound"
   /public-administrations:
     get:
       description: |-
@@ -244,6 +261,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdministrationSearchResult'
 components:
+  responses:
+    403Forbidden:
+      description: Forbidden
+      <<: *problem+json-content
+    409Conflict:
+      description: Conflict
+      <<: *problem+json-content
+    500ErrorInternal:
+      description: Internal Server Error
+      <<: *problem+json-content
   schemas:
     BinaryFile:
       type: string
