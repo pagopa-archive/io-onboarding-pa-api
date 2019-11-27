@@ -43,7 +43,7 @@ x-commons:
     "429":
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
     "500":
-      $ref: "#/components/responses/500ErrorInternal"
+      $ref: "#/components/responses/500InternalServerError"
     "503":
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
   non-empty-string: &non-empty-string
@@ -268,7 +268,7 @@ components:
     409Conflict:
       description: Conflict
       <<: *problem+json-content
-    500ErrorInternal:
+    500InternalServerError:
       description: Internal Server Error
       <<: *problem+json-content
   schemas:
