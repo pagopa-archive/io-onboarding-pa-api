@@ -16,6 +16,7 @@ import {
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
+import accessControl from "../acl/acl";
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
 import { FiscalCode } from "../generated/FiscalCode";
@@ -87,7 +88,10 @@ export default class OrganizationController {
     | IResponseSuccessRedirectToResource<Organization, Organization>
   > {
     return withUserFromRequest(req, async user => {
-      if (user.role !== UserRoleEnum.ORG_DELEGATE) {
+      const userPermission = accessControl
+        .can(user.role)
+        .createOwn("organization");
+      if (!userPermission.granted) {
         return ResponseErrorForbiddenNotAuthorized;
       }
       return withValidatedOrValidationError(
@@ -173,46 +177,41 @@ export default class OrganizationController {
           "An error occurred while reading from the database."
         );
       };
-      switch (user.role) {
-        case UserRoleEnum.ADMIN: // can see all the organizations
-          const errorOrOrganizations = await getAllOrganizations();
-          return errorOrOrganizations.fold<
-            | IResponseErrorInternal
-            | IResponseSuccessJson<OrganizationCollection>
-          >(handleError, organizations => {
-            return ResponseSuccessJson({
-              items: organizations
-            });
+      if (accessControl.can(user.role).readAny("organization").granted) {
+        const errorOrOrganizations = await getAllOrganizations();
+        return errorOrOrganizations.fold<
+          IResponseErrorInternal | IResponseSuccessJson<OrganizationCollection>
+        >(handleError, organizations => {
+          return ResponseSuccessJson({
+            items: organizations
           });
-        case UserRoleEnum.ORG_MANAGER: // can see only his represented organization
-        case UserRoleEnum.ORG_DELEGATE: // can see only his delegating organization
-          const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
-            user.email
-          );
-          return errorOrMaybeOrganization.fold<
-            | IResponseErrorInternal
-            | IResponseSuccessJson<OrganizationCollection>
-          >(handleError, maybeOrganization =>
-            maybeOrganization
-              .map<
-                | IResponseErrorInternal
-                | IResponseSuccessJson<OrganizationCollection>
-              >(organization =>
-                ResponseSuccessJson({
-                  items: [organization]
-                })
-              )
-              .getOrElse(
-                user.role === UserRoleEnum.ORG_MANAGER
-                  ? ResponseErrorInternal(
-                      "Could not find the organization associated to the user"
-                    )
-                  : ResponseSuccessJson({ items: [] })
-              )
-          );
-        default:
-          // can see no organization
-          return ResponseErrorForbiddenNotAuthorized;
+        });
+      } else if (accessControl.can(user.role).readOwn("organization").granted) {
+        const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
+          user.email
+        );
+        return errorOrMaybeOrganization.fold<
+          IResponseErrorInternal | IResponseSuccessJson<OrganizationCollection>
+        >(handleError, maybeOrganization =>
+          maybeOrganization
+            .map<
+              | IResponseErrorInternal
+              | IResponseSuccessJson<OrganizationCollection>
+            >(organization =>
+              ResponseSuccessJson({
+                items: [organization]
+              })
+            )
+            .getOrElse(
+              user.role === UserRoleEnum.ORG_MANAGER
+                ? ResponseErrorInternal(
+                    "Could not find the organization associated to the user"
+                  )
+                : ResponseSuccessJson({ items: [] })
+            )
+        );
+      } else {
+        return ResponseErrorForbiddenNotAuthorized;
       }
     });
   }
@@ -228,7 +227,7 @@ export default class OrganizationController {
     | IResponseDownload
   > {
     return withUserFromRequest(req, async user => {
-      if (user.role !== UserRoleEnum.ORG_DELEGATE) {
+      if (!accessControl.can(user.role).readOwn("document").granted) {
         return ResponseErrorForbiddenNotAuthorized;
       }
       const filePath = `./documents/${req.params.ipaCode}/${req.params.fileName}`;
@@ -256,7 +255,7 @@ export default class OrganizationController {
     | IResponseNoContent
   > {
     return withUserFromRequest(req, async user => {
-      if (user.role !== UserRoleEnum.ORG_DELEGATE) {
+      if (!accessControl.can(user.role).createOwn("signed-document").granted) {
         return ResponseErrorForbiddenNotAuthorized;
       }
       const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(

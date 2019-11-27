@@ -56,6 +56,7 @@
     "typescript": "^3.5.0"
   },
   "dependencies": {
+    "accesscontrol": "^2.2.1",
     "cors": "^2.8.5",
     "csv-stream": "^0.2.0",
     "dotenv": "^6.1.0",
