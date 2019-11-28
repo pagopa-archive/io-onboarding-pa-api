@@ -36,17 +36,24 @@ x-commons:
   # This section contains yaml anchors useful to implement common behaviors
   #  in the OAS.
   common-responses: &common-responses
-    400:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
-    401:
-      description: Unauthorized
-    429:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
-    503:
-      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
+    "400":
+      $ref: "#/components/responses/400BadRequest"
+    "401":
+      $ref: "#/components/responses/401Unauthorized"
+    "429":
+      $ref: "#/components/responses/429TooManyRequests"
+    "500":
+      $ref: "#/components/responses/500InternalServerError"
+    "503":
+      $ref: "#/components/responses/503ServiceUnavailable"
   non-empty-string: &non-empty-string
     type: string
     minLength: 1
+  problem+json-content: &problem+json-content
+    content:
+      application/problem+json:
+        schema:
+          $ref: "https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/schemas/Problem"
 paths:
   /login:
     get:
@@ -73,7 +80,7 @@ paths:
             x-extensible-enum: ["SpidL2", "SpidL3"]
           example: SpidL2
       responses:
-        302:
+        "302":
           description: Redirection to the login page from the chosen IdP.
   /logout:
     post:
@@ -83,7 +90,7 @@ paths:
         - bearerAuth: []
       responses:
         <<: *common-responses
-        204:
+        "204":
           description: No content
   /organizations:
     get:
@@ -99,14 +106,14 @@ paths:
         - bearerAuth: []
       responses:
         <<: *common-responses
-        200:
+        "200":
           description: The organizations related to the user
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrganizationCollection"
-        403:
-          description: Forbidden
+        "403":
+          $ref: "#/components/responses/403Forbidden"
     post:
       description: |-
         Creates a new organization associated with its legal responsible,
@@ -121,7 +128,7 @@ paths:
               $ref: "#/components/schemas/OrganizationRegistrationParams"
       responses:
         <<: *common-responses
-        201:
+        "201":
           description: The registered organization
           headers:
             Location:
@@ -132,6 +139,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Organization"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+        "409":
+          $ref: "#/components/responses/409Conflict"
   /organizations/{ipaCode}/signed-documents:
     post:
       description: Send via email the registration documents of the organization
@@ -147,12 +160,14 @@ paths:
             <<: *non-empty-string
       responses:
         <<: *common-responses
-        204:
+        "204":
           description: No content
-        403:
-          description: Forbidden
-        404:
-          description: Organization not found
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+        "409":
+          $ref: "#/components/responses/409Conflict"
   /organizations/{ipaCode}/documents/{documentName}:
     get:
       description: Returns the requested document
@@ -175,16 +190,16 @@ paths:
             <<: *non-empty-string
       responses:
         <<: *common-responses
-        200:
+        "200":
           description: The document
           content:
             application/pdf:
               schema:
                 $ref: '#/components/schemas/BinaryFile'
-        403:
-          description: Forbidden
-        404:
-          description: File not found
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
   /profile:
     get:
       description: |-
@@ -194,7 +209,7 @@ paths:
         - bearerAuth: []
       responses:
         <<: *common-responses
-        200:
+        "200":
           description: The user profile information
           content:
             application/json:
@@ -214,12 +229,14 @@ paths:
               $ref: "#/components/schemas/UpdateUserProfile"
       responses:
         <<: *common-responses
-        200:
+        "200":
           description: The updated user profile information
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
+        "404":
+          $ref: "#/components/responses/404NotFound"
   /public-administrations:
     get:
       description: |-
@@ -236,7 +253,7 @@ paths:
             $ref: "#/components/schemas/AdministrationSearchParam"
       responses:
         <<: *common-responses
-        200:
+        "200":
           description: |-
             Public Administrations matching the search criteria.
           content:
@@ -244,6 +261,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdministrationSearchResult'
 components:
+  responses:
+    400BadRequest:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/400BadRequest
+    401Unauthorized:
+      description: Unauthorized
+      <<: *problem+json-content
+    403Forbidden:
+      description: Forbidden
+      <<: *problem+json-content
+    404NotFound:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
+    409Conflict:
+      description: Conflict
+      <<: *problem+json-content
+    429TooManyRequests:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
+    500InternalServerError:
+      description: Internal Server Error
+      <<: *problem+json-content
+    503ServiceUnavailable:
+      $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/503ServiceUnavailable
   schemas:
     BinaryFile:
       type: string
