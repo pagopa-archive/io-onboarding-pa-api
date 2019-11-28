@@ -82,6 +82,9 @@ export async function findPublicAdministrationsByName(
     where: {
       ipaCode: {
         [Op.in]: publicAdministrations.map(_ => _.cod_amm)
+      },
+      registrationStatus: {
+        [Op.ne]: OrganizationRegistrationStatusEnum.PRE_DRAFT
       }
     }
   });
