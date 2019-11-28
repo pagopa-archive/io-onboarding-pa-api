@@ -89,8 +89,7 @@ export default class OrganizationController {
   > {
     return withUserFromRequest(req, async user => {
       const userPermissions = accessControl.can(user.role);
-      const permission = userPermissions.createOwn(Resource.ORGANIZATION);
-      if (!permission.granted) {
+      if (!userPermissions.createOwn(Resource.ORGANIZATION).granted) {
         return ResponseErrorForbiddenNotAuthorized;
       }
       return withValidatedOrValidationError(
