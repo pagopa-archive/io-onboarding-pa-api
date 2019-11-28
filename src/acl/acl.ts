@@ -1,12 +1,13 @@
 import { AccessControl } from "accesscontrol";
 import { UserRoleEnum } from "../generated/UserRole";
 
-// Resource constants
-export const ADMINISTRATION_RESOURCE = "administration";
-export const ORGANIZATION_RESOURCE = "organization";
-export const PROFILE_RESOURCE = "profile";
-export const SIGNED_DOCUMENT_RESOURCE = "signed-document";
-export const UNSIGNED_DOCUMENT_RESOURCE = "unsigned-document";
+export enum Resource {
+  ADMINISTRATION = "administration",
+  ORGANIZATION = "organization",
+  PROFILE = "profile",
+  SIGNED_DOCUMENT = "signed-document",
+  UNSIGNED_DOCUMENT = "unsigned-document"
+}
 
 // Attribute name constants
 export const EMAIL_ATTRIBUTE = "email";
@@ -43,7 +44,7 @@ enum ACTION {
 
 const grants = {
   [UserRoleEnum.ORG_DELEGATE]: {
-    [PROFILE_RESOURCE]: {
+    [Resource.PROFILE]: {
       [ACTION.READ_OWN]: [ALL_ATTRIBUTES, NOT + PASSWORD_ATTRIBUTE],
       [ACTION.UPDATE_OWN]: [
         WORK_EMAIL_ATTRIBUTE,
@@ -52,23 +53,23 @@ const grants = {
         NOT + PHONE_NUMBER_ATTRIBUTE
       ]
     },
-    [ADMINISTRATION_RESOURCE]: {
+    [Resource.ADMINISTRATION]: {
       [ACTION.READ_ANY]: [ALL_ATTRIBUTES]
     },
-    [ORGANIZATION_RESOURCE]: {
+    [Resource.ORGANIZATION]: {
       [ACTION.CREATE_OWN]: [ALL_ATTRIBUTES],
       [ACTION.READ_OWN]: [ALL_ATTRIBUTES]
     },
-    [UNSIGNED_DOCUMENT_RESOURCE]: {
+    [Resource.UNSIGNED_DOCUMENT]: {
       [ACTION.CREATE_OWN]: [ALL_ATTRIBUTES],
       [ACTION.READ_OWN]: [ALL_ATTRIBUTES]
     },
-    [SIGNED_DOCUMENT_RESOURCE]: {
+    [Resource.SIGNED_DOCUMENT]: {
       [ACTION.CREATE_OWN]: [ALL_ATTRIBUTES]
     }
   },
   [UserRoleEnum.DEVELOPER]: {
-    [PROFILE_RESOURCE]: {
+    [Resource.PROFILE]: {
       [ACTION.READ_OWN]: [
         ALL_ATTRIBUTES,
         NOT + PASSWORD_ATTRIBUTE,
@@ -81,12 +82,12 @@ const grants = {
         PHONE_NUMBER_ATTRIBUTE
       ]
     },
-    [ADMINISTRATION_RESOURCE]: {
+    [Resource.ADMINISTRATION]: {
       [ACTION.READ_ANY]: [ALL_ATTRIBUTES]
     }
   },
   [UserRoleEnum.ORG_MANAGER]: {
-    [PROFILE_RESOURCE]: {
+    [Resource.PROFILE]: {
       [ACTION.READ_OWN]: [
         ALL_ATTRIBUTES,
         NOT + PASSWORD_ATTRIBUTE,
@@ -99,13 +100,13 @@ const grants = {
         NOT + PHONE_NUMBER_ATTRIBUTE
       ]
     },
-    [ORGANIZATION_RESOURCE]: {
+    [Resource.ORGANIZATION]: {
       [ACTION.READ_OWN]: [ALL_ATTRIBUTES],
       [ACTION.DELETE_OWN]: [ALL_ATTRIBUTES, USER_ATTRIBUTE]
     }
   },
   [UserRoleEnum.ADMIN]: {
-    [PROFILE_RESOURCE]: {
+    [Resource.PROFILE]: {
       [ACTION.READ_OWN]: [
         ALL_ATTRIBUTES,
         NOT + PASSWORD_ATTRIBUTE,
@@ -118,12 +119,12 @@ const grants = {
         NOT + PHONE_NUMBER_ATTRIBUTE
       ]
     },
-    [ORGANIZATION_RESOURCE]: {
+    [Resource.ORGANIZATION]: {
       [ACTION.READ_ANY]: [ALL_ATTRIBUTES],
       [ACTION.UPDATE_ANY]: [REGISTRATION_STATUS_ATTRIBUTE],
       [ACTION.DELETE_ANY]: [ALL_ATTRIBUTES]
     },
-    [SIGNED_DOCUMENT_RESOURCE]: {
+    [Resource.SIGNED_DOCUMENT]: {
       [ACTION.READ_ANY]: [ALL_ATTRIBUTES]
     }
   }
