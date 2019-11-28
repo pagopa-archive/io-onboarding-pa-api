@@ -41,7 +41,7 @@ export function upsertFromIpa(): Promise<void> {
               // Trim the property values of the parsed row
               Object.entries(parsedRow)
                 .map(([key, val]) => [key, val.trim()])
-                .reduce((prev, [cKey, cVal]) => {
+                .reduce<{ [key: string]: string }>((prev, [cKey, cVal]) => {
                   return { ...prev, [cKey]: cVal };
                 }, {})
             ).fold(
