@@ -18,114 +18,102 @@ export const USER_ATTRIBUTE = "user";
 export const WORK_EMAIL_ATTRIBUTE = "workEmail";
 
 export const ALL_ATTRIBUTES = "*";
-export const NOT = "!";
 
-enum VERB {
-  CREATE = "create",
-  READ = "read",
-  UPDATE = "update",
-  DELETE = "delete"
-}
-enum POSSESSION {
-  ANY = "any",
-  OWN = "own"
-}
-
-enum ACTION {
-  CREATE_ANY = VERB.CREATE + ":" + POSSESSION.ANY,
-  CREATE_OWN = VERB.CREATE + ":" + POSSESSION.OWN,
-  READ_ANY = VERB.READ + ":" + POSSESSION.ANY,
-  READ_OWN = VERB.READ + ":" + POSSESSION.OWN,
-  UPDATE_ANY = VERB.UPDATE + ":" + POSSESSION.ANY,
-  UPDATE_OWN = VERB.UPDATE + ":" + POSSESSION.OWN,
-  DELETE_ANY = VERB.DELETE + ":" + POSSESSION.ANY,
-  DELETE_OWN = VERB.DELETE + ":" + POSSESSION.OWN
+enum Action {
+  CREATE_ANY = "create:any",
+  CREATE_OWN = "create:own",
+  READ_ANY = "read:any",
+  READ_OWN = "read:own",
+  UPDATE_ANY = "update:any",
+  UPDATE_OWN = "update:own",
+  DELETE_ANY = "delete:any",
+  DELETE_OWN = "delete:own"
 }
 
 const grants = {
   [UserRoleEnum.ORG_DELEGATE]: {
     [Resource.PROFILE]: {
-      [ACTION.READ_OWN]: [ALL_ATTRIBUTES, NOT + PASSWORD_ATTRIBUTE],
-      [ACTION.UPDATE_OWN]: [
+      [Action.READ_OWN]: [ALL_ATTRIBUTES, "!" + PASSWORD_ATTRIBUTE],
+      [Action.UPDATE_OWN]: [
         WORK_EMAIL_ATTRIBUTE,
-        NOT + EMAIL_ATTRIBUTE,
-        NOT + PASSWORD_ATTRIBUTE,
-        NOT + PHONE_NUMBER_ATTRIBUTE
+        "!" + EMAIL_ATTRIBUTE,
+        "!" + PASSWORD_ATTRIBUTE,
+        "!" + PHONE_NUMBER_ATTRIBUTE
       ]
     },
     [Resource.ADMINISTRATION]: {
-      [ACTION.READ_ANY]: [ALL_ATTRIBUTES]
+      [Action.READ_ANY]: [ALL_ATTRIBUTES]
     },
     [Resource.ORGANIZATION]: {
-      [ACTION.CREATE_OWN]: [ALL_ATTRIBUTES],
-      [ACTION.READ_OWN]: [ALL_ATTRIBUTES]
+      [Action.CREATE_OWN]: [ALL_ATTRIBUTES],
+      [Action.READ_OWN]: [ALL_ATTRIBUTES]
     },
     [Resource.UNSIGNED_DOCUMENT]: {
-      [ACTION.CREATE_OWN]: [ALL_ATTRIBUTES],
-      [ACTION.READ_OWN]: [ALL_ATTRIBUTES]
+      [Action.CREATE_OWN]: [ALL_ATTRIBUTES],
+      [Action.READ_OWN]: [ALL_ATTRIBUTES]
     },
     [Resource.SIGNED_DOCUMENT]: {
-      [ACTION.CREATE_OWN]: [ALL_ATTRIBUTES]
+      [Action.CREATE_OWN]: [ALL_ATTRIBUTES]
     }
   },
   [UserRoleEnum.DEVELOPER]: {
     [Resource.PROFILE]: {
-      [ACTION.READ_OWN]: [
+      [Action.READ_OWN]: [
         ALL_ATTRIBUTES,
-        NOT + PASSWORD_ATTRIBUTE,
-        NOT + WORK_EMAIL_ATTRIBUTE
+        "!" + PASSWORD_ATTRIBUTE,
+        "!" + WORK_EMAIL_ATTRIBUTE
       ],
-      [ACTION.UPDATE_OWN]: [
-        NOT + WORK_EMAIL_ATTRIBUTE,
+      [Action.UPDATE_OWN]: [
+        "!" + WORK_EMAIL_ATTRIBUTE,
         EMAIL_ATTRIBUTE,
         PASSWORD_ATTRIBUTE,
         PHONE_NUMBER_ATTRIBUTE
       ]
     },
     [Resource.ADMINISTRATION]: {
-      [ACTION.READ_ANY]: [ALL_ATTRIBUTES]
+      [Action.READ_ANY]: [ALL_ATTRIBUTES]
     }
   },
   [UserRoleEnum.ORG_MANAGER]: {
     [Resource.PROFILE]: {
-      [ACTION.READ_OWN]: [
+      [Action.READ_OWN]: [
         ALL_ATTRIBUTES,
-        NOT + PASSWORD_ATTRIBUTE,
-        NOT + WORK_EMAIL_ATTRIBUTE
+        "!" + PASSWORD_ATTRIBUTE,
+        "!" + WORK_EMAIL_ATTRIBUTE
       ],
-      [ACTION.UPDATE_OWN]: [
+      [Action.UPDATE_OWN]: [
         PASSWORD_ATTRIBUTE,
-        NOT + WORK_EMAIL_ATTRIBUTE,
-        NOT + EMAIL_ATTRIBUTE,
-        NOT + PHONE_NUMBER_ATTRIBUTE
+        "!" + WORK_EMAIL_ATTRIBUTE,
+        "!" + EMAIL_ATTRIBUTE,
+        "!" + PHONE_NUMBER_ATTRIBUTE
       ]
     },
     [Resource.ORGANIZATION]: {
-      [ACTION.READ_OWN]: [ALL_ATTRIBUTES],
-      [ACTION.DELETE_OWN]: [ALL_ATTRIBUTES, USER_ATTRIBUTE]
+      [Action.READ_OWN]: [ALL_ATTRIBUTES],
+      [Action.DELETE_OWN]: [ALL_ATTRIBUTES, USER_ATTRIBUTE]
     }
   },
   [UserRoleEnum.ADMIN]: {
     [Resource.PROFILE]: {
-      [ACTION.READ_OWN]: [
+      [Action.READ_OWN]: [
         ALL_ATTRIBUTES,
-        NOT + PASSWORD_ATTRIBUTE,
-        NOT + WORK_EMAIL_ATTRIBUTE
+        "!" + PASSWORD_ATTRIBUTE,
+        "!" + WORK_EMAIL_ATTRIBUTE
       ],
-      [ACTION.UPDATE_OWN]: [
+      [Action.UPDATE_OWN]: [
         PASSWORD_ATTRIBUTE,
-        NOT + WORK_EMAIL_ATTRIBUTE,
-        NOT + EMAIL_ATTRIBUTE,
-        NOT + PHONE_NUMBER_ATTRIBUTE
+        "!" + WORK_EMAIL_ATTRIBUTE,
+        "!" + EMAIL_ATTRIBUTE,
+        "!" + PHONE_NUMBER_ATTRIBUTE
       ]
     },
     [Resource.ORGANIZATION]: {
-      [ACTION.READ_ANY]: [ALL_ATTRIBUTES],
-      [ACTION.UPDATE_ANY]: [REGISTRATION_STATUS_ATTRIBUTE],
-      [ACTION.DELETE_ANY]: [ALL_ATTRIBUTES]
+      [Action.READ_ANY]: [ALL_ATTRIBUTES],
+      [Action.UPDATE_ANY]: [REGISTRATION_STATUS_ATTRIBUTE],
+      [Action.DELETE_ANY]: [ALL_ATTRIBUTES]
     },
     [Resource.SIGNED_DOCUMENT]: {
-      [ACTION.READ_ANY]: [ALL_ATTRIBUTES]
+      [Action.READ_ANY]: [ALL_ATTRIBUTES]
     }
   }
 };
