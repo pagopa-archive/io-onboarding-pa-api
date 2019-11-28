@@ -39,7 +39,7 @@
     "@types/shelljs": "^0.8.5",
     "@types/tmp": "^0.1.0",
     "@types/validator": "^10.11.1",
-    "danger": "^8.0.0",
+    "danger": "^9.2.8",
     "danger-plugin-digitalcitizenship": "*",
     "dotenv-cli": "^3.0.0",
     "italia-tslint-rules": "*",
