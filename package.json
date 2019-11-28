@@ -101,6 +101,7 @@
     "testMatch": null
   },
   "resolutions": {
-    "fp-ts": "1.12.0"
+    "fp-ts": "1.12.0",
+    "snapdragon": "^0.12.0"
   }
 }
