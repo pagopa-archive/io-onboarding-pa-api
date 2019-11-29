@@ -215,7 +215,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
-    put:
+    patch:
       description: |-
         Updates the user profile.
       operationId: updateProfile
@@ -224,9 +224,9 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          application/merge-patch+json:
             schema:
-              $ref: "#/components/schemas/UpdateUserProfile"
+              $ref: "#/components/schemas/WorkEmailPatch"
       responses:
         <<: *common-responses
         "200":
@@ -366,7 +366,7 @@ components:
           "email": "indirizzo00@email.pec.it",
           "role": "ORG_MANAGER"
         }
-    UpdateUserProfile:
+    WorkEmailPatch:
       type: object
       properties:
         work_email:

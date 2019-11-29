@@ -174,7 +174,7 @@ function registerRoutes(
     toExpressHandler(profileController.getProfile, profileController)
   );
 
-  app.put(
+  app.patch(
     `/profile`,
     bearerTokenAuth,
     toExpressHandler(profileController.editProfile, profileController)
