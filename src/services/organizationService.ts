@@ -47,7 +47,7 @@ import { log } from "../utils/logger";
  * In order to match, the name of the public administration must include each word of the input value in the same order.
  * @param input The value to compare with the name of the public administration.
  */
-export async function findPublicAdministrationsByName(
+export async function findAllNotPreDraft(
   input: string
 ): Promise<ReadonlyArray<FoundAdministration>> {
   const descriptionWords = input
@@ -82,6 +82,9 @@ export async function findPublicAdministrationsByName(
     where: {
       ipaCode: {
         [Op.in]: publicAdministrations.map(_ => _.cod_amm)
+      },
+      registrationStatus: {
+        [Op.ne]: OrganizationRegistrationStatusEnum.PRE_DRAFT
       }
     }
   });
