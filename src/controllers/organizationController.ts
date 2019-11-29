@@ -202,6 +202,8 @@ export default class OrganizationController {
               })
             )
             .getOrElse(
+              // A legal representative must always be associated to the organization that he represents.
+              // If no organization is found for a legal representative, then the stored data are not consistent.
               user.role === UserRoleEnum.ORG_MANAGER
                 ? ResponseErrorInternal(
                     "Could not find the organization associated to the user"
