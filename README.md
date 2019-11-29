@@ -88,6 +88,8 @@ To validate SPID login functionalities, point your browser to [http://localhost:
 
 ## Environment variables
 
+#### Required environment variables
+
 The table lists the environment variables needed by the application, that may be further customized as needed.
 
 | Variable name                          | Description                                                                       | type   |
@@ -123,6 +125,15 @@ The table lists the environment variables needed by the application, that may be
 | ARSS_IDENTITY_TYPE_OTP_AUTH            | The authentication domain of the ARSS user                                        | string |
 | ARSS_IDENTITY_USER                     | The username of the ARSS user                                                     | string |
 | ARSS_IDENTITY_USER_PWD                 | The password of the ARSS user                                                     | string |
+
+#### Optional environment variables
+
+The table lists the optional environment variables: if any of them is not set, the application will use its default value instead.
+
+| Variable name                          | Description                                                                       | type   | default |
+|----------------------------------------|-----------------------------------------------------------------------------------|--------|---------|
+| ADMINISTRATION_SEARCH_RESULTS_LIMIT    | The maximum number of administrations returned when performing a search      | number | 30      |
+
 
 ## Production deployments
 
