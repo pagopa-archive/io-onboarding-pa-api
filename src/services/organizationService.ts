@@ -19,6 +19,7 @@ import {
   ResponseSuccessRedirectToResource
 } from "italia-ts-commons/lib/responses";
 import { Op, QueryTypes, UniqueConstraintError } from "sequelize";
+import { ADMINISTRATION_SEARCH_RESULTS_LIMIT } from "../config";
 import sequelize from "../database/db";
 import { FoundAdministration } from "../generated/FoundAdministration";
 import { LegalRepresentative } from "../generated/LegalRepresentative";
@@ -63,7 +64,8 @@ export async function findAllNotPreDraft(
     `
       SELECT *
       FROM "${IpaPublicAdministrationModel.tableName}"
-      WHERE _search @@ plainto_tsquery('italian', :query);
+      WHERE _search @@ plainto_tsquery('italian', :query)
+      LIMIT ${ADMINISTRATION_SEARCH_RESULTS_LIMIT};
     `,
     {
       mapToModel: true,
