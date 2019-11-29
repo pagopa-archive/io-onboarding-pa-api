@@ -240,7 +240,8 @@ paths:
   /public-administrations:
     get:
       description: |-
-        Returns a list of public administrations that match the searching words.
+        Returns a list of public administrations that match the searching words,
+        its items are ordered by name and their amount could be limited.
       operationId: searchPublicAdministrations
       parameters:
         - name: search
