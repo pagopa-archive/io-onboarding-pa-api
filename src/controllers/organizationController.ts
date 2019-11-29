@@ -31,7 +31,7 @@ import DocumentService from "../services/documentService";
 import EmailService from "../services/emailService";
 import {
   deleteOrganization,
-  findPublicAdministrationsByName,
+  findAllNotPreDraft,
   getAllOrganizations,
   getOrganizationFromUserEmail,
   getOrganizationInstanceFromDelegateEmail,
@@ -67,9 +67,7 @@ export default class OrganizationController {
         withCatchAsInternalError(
           async () =>
             ResponseSuccessJson({
-              administrations: await findPublicAdministrationsByName(
-                searchParam
-              )
+              administrations: await findAllNotPreDraft(searchParam)
             }),
           "Internal message error"
         )
