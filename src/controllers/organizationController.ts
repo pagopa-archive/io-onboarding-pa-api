@@ -16,6 +16,7 @@ import {
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
+import accessControl, { Resource } from "../acl/acl";
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
 import { FiscalCode } from "../generated/FiscalCode";
@@ -85,7 +86,8 @@ export default class OrganizationController {
     | IResponseSuccessRedirectToResource<Organization, Organization>
   > {
     return withUserFromRequest(req, async user => {
-      if (user.role !== UserRoleEnum.ORG_DELEGATE) {
+      const userPermissions = accessControl.can(user.role);
+      if (!userPermissions.createOwn(Resource.ORGANIZATION).granted) {
         return ResponseErrorForbiddenNotAuthorized;
       }
       return withValidatedOrValidationError(
@@ -162,6 +164,7 @@ export default class OrganizationController {
     | IResponseSuccessJson<OrganizationCollection>
   > {
     return withUserFromRequest(req, async user => {
+      const userPermissions = accessControl.can(user.role);
       const handleError = (error: Error) => {
         log.error(
           "An error occurred while reading from the database. %s",
@@ -171,46 +174,43 @@ export default class OrganizationController {
           "An error occurred while reading from the database."
         );
       };
-      switch (user.role) {
-        case UserRoleEnum.ADMIN: // can see all the organizations
-          const errorOrOrganizations = await getAllOrganizations();
-          return errorOrOrganizations.fold<
-            | IResponseErrorInternal
-            | IResponseSuccessJson<OrganizationCollection>
-          >(handleError, organizations => {
-            return ResponseSuccessJson({
-              items: organizations
-            });
+      if (userPermissions.readAny(Resource.ORGANIZATION).granted) {
+        const errorOrOrganizations = await getAllOrganizations();
+        return errorOrOrganizations.fold<
+          IResponseErrorInternal | IResponseSuccessJson<OrganizationCollection>
+        >(handleError, organizations => {
+          return ResponseSuccessJson({
+            items: organizations
           });
-        case UserRoleEnum.ORG_MANAGER: // can see only his represented organization
-        case UserRoleEnum.ORG_DELEGATE: // can see only his delegating organization
-          const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
-            user.email
-          );
-          return errorOrMaybeOrganization.fold<
-            | IResponseErrorInternal
-            | IResponseSuccessJson<OrganizationCollection>
-          >(handleError, maybeOrganization =>
-            maybeOrganization
-              .map<
-                | IResponseErrorInternal
-                | IResponseSuccessJson<OrganizationCollection>
-              >(organization =>
-                ResponseSuccessJson({
-                  items: [organization]
-                })
-              )
-              .getOrElse(
-                user.role === UserRoleEnum.ORG_MANAGER
-                  ? ResponseErrorInternal(
-                      "Could not find the organization associated to the user"
-                    )
-                  : ResponseSuccessJson({ items: [] })
-              )
-          );
-        default:
-          // can see no organization
-          return ResponseErrorForbiddenNotAuthorized;
+        });
+      } else if (userPermissions.readOwn(Resource.ORGANIZATION).granted) {
+        const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
+          user.email
+        );
+        return errorOrMaybeOrganization.fold<
+          IResponseErrorInternal | IResponseSuccessJson<OrganizationCollection>
+        >(handleError, maybeOrganization =>
+          maybeOrganization
+            .map<
+              | IResponseErrorInternal
+              | IResponseSuccessJson<OrganizationCollection>
+            >(organization =>
+              ResponseSuccessJson({
+                items: [organization]
+              })
+            )
+            .getOrElse(
+              // A legal representative must always be associated to the organization that he represents.
+              // If no organization is found for a legal representative, then the stored data are not consistent.
+              user.role === UserRoleEnum.ORG_MANAGER
+                ? ResponseErrorInternal(
+                    "Could not find the organization associated to the user"
+                  )
+                : ResponseSuccessJson({ items: [] })
+            )
+        );
+      } else {
+        return ResponseErrorForbiddenNotAuthorized;
       }
     });
   }
@@ -226,7 +226,8 @@ export default class OrganizationController {
     | IResponseDownload
   > {
     return withUserFromRequest(req, async user => {
-      if (user.role !== UserRoleEnum.ORG_DELEGATE) {
+      const userPermissions = accessControl.can(user.role);
+      if (!userPermissions.readOwn(Resource.UNSIGNED_DOCUMENT).granted) {
         return ResponseErrorForbiddenNotAuthorized;
       }
       const filePath = `./documents/${req.params.ipaCode}/${req.params.fileName}`;
@@ -254,7 +255,8 @@ export default class OrganizationController {
     | IResponseNoContent
   > {
     return withUserFromRequest(req, async user => {
-      if (user.role !== UserRoleEnum.ORG_DELEGATE) {
+      const userPermissions = accessControl.can(user.role);
+      if (!userPermissions.createOwn(Resource.SIGNED_DOCUMENT).granted) {
         return ResponseErrorForbiddenNotAuthorized;
       }
       const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
