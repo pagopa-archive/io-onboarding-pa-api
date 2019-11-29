@@ -237,6 +237,8 @@ paths:
                 $ref: "#/components/schemas/UserProfile"
         "404":
           $ref: "#/components/responses/404NotFound"
+        "415":
+          $ref: "#/components/responses/415UnsupportedMediaType"
   /public-administrations:
     get:
       description: |-
@@ -274,6 +276,9 @@ components:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
     409Conflict:
       description: Conflict
+      <<: *problem+json-content
+    415UnsupportedMediaType:
+      description: Unsupported Media Type
       <<: *problem+json-content
     429TooManyRequests:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests

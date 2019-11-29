@@ -3,6 +3,7 @@ import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import {
   IResponse,
+  ProblemJson,
   ResponseErrorInternal,
   ResponseErrorValidation
 } from "italia-ts-commons/lib/responses";
@@ -51,6 +52,36 @@ export const ResponseDownload = (
     kind: "IResponseDownload"
   };
 };
+
+/**
+ * Interface for a response describing an unsupported media type error (415).
+ */
+export interface IResponseErrorUnsupportedMediaType
+  extends IResponse<"IResponseErrorUnsupportedMediaType"> {}
+
+/**
+ * Returns a response describing an unsupported media type error (415).
+ */
+export function ResponseErrorUnsupportedMediaType(
+  detail: string
+): IResponseErrorUnsupportedMediaType {
+  const status = 415;
+  const title = "Unsupported Media type";
+  const problem: ProblemJson = {
+    detail,
+    status,
+    title
+  };
+  return {
+    apply: res =>
+      res
+        .status(status)
+        .set("Content-Type", "application/problem+json")
+        .json(problem),
+    detail: `${title}: ${detail}`,
+    kind: "IResponseErrorUnsupportedMediaType"
+  };
+}
 
 /**
  * Transforms async failures into internal errors
