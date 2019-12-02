@@ -22,7 +22,7 @@ LABEL maintainer="https://teamdigitale.governo.it"
 # Install major CA certificates to cover
 # https://github.com/SparebankenVest/azure-key-vault-to-kubernetes integration
 RUN apk update && \
-    apk add ca-certificates ghostscript ghostscript-dev
+  apk add ca-certificates ghostscript ghostscript-dev
 
 WORKDIR /usr/src/app
 COPY /package.json /usr/src/app/package.json
@@ -31,4 +31,4 @@ COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
 
 EXPOSE 3000
 
-ENTRYPOINT yarn start
+CMD ["yarn", "start"]

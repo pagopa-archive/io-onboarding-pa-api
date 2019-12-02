@@ -94,10 +94,10 @@ The table lists the environment variables needed by the application, that may be
 
 | Variable name                          | Description                                                                       | type   |
 |----------------------------------------|-----------------------------------------------------------------------------------|--------|
-| POSTGRES_HOST                          | The name of postgres server host to connect to                                    | string |
-| POSTGRES_PASSWORD                      | The password used to connect to postgres server                                   | string |
-| POSTGRES_USER                          | PostgreSQL user name to connect as                                                | string |
-| POSTGRES_DB                            | The database name                                                                 | string |
+| POSTGRESQL_HOST                        | The name of postgres server host to connect to                                    | string |
+| POSTGRESQL_PASSWORD                    | The password used to connect to postgres server                                   | string |
+| POSTGRESQL_USERNAME                    | PostgreSQL user name to connect as                                                | string |
+| POSTGRESQL_DATABASE                    | The database name                                                                 | string |
 | CLIENT_DOMAIN                          | The client domain, which will be CORS-enabled                                     | string |
 | COOKIE_DOMAIN                          | The allowed hosts to receive the cookie containing the session token              | string |
 | CLIENT_SPID_LOGIN_REDIRECTION_URL      | The path where the user will be redirected to perform a SPID login                | string |
