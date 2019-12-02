@@ -65,7 +65,7 @@ export async function findAllNotPreDraft(
       SELECT *
       FROM "${IpaPublicAdministrationModel.tableName}"
       WHERE _search @@ plainto_tsquery('italian', :query)
-      ORDER BY des_amm DESC
+      ORDER BY des_amm ASC
       LIMIT ${ADMINISTRATION_SEARCH_RESULTS_LIMIT};
     `,
     {
