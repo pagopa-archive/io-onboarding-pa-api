@@ -1,5 +1,5 @@
 import { array } from "fp-ts/lib/Array";
-import { either, Either, left, right } from "fp-ts/lib/Either";
+import { either, Either, isLeft, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
 import { tryCatch } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
@@ -488,6 +488,117 @@ export async function registerOrganization(
     log.error(`${genericError} %s`, error);
     return left(ResponseErrorInternal(genericError));
   }
+}
+
+export async function addDelegate(
+  ipaCode: string,
+  userEmail: string
+): Promise<
+  Either<
+    // tslint:disable-next-line:max-union-size
+    IResponseErrorInternal | IResponseErrorNotFound | IResponseErrorConflict,
+    IResponseSuccessRedirectToResource<Organization, Organization>
+  >
+> {
+  const genericError = "An error occurred adding the delegate.";
+
+  const errorOrNullableOrganizationModel = await tryCatch(
+    () =>
+      OrganizationModel.findOne({
+        where: { ipaCode }
+      }),
+    error => {
+      log.error(`${genericError} %s`, error);
+      return ResponseErrorInternal(genericError);
+    }
+  ).run();
+  if (isLeft(errorOrNullableOrganizationModel)) {
+    return left(errorOrNullableOrganizationModel.value);
+  }
+  if (errorOrNullableOrganizationModel.value === null) {
+    return left(
+      ResponseErrorNotFound(
+        "Not found",
+        "Registered organization does not exists"
+      )
+    );
+  }
+  const organizationModel = errorOrNullableOrganizationModel.value;
+  if (
+    organizationModel.registrationStatus !==
+    OrganizationRegistrationStatusEnum.REGISTERED
+  ) {
+    return left(
+      ResponseErrorConflict(
+        "The organization has not completed the registration process yet."
+      )
+    );
+  }
+  const errorOrOrganizationUserModel = await tryCatch(
+    () =>
+      OrganizationUserModel.create({
+        createdAt: Date.now(),
+        organizationIpaCode: organizationModel.ipaCode,
+        updatedAt: Date.now(),
+        userEmail,
+        userRole: UserRoleEnum.ORG_DELEGATE
+      }),
+    error => {
+      log.error(`${genericError} %s`, error);
+      return ResponseErrorInternal(genericError);
+    }
+  ).run();
+  if (isLeft(errorOrOrganizationUserModel)) {
+    return left(errorOrOrganizationUserModel.value);
+  }
+  const errorOrOrganizationModel = await tryCatch(
+    () =>
+      organizationModel.reload({
+        include: [
+          {
+            as: "users",
+            model: User
+          },
+          {
+            as: "legalRepresentative",
+            model: User
+          }
+        ],
+        order: [["users", "createdAt", "DESC"]]
+      }),
+    error => {
+      log.error(`${genericError} %s`, error);
+      return ResponseErrorInternal(genericError);
+    }
+  ).run();
+  if (isLeft(errorOrOrganizationModel)) {
+    return left(errorOrOrganizationModel.value);
+  }
+
+  return toOrganizationObject(organizationModel).fold<
+    Either<
+      IResponseErrorInternal,
+      IResponseSuccessRedirectToResource<Organization, Organization>
+    >
+  >(
+    errors => {
+      log.error(
+        "Invalid organization data. " +
+          errorsToReadableMessages(errors).join(" / ")
+      );
+      return left(ResponseErrorInternal("Invalid organization data."));
+    },
+    organization => {
+      const selfLink = organization.links.find(_ => _.rel === "self");
+      return right(
+        ResponseSuccessRedirectToResource(
+          organization,
+          selfLink ? selfLink.href : "",
+          organization
+        )
+      );
+    }
+  );
 }
 
 export async function getOrganizationInstanceFromDelegateEmail(

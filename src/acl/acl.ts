@@ -3,6 +3,7 @@ import { UserRoleEnum } from "../generated/UserRole";
 
 export enum Resource {
   ADMINISTRATION = "administration",
+  DELEGATE = "delegate",
   ORGANIZATION = "organization",
   PROFILE = "profile",
   SIGNED_DOCUMENT = "signed-document",
@@ -43,6 +44,9 @@ const grants = {
     },
     [Resource.ADMINISTRATION]: {
       [Action.READ_ANY]: [ALL_ATTRIBUTES]
+    },
+    [Resource.DELEGATE]: {
+      [Action.CREATE_OWN]: [ALL_ATTRIBUTES]
     },
     [Resource.ORGANIZATION]: {
       [Action.CREATE_OWN]: [ALL_ATTRIBUTES],
