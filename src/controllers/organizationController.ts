@@ -46,6 +46,7 @@ import {
   ResponseDownload,
   ResponseNoContent,
   withCatchAsInternalError,
+  withResultOrInternalError,
   withValidatedOrValidationError
 } from "../utils/responses";
 
@@ -235,13 +236,8 @@ export default class OrganizationController {
       const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
         user.email
       );
-      return errorOrMaybeOrganization.fold(
-        error => {
-          log.error("An error occurred reading data from db %s", error);
-          return Promise.resolve(
-            ResponseErrorInternal("An error occurred reading data from db.")
-          );
-        },
+      return withResultOrInternalError(
+        errorOrMaybeOrganization,
         async maybeOrganization => {
           if (isSome(maybeOrganization)) {
             return ResponseErrorConflict(

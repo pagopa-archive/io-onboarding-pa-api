@@ -1,4 +1,5 @@
 import { Response } from "express";
+import { Either, isLeft } from "fp-ts/lib/Either";
 import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import {
@@ -93,3 +94,20 @@ export const withValidatedOrInternalError = <T, U>(
         errorsToReadableMessages(validated.value).join(" / ")
       )
     : f(validated.value);
+
+/**
+ * Calls the provided function with the valid value, or else returns an
+ * IResponseErrorInternal with the error.
+ */
+export const withResultOrInternalError = <T, U>(
+  errorOrResult: Either<Error, T>,
+  f: (t: T) => U
+) => {
+  if (isLeft(errorOrResult)) {
+    log.error("An error occurred. %s", errorOrResult.value);
+    return ResponseErrorInternal(
+      `Internal server error. ${errorOrResult.value}"`
+    );
+  }
+  return f(errorOrResult.value);
+};
