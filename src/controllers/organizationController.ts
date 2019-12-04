@@ -247,7 +247,7 @@ export default class OrganizationController {
           const errorResponseOrSuccessResponse = await addDelegate(
             req.params.ipaCode,
             user.email
-          );
+          ).run();
           if (isLeft(errorResponseOrSuccessResponse)) {
             return errorResponseOrSuccessResponse.value;
           }

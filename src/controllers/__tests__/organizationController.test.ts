@@ -1,5 +1,10 @@
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
+import { Task } from "fp-ts/lib/Task";
+import {
+  left as leftTaskEither,
+  right as rightTaskEither
+} from "fp-ts/lib/TaskEither";
 import {
   ResponseErrorInternal,
   ResponseErrorNotFound,
@@ -452,7 +457,11 @@ describe("OrganizationController#addDelegate()", () => {
       return Promise.resolve(right(none));
     });
     mockAddDelegate.mockReturnValue(
-      Promise.resolve(left(ResponseErrorInternal("An error message")))
+      leftTaskEither(
+        new Task(() =>
+          Promise.resolve(ResponseErrorInternal("An error message"))
+        )
+      )
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
@@ -472,12 +481,14 @@ describe("OrganizationController#addDelegate()", () => {
     });
     const mockedUrl = "url-to-the-organization";
     mockAddDelegate.mockReturnValue(
-      Promise.resolve(
-        right(
-          ResponseSuccessRedirectToResource(
-            registeredOrganizationWithAddedDelegate,
-            mockedUrl,
-            registeredOrganizationWithAddedDelegate
+      rightTaskEither(
+        new Task(() =>
+          Promise.resolve(
+            ResponseSuccessRedirectToResource(
+              registeredOrganizationWithAddedDelegate,
+              mockedUrl,
+              registeredOrganizationWithAddedDelegate
+            )
           )
         )
       )
@@ -501,12 +512,14 @@ describe("OrganizationController#addDelegate()", () => {
     });
     const mockedUrl = "url-to-the-organization";
     mockAddDelegate.mockReturnValue(
-      Promise.resolve(
-        right(
-          ResponseSuccessRedirectToResource(
-            registeredOrganizationWithAddedDelegate,
-            mockedUrl,
-            registeredOrganizationWithAddedDelegate
+      rightTaskEither(
+        new Task(() =>
+          Promise.resolve(
+            ResponseSuccessRedirectToResource(
+              registeredOrganizationWithAddedDelegate,
+              mockedUrl,
+              registeredOrganizationWithAddedDelegate
+            )
           )
         )
       )

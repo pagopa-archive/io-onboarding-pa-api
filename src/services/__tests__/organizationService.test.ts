@@ -454,7 +454,7 @@ describe("OrganizationService#addDelegate()", () => {
     const result = await addDelegate(
       "not existing org",
       "any-user@example.com"
-    );
+    ).run();
     expect(isLeft(result)).toBeTruthy();
     expect(result.value).toHaveProperty("kind", "IResponseErrorNotFound");
   });
@@ -463,7 +463,7 @@ describe("OrganizationService#addDelegate()", () => {
     const result = await addDelegate(
       mockPreDraftOrganizationParams.ipaCode,
       "any-user@example.com"
-    );
+    ).run();
     expect(isLeft(result)).toBeTruthy();
     expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");
   });
@@ -494,7 +494,7 @@ describe("OrganizationService#addDelegate()", () => {
       const result = await addDelegate(
         mockRegisteredOrganizationParams.ipaCode,
         noOrgDelegateParams.email
-      );
+      ).run();
       expect(isRight(result)).toBeTruthy();
       expect(result.value).toHaveProperty(
         "kind",
