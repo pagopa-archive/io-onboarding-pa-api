@@ -11,6 +11,7 @@ import { OrganizationRegistrationStatusEnum } from "../../generated/Organization
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { UserRoleEnum } from "../../generated/UserRole";
 import {
+  addDelegate,
   getAllOrganizations,
   getOrganizationFromUserEmail,
   getOrganizationInstanceFromDelegateEmail,
@@ -155,6 +156,8 @@ let userInstance: UserModel;
 let registeredOrgDelegate1: UserModel;
 // tslint:disable-next-line:no-let
 let registeredOrgDelegate2: UserModel;
+// tslint:disable-next-line:no-let
+let noOrgDelegate: UserModel;
 
 beforeAll(async () => {
   initIpaPublicAdministration();
@@ -182,20 +185,18 @@ beforeAll(async () => {
   });
   user = userInstance.get({ plain: true }) as LoggedUser;
 
-  [registeredOrgDelegate1, registeredOrgDelegate2] = await UserModel.bulkCreate(
-    [registeredOrgDelegateParams1, registeredOrgDelegateParams2]
-  );
+  registeredOrgDelegate1 = await UserModel.create(registeredOrgDelegateParams1);
+  registeredOrgDelegate2 = await UserModel.create(registeredOrgDelegateParams2);
+  noOrgDelegate = await UserModel.create(noOrgDelegateParams);
 
   const [
     registeredOrgLegalRepresentative,
     preDraftOrgDelegate,
-    admin,
-    noOrgDelegate
+    admin
   ] = await UserModel.bulkCreate([
     registeredOrgLegalRepresentativeParams,
     preDraftOrgDelegateParams,
-    adminParams,
-    noOrgDelegateParams
+    adminParams
   ]);
   const [
     mockRegisteredOrganization,
@@ -444,6 +445,63 @@ describe("OrganizationService", () => {
         expect(isLeft(result)).toBeTruthy();
         expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");
       });
+    });
+  });
+});
+
+describe("OrganizationService#addDelegate()", () => {
+  it("should return a left value with a not found error response if the ipa code doesn't match an existing organization", async () => {
+    const result = await addDelegate(
+      "not existing org",
+      "any-user@example.com"
+    );
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toHaveProperty("kind", "IResponseErrorNotFound");
+  });
+
+  it("should return a left value with a conflict error response if the ipa code doesn't match a registered organization", async () => {
+    const result = await addDelegate(
+      mockPreDraftOrganizationParams.ipaCode,
+      "any-user@example.com"
+    );
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");
+  });
+
+  describe("when no error occurs", () => {
+    afterEach(async () =>
+      OrganizationUserModel.destroy({
+        force: true,
+        where: { userEmail: noOrgDelegate.email }
+      })
+    );
+
+    it("should return a right value with a success response containing the whole organization", async () => {
+      const expectedResult = toOrganizationObject(({
+        ...mockRegisteredOrganizationParams,
+        legalRepresentative: registeredOrgLegalRepresentativeParams,
+        users: [
+          registeredOrgDelegate1,
+          registeredOrgDelegate2,
+          noOrgDelegate
+        ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      } as unknown) as OrganizationModel).fold(
+        () => {
+          fail("toOrganizationObject error");
+        },
+        value => value
+      );
+      const result = await addDelegate(
+        mockRegisteredOrganizationParams.ipaCode,
+        noOrgDelegateParams.email
+      );
+      expect(isRight(result)).toBeTruthy();
+      expect(result.value).toHaveProperty(
+        "kind",
+        "IResponseSuccessRedirectToResource"
+      );
+      expect(result.value).toHaveProperty("payload", expectedResult);
+      expect(result.value).toHaveProperty("resource", expectedResult);
     });
   });
 });
