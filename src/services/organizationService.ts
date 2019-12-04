@@ -1,5 +1,5 @@
 import { array } from "fp-ts/lib/Array";
-import { either, Either, isLeft, isRight, left, right } from "fp-ts/lib/Either";
+import { either, Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
 import {
   fromEither,
