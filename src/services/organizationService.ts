@@ -522,7 +522,7 @@ export function addDelegate(
     genericErrorHandler
   )
     .chain(
-      fromPredicate<IResponseErrorNotFound, OrganizationModel>(
+      fromPredicate(
         _ => _ !== null,
         () =>
           ResponseErrorNotFound(
@@ -532,10 +532,7 @@ export function addDelegate(
       )
     )
     .chain(
-      fromPredicate<
-        IResponseErrorConflict | IResponseErrorInternal,
-        OrganizationModel
-      >(
+      fromPredicate(
         _ =>
           _.registrationStatus ===
           OrganizationRegistrationStatusEnum.REGISTERED,
