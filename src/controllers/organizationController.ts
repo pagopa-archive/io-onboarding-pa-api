@@ -30,6 +30,7 @@ import { Organization as OrganizationModel } from "../models/Organization";
 import DocumentService from "../services/documentService";
 import EmailService from "../services/emailService";
 import {
+  addDelegate,
   deleteOrganization,
   findAllNotPreDraft,
   getAllOrganizations,
@@ -42,9 +43,11 @@ import { log } from "../utils/logger";
 import {
   IResponseDownload,
   IResponseNoContent,
+  IResponseSuccessCreation,
   ResponseDownload,
   ResponseNoContent,
   withCatchAsInternalError,
+  withResultOrInternalError,
   withValidatedOrValidationError
 } from "../utils/responses";
 
@@ -212,6 +215,77 @@ export default class OrganizationController {
       } else {
         return ResponseErrorForbiddenNotAuthorized;
       }
+    });
+  }
+
+  public addDelegate(
+    req: Request
+  ): Promise<
+    // tslint:disable-next-line:max-union-size
+    | IResponseErrorValidation
+    | IResponseErrorInternal
+    | IResponseErrorForbiddenNotAuthorized
+    | IResponseErrorNotFound
+    | IResponseErrorConflict
+    | IResponseSuccessCreation<Organization>
+  > {
+    return withUserFromRequest(req, async user => {
+      const userPermissions = accessControl.can(user.role);
+      if (!userPermissions.createOwn(Resource.DELEGATE).granted) {
+        return ResponseErrorForbiddenNotAuthorized;
+      }
+      const errorOrMaybeOrganization = await getOrganizationFromUserEmail(
+        user.email
+      );
+      return withResultOrInternalError(
+        errorOrMaybeOrganization,
+        async maybeOrganization => {
+          if (isSome(maybeOrganization)) {
+            return ResponseErrorConflict(
+              "You are already associated to an organization"
+            );
+          }
+          const errorResponseOrSuccessResponse = await addDelegate(
+            req.params.ipaCode,
+            user.email
+          ).run();
+          if (isLeft(errorResponseOrSuccessResponse)) {
+            return errorResponseOrSuccessResponse.value;
+          }
+          const organization = errorResponseOrSuccessResponse.value.value;
+          const legalRepresentative = organization.legal_representative;
+          if (!legalRepresentative) {
+            return ResponseErrorInternal(
+              "An error occurred while generating mandate document"
+            );
+          }
+          const maybeError = await this.documentService.generateDocument(
+            // TODO:
+            //  refactor this operation using an internationalization framework allowing params interpolation in strings.
+            //  @see https://www.pivotaltracker.com/story/show/169644146
+            localeIt.organizationController.registerOrganization.delegation
+              .replace(
+                "%legalRepresentative%",
+                `${legalRepresentative.given_name} ${legalRepresentative.family_name}`
+              )
+              .replace("%organizationName%", organization.name)
+              .replace("%delegate%", `${user.givenName} ${user.familyName}`),
+            `documents/${
+              organization.ipa_code
+            }/mandate-${user.fiscalCode.toLowerCase()}.pdf`
+          );
+          if (isSome(maybeError)) {
+            log.error(
+              "An error occurred while generating a mandate document. %s",
+              maybeError.value
+            );
+            return ResponseErrorInternal(
+              "An error occurred while generating mandate document"
+            );
+          }
+          return errorResponseOrSuccessResponse.value;
+        }
+      );
     });
   }
 

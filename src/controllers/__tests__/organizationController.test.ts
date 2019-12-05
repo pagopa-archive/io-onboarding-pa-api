@@ -1,6 +1,12 @@
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
+import { Task } from "fp-ts/lib/Task";
 import {
+  left as leftTaskEither,
+  right as rightTaskEither
+} from "fp-ts/lib/TaskEither";
+import {
+  ResponseErrorInternal,
   ResponseErrorNotFound,
   ResponseSuccessRedirectToResource
 } from "italia-ts-commons/lib/responses";
@@ -23,6 +29,7 @@ import EmailService from "../../services/emailService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
 import { getRequiredEnvVar } from "../../utils/environment";
+import { ResponseSuccessCreation } from "../../utils/responses";
 import OrganizationController from "../organizationController";
 
 const mockedLoggedDelegate: LoggedUser = {
@@ -45,6 +52,8 @@ const mockRegisterOrganization = jest.spyOn(
   organizationService,
   "registerOrganization"
 );
+
+const mockAddDelegate = jest.spyOn(organizationService, "addDelegate");
 
 const mockGetOrganizationInstanceFromDelegateEmail = jest.spyOn(
   organizationService,
@@ -380,6 +389,144 @@ describe("OrganizationController", () => {
         const result = await organizationController.getDocument(req);
         expect(result).toHaveProperty("kind", "IResponseDownload");
       });
+    });
+  });
+});
+
+describe("OrganizationController#addDelegate()", () => {
+  const alreadyExistingDelegates: ReadonlyArray<OrganizationDelegate> = [
+    mockedDelegate1,
+    mockedDelegate2
+  ];
+  const registeredOrganization: Organization = {
+    ...mockedRegisteredOrganization1,
+    users: alreadyExistingDelegates
+  };
+  const delegateToBeAdded: OrganizationDelegate = {
+    email: mockedLoggedDelegate.email,
+    family_name: mockedLoggedDelegate.familyName,
+    fiscal_code: mockedLoggedDelegate.fiscalCode,
+    given_name: mockedLoggedDelegate.givenName,
+    role: mockedLoggedDelegate.role,
+    work_email: mockedLoggedDelegate.workEmail
+  };
+  const registeredOrganizationWithAddedDelegate = {
+    ...registeredOrganization,
+    users: alreadyExistingDelegates.concat(delegateToBeAdded)
+  };
+
+  it("should return a forbidden error response if the user is not a delegate", async () => {
+    const mockedLoggedUser: LoggedUser = {
+      ...mockedLoggedDelegate,
+      role: UserRoleEnum.DEVELOPER
+    };
+    const req = mockReq();
+    req.user = mockedLoggedUser;
+    req.params = { ipaCode: mockedRegisteredOrganization1.ipa_code };
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.addDelegate(req);
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorForbiddenNotAuthorized"
+    });
+  });
+
+  it("should return a conflict error response if the user is already associated to an organization", async () => {
+    mockGetOrganizationFromUserEmail.mockImplementation(() => {
+      return Promise.resolve(right(some(registeredOrganization)));
+    });
+    const organizationController = await getOrganizationController();
+
+    const loggedDelegate: LoggedUser = {
+      ...mockedLoggedDelegate,
+      email: mockedDelegate1.email
+    };
+    const req = mockReq();
+    req.user = loggedDelegate;
+    req.params = { ipaCode: registeredOrganization.ipa_code };
+    const result = await organizationController.addDelegate(req);
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorConflict"
+    });
+  });
+
+  it("should return an internal error response if the write in the database fails", async () => {
+    mockGetOrganizationFromUserEmail.mockImplementation(() => {
+      return Promise.resolve(right(none));
+    });
+    mockAddDelegate.mockReturnValue(
+      leftTaskEither(
+        new Task(() =>
+          Promise.resolve(ResponseErrorInternal("An error message"))
+        )
+      )
+    );
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: registeredOrganization.ipa_code };
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.addDelegate(req);
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorInternal"
+    });
+  });
+
+  it("should return an internal error response if the generation of mandate document fails", async () => {
+    mockGetOrganizationFromUserEmail.mockImplementation(() => {
+      return Promise.resolve(right(none));
+    });
+    const mockedUrl = "url-to-the-organization";
+    mockAddDelegate.mockReturnValue(
+      rightTaskEither(
+        new Task(() =>
+          Promise.resolve(
+            ResponseSuccessCreation(registeredOrganizationWithAddedDelegate)
+          )
+        )
+      )
+    );
+    mockGenerateDocument.mockReturnValue(some(new Error("An error occurred")));
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: registeredOrganization.ipa_code };
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.addDelegate(req);
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorInternal"
+    });
+  });
+
+  it("should return a success response if the delegate addition process completes successfully", async () => {
+    mockGetOrganizationFromUserEmail.mockImplementation(() => {
+      return Promise.resolve(right(none));
+    });
+    const mockedUrl = "url-to-the-organization";
+    mockAddDelegate.mockReturnValue(
+      rightTaskEither(
+        new Task(() =>
+          Promise.resolve(
+            ResponseSuccessCreation(registeredOrganizationWithAddedDelegate)
+          )
+        )
+      )
+    );
+    mockGenerateDocument.mockReturnValue(none);
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: registeredOrganization.ipa_code };
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.addDelegate(req);
+    expect(result).toEqual({
+      apply: expect.any(Function),
+      kind: "IResponseSuccessCreation",
+      value: registeredOrganizationWithAddedDelegate
     });
   });
 });

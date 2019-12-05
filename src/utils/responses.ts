@@ -1,4 +1,5 @@
 import { Response } from "express";
+import { Either, isLeft } from "fp-ts/lib/Either";
 import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import {
@@ -7,6 +8,28 @@ import {
   ResponseErrorValidation
 } from "italia-ts-commons/lib/responses";
 import { log } from "./logger";
+
+/**
+ * Interface for a successful creation response returning a json object (201 HTTP status).
+ */
+export interface IResponseSuccessCreation<T>
+  extends IResponse<"IResponseSuccessCreation"> {
+  readonly value: T;
+}
+
+/**
+ * Returns a successful json creation response (201 HTTP status).
+ */
+export function ResponseSuccessCreation<T>(o: T): IResponseSuccessCreation<T> {
+  const kindlessObject = Object.assign(Object.assign({}, o), {
+    kind: undefined
+  });
+  return {
+    apply: res => res.status(201).json(kindlessObject),
+    kind: "IResponseSuccessCreation",
+    value: o
+  };
+}
 
 /**
  * Interface for a no content response returning a empty object.
@@ -93,3 +116,20 @@ export const withValidatedOrInternalError = <T, U>(
         errorsToReadableMessages(validated.value).join(" / ")
       )
     : f(validated.value);
+
+/**
+ * Calls the provided function with the valid value, or else returns an
+ * IResponseErrorInternal with the error.
+ */
+export const withResultOrInternalError = <T, U>(
+  errorOrResult: Either<Error, T>,
+  f: (t: T) => U
+) => {
+  if (isLeft(errorOrResult)) {
+    log.error("An error occurred. %s", errorOrResult.value);
+    return ResponseErrorInternal(
+      `Internal server error. ${errorOrResult.value}"`
+    );
+  }
+  return f(errorOrResult.value);
+};

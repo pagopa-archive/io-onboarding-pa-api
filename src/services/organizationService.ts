@@ -1,7 +1,12 @@
 import { array } from "fp-ts/lib/Array";
 import { either, Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
-import { tryCatch } from "fp-ts/lib/TaskEither";
+import {
+  fromEither,
+  fromPredicate,
+  TaskEither,
+  tryCatch
+} from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
 import * as t from "io-ts";
 import { Errors } from "io-ts";
@@ -42,6 +47,10 @@ import {
 } from "../types/PublicAdministration";
 import { LoggedUser } from "../types/user";
 import { log } from "../utils/logger";
+import {
+  IResponseSuccessCreation,
+  ResponseSuccessCreation
+} from "../utils/responses";
 
 /**
  * Retrieve from the db all the public administrations whose names match the provided value.
@@ -488,6 +497,96 @@ export async function registerOrganization(
     log.error(`${genericError} %s`, error);
     return left(ResponseErrorInternal(genericError));
   }
+}
+
+export function addDelegate(
+  ipaCode: string,
+  userEmail: string
+): TaskEither<
+  // tslint:disable-next-line:max-union-size
+  IResponseErrorInternal | IResponseErrorNotFound | IResponseErrorConflict,
+  IResponseSuccessCreation<Organization>
+> {
+  const genericErrorHandler = (error: unknown) => {
+    log.error("An error occurred adding the delegate. %s", error);
+    return ResponseErrorInternal("An error occurred adding the delegate.");
+  };
+  return tryCatch<
+    IResponseErrorInternal | IResponseErrorNotFound | IResponseErrorConflict,
+    OrganizationModel
+  >(
+    () =>
+      OrganizationModel.findOne({
+        where: { ipaCode }
+      }),
+    genericErrorHandler
+  )
+    .chain(
+      fromPredicate(
+        _ => _ !== null,
+        () =>
+          ResponseErrorNotFound(
+            "Not found",
+            "Registered organization does not exists"
+          )
+      )
+    )
+    .chain(
+      fromPredicate(
+        _ =>
+          _.registrationStatus ===
+          OrganizationRegistrationStatusEnum.REGISTERED,
+        () =>
+          ResponseErrorConflict(
+            "The organization has not completed the registration process yet."
+          )
+      )
+    )
+    .chain(organizationModel =>
+      tryCatch<IResponseErrorInternal, OrganizationModel>(
+        () =>
+          OrganizationUserModel.create({
+            createdAt: Date.now(),
+            organizationIpaCode: organizationModel.ipaCode,
+            updatedAt: Date.now(),
+            userEmail,
+            userRole: UserRoleEnum.ORG_DELEGATE
+          }).then(_ => organizationModel),
+        genericErrorHandler
+      )
+    )
+    .chain(organizationModel =>
+      tryCatch(
+        () =>
+          organizationModel.reload({
+            include: [
+              {
+                as: "users",
+                model: User
+              },
+              {
+                as: "legalRepresentative",
+                model: User
+              }
+            ],
+            order: [["users", "createdAt", "DESC"]]
+          }),
+        genericErrorHandler
+      )
+    )
+    .chain(organizationModel =>
+      fromEither(
+        toOrganizationObject(organizationModel).map(organization => {
+          return ResponseSuccessCreation(organization);
+        })
+      ).mapLeft(errors => {
+        log.error(
+          "Invalid organization data. " +
+            errorsToReadableMessages(errors).join(" / ")
+        );
+        return ResponseErrorInternal("Invalid organization data.");
+      })
+    );
 }
 
 export async function getOrganizationInstanceFromDelegateEmail(
