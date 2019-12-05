@@ -29,6 +29,7 @@ import EmailService from "../../services/emailService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
 import { getRequiredEnvVar } from "../../utils/environment";
+import { ResponseSuccessCreation } from "../../utils/responses";
 import OrganizationController from "../organizationController";
 
 const mockedLoggedDelegate: LoggedUser = {
@@ -484,11 +485,7 @@ describe("OrganizationController#addDelegate()", () => {
       rightTaskEither(
         new Task(() =>
           Promise.resolve(
-            ResponseSuccessRedirectToResource(
-              registeredOrganizationWithAddedDelegate,
-              mockedUrl,
-              registeredOrganizationWithAddedDelegate
-            )
+            ResponseSuccessCreation(registeredOrganizationWithAddedDelegate)
           )
         )
       )
@@ -515,11 +512,7 @@ describe("OrganizationController#addDelegate()", () => {
       rightTaskEither(
         new Task(() =>
           Promise.resolve(
-            ResponseSuccessRedirectToResource(
-              registeredOrganizationWithAddedDelegate,
-              mockedUrl,
-              registeredOrganizationWithAddedDelegate
-            )
+            ResponseSuccessCreation(registeredOrganizationWithAddedDelegate)
           )
         )
       )
@@ -532,10 +525,8 @@ describe("OrganizationController#addDelegate()", () => {
     const result = await organizationController.addDelegate(req);
     expect(result).toEqual({
       apply: expect.any(Function),
-      detail: mockedUrl,
-      kind: "IResponseSuccessRedirectToResource",
-      payload: registeredOrganizationWithAddedDelegate,
-      resource: registeredOrganizationWithAddedDelegate
+      kind: "IResponseSuccessCreation",
+      value: registeredOrganizationWithAddedDelegate
     });
   });
 });

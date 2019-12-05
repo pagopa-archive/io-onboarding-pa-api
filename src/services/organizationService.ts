@@ -47,6 +47,10 @@ import {
 } from "../types/PublicAdministration";
 import { LoggedUser } from "../types/user";
 import { log } from "../utils/logger";
+import {
+  IResponseSuccessCreation,
+  ResponseSuccessCreation
+} from "../utils/responses";
 
 /**
  * Retrieve from the db all the public administrations whose names match the provided value.
@@ -501,7 +505,7 @@ export function addDelegate(
 ): TaskEither<
   // tslint:disable-next-line:max-union-size
   IResponseErrorInternal | IResponseErrorNotFound | IResponseErrorConflict,
-  IResponseSuccessRedirectToResource<Organization, Organization>
+  IResponseSuccessCreation<Organization>
 > {
   const genericErrorHandler = (error: unknown) => {
     log.error("An error occurred adding the delegate. %s", error);
@@ -576,12 +580,7 @@ export function addDelegate(
     .chain(organizationModel =>
       fromEither(
         toOrganizationObject(organizationModel).map(organization => {
-          const selfLink = organization.links.find(_ => _.rel === "self");
-          return ResponseSuccessRedirectToResource(
-            organization,
-            selfLink ? selfLink.href : "",
-            organization
-          );
+          return ResponseSuccessCreation(organization);
         })
       ).mapLeft(errors => {
         log.error(

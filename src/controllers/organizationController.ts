@@ -43,6 +43,7 @@ import { log } from "../utils/logger";
 import {
   IResponseDownload,
   IResponseNoContent,
+  IResponseSuccessCreation,
   ResponseDownload,
   ResponseNoContent,
   withCatchAsInternalError,
@@ -226,7 +227,7 @@ export default class OrganizationController {
     | IResponseErrorForbiddenNotAuthorized
     | IResponseErrorNotFound
     | IResponseErrorConflict
-    | IResponseSuccessRedirectToResource<Organization, Organization>
+    | IResponseSuccessCreation<Organization>
   > {
     return withUserFromRequest(req, async user => {
       const userPermissions = accessControl.can(user.role);
@@ -251,7 +252,7 @@ export default class OrganizationController {
           if (isLeft(errorResponseOrSuccessResponse)) {
             return errorResponseOrSuccessResponse.value;
           }
-          const organization = errorResponseOrSuccessResponse.value.payload;
+          const organization = errorResponseOrSuccessResponse.value.value;
           const legalRepresentative = organization.legal_representative;
           if (!legalRepresentative) {
             return ResponseErrorInternal(

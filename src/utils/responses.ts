@@ -10,6 +10,28 @@ import {
 import { log } from "./logger";
 
 /**
+ * Interface for a successful creation response returning a json object (201 HTTP status).
+ */
+export interface IResponseSuccessCreation<T>
+  extends IResponse<"IResponseSuccessCreation"> {
+  readonly value: T;
+}
+
+/**
+ * Returns a successful json creation response (201 HTTP status).
+ */
+export function ResponseSuccessCreation<T>(o: T): IResponseSuccessCreation<T> {
+  const kindlessObject = Object.assign(Object.assign({}, o), {
+    kind: undefined
+  });
+  return {
+    apply: res => res.status(201).json(kindlessObject),
+    kind: "IResponseSuccessCreation",
+    value: o
+  };
+}
+
+/**
  * Interface for a no content response returning a empty object.
  */
 export interface IResponseNoContent extends IResponse<"IResponseNoContent"> {

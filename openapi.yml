@@ -162,11 +162,6 @@ paths:
         <<: *common-responses
         "201":
           description: The registered organization, including all its delegates
-          headers:
-            Location:
-              description: URI of the organization
-              schema:
-                type: string
           content:
             application/json:
               schema:

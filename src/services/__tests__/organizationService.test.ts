@@ -496,12 +496,11 @@ describe("OrganizationService#addDelegate()", () => {
         noOrgDelegateParams.email
       ).run();
       expect(isRight(result)).toBeTruthy();
-      expect(result.value).toHaveProperty(
-        "kind",
-        "IResponseSuccessRedirectToResource"
-      );
-      expect(result.value).toHaveProperty("payload", expectedResult);
-      expect(result.value).toHaveProperty("resource", expectedResult);
+      expect(result.value).toEqual({
+        apply: expect.any(Function),
+        kind: "IResponseSuccessCreation",
+        value: expectedResult
+      });
     });
   });
 });
