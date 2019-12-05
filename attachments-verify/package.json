@@ -1,0 +1,56 @@
+{
+  "name": "TODO",
+  "version": "0.0.1",
+  "description": "TODO",
+  "repository": "https://github.com/teamdigitale/TODO",
+  "author": "https://teamdigitale.governo.it",
+  "license": "MIT",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc -p .",
+    "postversion": "git push && git push --tags",
+    "test": "jest",
+    "lint": "tslint --project .",
+    "dev": "npm run build:live",
+    "start": "ts-node src/index.ts",
+    "build:live": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.13",
+    "@types/node": "10.14.1",
+    "danger": "^8.0.0",
+    "danger-plugin-digitalcitizenship": "*",
+    "imap-simple": "^4.3.0",
+    "italia-tslint-rules": "*",
+    "jest": "^24.8.0",
+    "nodemon": "^1.19.4",
+    "prettier": "^1.12.1",
+    "rimraf": "^2.6.2",
+    "ts-jest": "^24.0.2",
+    "ts-node": "^8.5.2",
+    "tslint": "^5.1.0",
+    "typescript": "^3.5.0",
+    "typescript-tslint-plugin": "^0.4.0"
+  },
+  "dependencies": {
+    "@types/imap-simple": "^4.2.1",
+    "fp-ts": "1.12.0",
+    "io-ts": "1.8.5",
+    "soap": "^0.30.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverage": true,
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "jsx",
+      "node",
+      "ts",
+      "tsx"
+    ],
+    "preset": "ts-jest",
+    "testMatch": null
+  }
+}
