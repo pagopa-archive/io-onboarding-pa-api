@@ -19,6 +19,10 @@ import {
 } from "./models/Organization";
 import { init as initOrganizationUser } from "./models/OrganizationUser";
 import {
+  createAssociations as createRequestAssociations,
+  init as initRequest
+} from "./models/Request";
+import {
   createAssociations as createSessionAssociations,
   init as initSession
 } from "./models/Session";
@@ -292,11 +296,13 @@ function initModels(): void {
   initOrganization();
   initOrganizationUser();
   initUser();
+  initRequest();
   initSession();
 }
 
 function createModelAssociations(): void {
   createOrganizationAssociations();
   createUserAssociations();
+  createRequestAssociations();
   createSessionAssociations();
 }

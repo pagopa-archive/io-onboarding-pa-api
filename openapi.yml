@@ -357,6 +357,14 @@ components:
       x-extensible-enum:
         - "LOCAL"
         - "NATIONAL"
+    RequestStatus:
+      type: string
+      x-extensible-enum:
+        - "CREATED"
+        - "SUBMITTED"
+        - "ACCEPTED"
+        - "REJECTED"
+        - "ERRORED"
     UserRole:
       type: string
       x-extensible-enum:
