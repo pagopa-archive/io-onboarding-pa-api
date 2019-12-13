@@ -4,11 +4,11 @@ import { none, Option, some } from "fp-ts/lib/Option";
 import {
   fromEither,
   fromPredicate,
+  taskEither,
   TaskEither,
   tryCatch
 } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
-import * as t from "io-ts";
 import { Errors } from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import {
@@ -16,25 +16,27 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorValidation,
-  IResponseSuccessRedirectToResource,
   ResponseErrorConflict,
   ResponseErrorInternal,
   ResponseErrorNotFound,
-  ResponseErrorValidation,
-  ResponseSuccessRedirectToResource
+  ResponseErrorValidation
 } from "italia-ts-commons/lib/responses";
-import { Op, QueryTypes, UniqueConstraintError } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
 import { ADMINISTRATION_SEARCH_RESULTS_LIMIT } from "../config";
 import sequelize from "../database/db";
 import { FoundAdministration } from "../generated/FoundAdministration";
-import { LegalRepresentative } from "../generated/LegalRepresentative";
 import { Organization } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
+import { Request } from "../generated/Request";
+import { RequestCollection } from "../generated/RequestCollection";
+import { RequestStatusEnum } from "../generated/RequestStatus";
+import { RequestTypeEnum } from "../generated/RequestType";
 import { UserRoleEnum } from "../generated/UserRole";
 import { IpaPublicAdministration as IpaPublicAdministrationModel } from "../models/IpaPublicAdministration";
 import { Organization as OrganizationModel } from "../models/Organization";
 import { OrganizationUser as OrganizationUserModel } from "../models/OrganizationUser";
+import { Request as RequestModel, RequestScope } from "../models/Request";
 import { User } from "../models/User";
 import {
   fromOrganizationModelToFoundAdministration,
@@ -51,6 +53,24 @@ import {
   IResponseSuccessCreation,
   ResponseSuccessCreation
 } from "../utils/responses";
+
+const genericInternalUnknownErrorHandler = (
+  error: unknown,
+  logMessage: string,
+  errorDetail: string
+) => {
+  log.error(logMessage + " %s", error);
+  return ResponseErrorInternal(errorDetail);
+};
+
+const genericInternalValidationErrorsHandler = (
+  errors: Errors,
+  logMessage: string,
+  errorDetail: string
+) => {
+  log.error(logMessage + " %s", errorsToReadableMessages(errors).join(" / "));
+  return ResponseErrorInternal(errorDetail);
+};
 
 /**
  * Retrieve from the db all the public administrations whose names match the provided value.
@@ -219,113 +239,58 @@ export async function deleteOrganization(
   }
 }
 
-/**
- * Checks if the registration process for a given administration has already started
- * and deletes it if it's still in a pre-draft status. Returns an optional error response
- * if the user can not start a new registration process for the given administration.
- * @param ipaCode The ipaCode of the administration to be checked
- */
-async function checkAndDeletePreviousRegistration(
+function checkOnboardingCapability(
   ipaCode: string
-): Promise<Option<IResponseErrorConflict | IResponseErrorInternal>> {
-  try {
-    const oldOrganizationInstance = await OrganizationModel.findOne({
-      include: [
-        {
-          as: "users",
-          model: User,
-          required: true
-        },
-        {
-          as: "legalRepresentative",
-          model: User
+): TaskEither<IResponseErrorConflict | IResponseErrorInternal, null> {
+  return tryCatch<IResponseErrorConflict | IResponseErrorInternal, null>(
+    () =>
+      RequestModel.scope(RequestScope.ORGANIZATION_REGISTRATION).findOne({
+        where: {
+          organizationIpaCode: ipaCode,
+          status: RequestStatusEnum.ACCEPTED
         }
-      ],
-      where: { ipaCode }
-    });
-    if (oldOrganizationInstance !== null) {
-      if (
-        oldOrganizationInstance.registrationStatus !==
-        OrganizationRegistrationStatusEnum.PRE_DRAFT
-      ) {
-        return some(
-          ResponseErrorConflict("The organization is already registered")
-        );
-      }
-      const maybeError = await deleteOrganization(oldOrganizationInstance);
-      if (maybeError.isSome()) {
-        log.error(
-          "An error occurred while deleting a registration in pre-draft status. %s",
-          maybeError.value
-        );
-        return some(
-          ResponseErrorInternal(
-            "The previous registration for this administration is in a pre-draft status and could not be deleted."
-          )
-        );
-      }
-    }
-    return none;
-  } catch (error) {
-    log.error(
-      "An error occurred while verifying that the organization was not already registered. %s",
-      error
-    );
-    return some(
-      ResponseErrorInternal(
-        "Could not verify that the administration is available for registration"
+      }),
+    (error: unknown) =>
+      genericInternalUnknownErrorHandler(
+        error,
+        "organizationService#checkOnboardingCapability | Error querying the database.",
+        "An error occurred checking the onboarding capability for the administration"
       )
-    );
-  }
+  ).chain(
+    fromPredicate(
+      _ => _ === null,
+      () => ResponseErrorConflict("The administration is already registered")
+    )
+  );
 }
 
 /**
- * Creates a new organization associated with its legal representative
- * and returns it in a success response.
- * @param newOrganizationParams The parameters required to create the organization
+ * Creates the requests for the onboarding of an administration,
+ * i.e. the registration request for the administration and the delegation request for the user performing the action,
+ * and returns them in a success creation response.
+ * @param newOrganizationParams The parameters required to create the requests
  * @param user The user who is performing the operation
  */
-export async function registerOrganization(
+export function createOnboardingRequests(
   newOrganizationParams: OrganizationRegistrationParams,
   user: LoggedUser
-): Promise<
-  Either<
-    // tslint:disable-next-line:max-union-size
-    | IResponseErrorInternal
-    | IResponseErrorConflict
-    | IResponseErrorNotFound
-    | IResponseErrorValidation,
-    IResponseSuccessRedirectToResource<Organization, Organization>
-  >
+): TaskEither<
+  // tslint:disable-next-line:max-union-size
+  | IResponseErrorInternal
+  | IResponseErrorConflict
+  | IResponseErrorNotFound
+  | IResponseErrorValidation,
+  IResponseSuccessCreation<RequestCollection>
 > {
-  const genericError = "Error creating the new organization";
-  try {
-    // Retrieve the public administration from the database
-    const ipaPublicAdministrationModel = await IpaPublicAdministrationModel.findOne(
-      {
-        where: { cod_amm: newOrganizationParams.ipa_code }
-      }
+  const internalErrorHandler = (error: unknown) =>
+    genericInternalUnknownErrorHandler(
+      error,
+      "organizationService#createOnboardingRequests | Error creating the onboarding requests.",
+      "An error occurred creating the onboarding requests."
     );
-    if (ipaPublicAdministrationModel === null) {
-      return left(
-        ResponseErrorNotFound(
-          "Not found",
-          "IPA public administration does not exist"
-        )
-      );
-    }
-    const errorsOrIpaPublicAdministration = IpaPublicAdministrationType.decode(
-      ipaPublicAdministrationModel.get({
-        plain: true
-      })
-    );
-    if (errorsOrIpaPublicAdministration.isLeft()) {
-      return left(
-        ResponseErrorInternal("Invalid IPA public administration data")
-      );
-    }
-    const ipaPublicAdministration = errorsOrIpaPublicAdministration.value;
-
+  const verifyPecLabel = (
+    ipaPublicAdministration: IpaPublicAdministrationType
+  ): Either<IResponseErrorValidation, IpaPublicAdministrationType> => {
     // Check that the selected pec label detects an existing email whose type is pec
     const emailPropName = `mail${newOrganizationParams.selected_pec_label}`;
     const emailTypePropName = `tipo_mail${newOrganizationParams.selected_pec_label}`;
@@ -341,162 +306,159 @@ export async function registerOrganization(
       ) ||
       ipaPublicAdministration[emailTypePropName] !== "pec"
     ) {
-      return left(
+      return left<IResponseErrorValidation, IpaPublicAdministrationType>(
         ResponseErrorValidation("Bad request", "Invalid selectedPecLabel")
       );
     }
-
-    const maybeErrorResponse = await checkAndDeletePreviousRegistration(
-      newOrganizationParams.ipa_code
+    return right<IResponseErrorValidation, IpaPublicAdministrationType>(
+      ipaPublicAdministration
     );
-    if (maybeErrorResponse.isSome()) {
-      return left(maybeErrorResponse.value);
-    }
+  };
 
-    // Transactionally save the entities into the database
-    return sequelize
-      .transaction(transaction =>
-        // Create the new organization with its associated legal representative
-        OrganizationModel.create(
-          {
-            fiscalCode: ipaPublicAdministration.Cf,
-            ipaCode: ipaPublicAdministration.cod_amm,
-            legalRepresentative: {
-              email: ipaPublicAdministration[emailPropName],
-              familyName:
-                newOrganizationParams.legal_representative.family_name,
-              fiscalCode:
-                newOrganizationParams.legal_representative.fiscal_code,
-              givenName: newOrganizationParams.legal_representative.given_name,
-              phoneNumber:
-                newOrganizationParams.legal_representative.phone_number,
-              role: UserRoleEnum.ORG_MANAGER
+  const loadRequesters = (requestModel: RequestModel) =>
+    tryCatch(
+      () =>
+        requestModel.reload({
+          include: [
+            {
+              as: "requester",
+              model: User
+            }
+          ]
+        }),
+      internalErrorHandler
+    );
+
+  return tryCatch<
+    // tslint:disable-next-line:max-union-size
+    | IResponseErrorInternal
+    | IResponseErrorNotFound
+    | IResponseErrorValidation
+    | IResponseErrorConflict,
+    IpaPublicAdministrationModel
+  >(
+    () =>
+      IpaPublicAdministrationModel.findOne({
+        where: { cod_amm: newOrganizationParams.ipa_code }
+      }),
+    internalErrorHandler
+  )
+    .chain(
+      fromPredicate(
+        _ => _ !== null,
+        () =>
+          ResponseErrorNotFound(
+            "Not found",
+            "Registered organization does not exists"
+          )
+      )
+    )
+    .chain(ipaPublicAdministrationModel =>
+      fromEither(
+        IpaPublicAdministrationType.decode(
+          ipaPublicAdministrationModel.get({
+            plain: true
+          })
+        )
+      ).mapLeft(() =>
+        ResponseErrorInternal("Invalid IPA public administration data")
+      )
+    )
+    .chain(ipaPublicAdministration =>
+      fromEither(verifyPecLabel(ipaPublicAdministration))
+    )
+    .chainFirst(checkOnboardingCapability(newOrganizationParams.ipa_code))
+    .chain(ipaPublicAdministration => {
+      const pecLabel = `mail${newOrganizationParams.selected_pec_label}`;
+      const organizationPec = isIpaPublicAdministrationProperty(
+        pecLabel,
+        ipaPublicAdministration
+      )
+        ? ipaPublicAdministration[pecLabel]
+        : null;
+      const requestParams = {
+        legalRepresentativeFamilyName:
+          newOrganizationParams.legal_representative.family_name,
+        legalRepresentativeFiscalCode:
+          newOrganizationParams.legal_representative.fiscal_code,
+        legalRepresentativeGivenName:
+          newOrganizationParams.legal_representative.given_name,
+        legalRepresentativePhoneNumber:
+          newOrganizationParams.legal_representative.phone_number,
+        organizationFiscalCode: ipaPublicAdministration.Cf,
+        organizationIpaCode: ipaPublicAdministration.cod_amm,
+        organizationName: ipaPublicAdministration.des_amm,
+        organizationPec,
+        organizationScope: newOrganizationParams.scope,
+        status: RequestStatusEnum.CREATED,
+        userEmail: user.email
+      };
+      return tryCatch(
+        () =>
+          RequestModel.bulkCreate([
+            {
+              ...requestParams,
+              documentId:
+                requestParams.organizationFiscalCode +
+                process.hrtime().join(""),
+              type: RequestTypeEnum.ORGANIZATION_REGISTRATION
             },
-            name: ipaPublicAdministration.des_amm,
-            pec: ipaPublicAdministration[emailPropName],
-            registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
-            scope: newOrganizationParams.scope
-          },
-          {
-            include: [
-              {
-                as: "legalRepresentative",
-                model: User
-              }
-            ],
-            transaction
-          }
-        ).then(createdOrganization => {
-          const now = Date.now();
-          // Associate the legal representative to the organization as a user
-          return createdOrganization
-            .addUser(createdOrganization.legalRepresentative, {
-              through: {
-                createdAt: now,
-                organizationIpaCode: createdOrganization.ipaCode,
-                updatedAt: now,
-                userEmail: createdOrganization.legalRepresentative.email,
-                userRole: UserRoleEnum.ORG_MANAGER
-              },
-              transaction
-            })
-            .then(() =>
-              // Associate the delegate to the organization as a user
-              OrganizationUserModel.create(
-                {
-                  createdAt: now,
-                  organizationIpaCode: createdOrganization.ipaCode,
-                  updatedAt: now,
-                  userEmail: user.email,
-                  userRole: UserRoleEnum.ORG_DELEGATE
+            {
+              ...requestParams,
+              documentId:
+                user.fiscalCode.toLowerCase() + process.hrtime().join(""),
+              type: RequestTypeEnum.USER_DELEGATION
+            }
+          ]),
+        internalErrorHandler
+      )
+        .chain(requestModels =>
+          array.traverse(taskEither)(requestModels, loadRequesters)
+        )
+        .chain(requestModels =>
+          array.traverse(taskEither)(requestModels, requestModel =>
+            fromEither(
+              Request.decode({
+                document_id: requestModel.documentId,
+                id: requestModel.id,
+                organization: {
+                  fiscal_code: requestModel.organizationFiscalCode,
+                  ipa_code: requestModel.organizationIpaCode,
+                  legal_representative: {
+                    email: requestModel.organizationPec,
+                    family_name: requestModel.legalRepresentativeFamilyName,
+                    fiscal_code: requestModel.legalRepresentativeFiscalCode,
+                    given_name: requestModel.legalRepresentativeGivenName,
+                    phone_number: requestModel.legalRepresentativePhoneNumber,
+                    role: UserRoleEnum.ORG_MANAGER
+                  },
+                  name: requestModel.organizationName,
+                  pec: requestModel.organizationPec,
+                  registration_status:
+                    OrganizationRegistrationStatusEnum.PRE_DRAFT,
+                  scope: requestModel.organizationScope
                 },
-                {
-                  transaction
-                }
+                requester: requestModel.requester && {
+                  email: requestModel.requester.email,
+                  family_name: requestModel.requester.familyName,
+                  fiscal_code: requestModel.requester.fiscalCode,
+                  given_name: requestModel.requester.givenName,
+                  role: UserRoleEnum.ORG_DELEGATE
+                },
+                status: requestModel.status,
+                type: requestModel.type
+              })
+            ).mapLeft(errors =>
+              genericInternalValidationErrorsHandler(
+                errors,
+                "organizationService#createOnboardingRequests | Invalid data.",
+                "Invalid data"
               )
             )
-            .then(() => {
-              return new Promise<
-                Either<
-                  IResponseErrorInternal,
-                  IResponseSuccessRedirectToResource<Organization, Organization>
-                >
-              >(resolve => {
-                const validationErrorsHandler = (errors: Errors) => {
-                  resolve(
-                    left(
-                      ResponseErrorInternal(
-                        errorsToReadableMessages(errors).join("/")
-                      )
-                    )
-                  );
-                };
-                t.exact(LegalRepresentative)
-                  .decode({
-                    email: createdOrganization.legalRepresentative.email,
-                    family_name:
-                      createdOrganization.legalRepresentative.familyName,
-                    fiscal_code:
-                      createdOrganization.legalRepresentative.fiscalCode,
-                    given_name:
-                      createdOrganization.legalRepresentative.givenName,
-                    phone_number:
-                      createdOrganization.legalRepresentative.phoneNumber,
-                    role: createdOrganization.legalRepresentative.role
-                  })
-                  .fold(validationErrorsHandler, legalRepresentative => {
-                    const resourceUrl = `/organizations/${createdOrganization.ipaCode}`;
-                    return t
-                      .exact(Organization)
-                      .decode({
-                        fiscal_code: createdOrganization.fiscalCode,
-                        ipa_code: createdOrganization.ipaCode,
-                        legal_representative: legalRepresentative,
-                        links: [
-                          {
-                            href: resourceUrl,
-                            rel: "self"
-                          },
-                          {
-                            href: resourceUrl,
-                            rel: "edit"
-                          }
-                        ],
-                        name: createdOrganization.name,
-                        pec: createdOrganization.pec,
-                        registration_status:
-                          createdOrganization.registrationStatus,
-                        scope: createdOrganization.scope
-                      })
-                      .fold(validationErrorsHandler, organization => {
-                        resolve(
-                          right(
-                            ResponseSuccessRedirectToResource(
-                              organization,
-                              resourceUrl,
-                              organization
-                            )
-                          )
-                        );
-                      });
-                  });
-              });
-            });
-        })
-      )
-      .catch(error => {
-        log.error(`${genericError} %s`, error);
-        if (error instanceof UniqueConstraintError) {
-          return left(
-            ResponseErrorConflict("The organization is already registered")
-          );
-        }
-        return left(ResponseErrorInternal(genericError));
-      });
-  } catch (error) {
-    log.error(`${genericError} %s`, error);
-    return left(ResponseErrorInternal(genericError));
-  }
+          )
+        )
+        .map(requests => ResponseSuccessCreation({ items: requests }));
+    });
 }
 
 export function addDelegate(
@@ -507,10 +469,12 @@ export function addDelegate(
   IResponseErrorInternal | IResponseErrorNotFound | IResponseErrorConflict,
   IResponseSuccessCreation<Organization>
 > {
-  const genericErrorHandler = (error: unknown) => {
-    log.error("An error occurred adding the delegate. %s", error);
-    return ResponseErrorInternal("An error occurred adding the delegate.");
-  };
+  const internalErrorHandler = (error: unknown) =>
+    genericInternalUnknownErrorHandler(
+      error,
+      "organizationService#addDelegate | An error occurred adding the delegate.",
+      "An error occurred adding the delegate."
+    );
   return tryCatch<
     IResponseErrorInternal | IResponseErrorNotFound | IResponseErrorConflict,
     OrganizationModel
@@ -519,7 +483,7 @@ export function addDelegate(
       OrganizationModel.findOne({
         where: { ipaCode }
       }),
-    genericErrorHandler
+    internalErrorHandler
   )
     .chain(
       fromPredicate(
@@ -552,7 +516,7 @@ export function addDelegate(
             userEmail,
             userRole: UserRoleEnum.ORG_DELEGATE
           }).then(_ => organizationModel),
-        genericErrorHandler
+        internalErrorHandler
       )
     )
     .chain(organizationModel =>
@@ -571,7 +535,7 @@ export function addDelegate(
             ],
             order: [["users", "createdAt", "DESC"]]
           }),
-        genericErrorHandler
+        internalErrorHandler
       )
     )
     .chain(organizationModel =>
@@ -579,13 +543,13 @@ export function addDelegate(
         toOrganizationObject(organizationModel).map(organization => {
           return ResponseSuccessCreation(organization);
         })
-      ).mapLeft(errors => {
-        log.error(
-          "Invalid organization data. " +
-            errorsToReadableMessages(errors).join(" / ")
-        );
-        return ResponseErrorInternal("Invalid organization data.");
-      })
+      ).mapLeft(errors =>
+        genericInternalValidationErrorsHandler(
+          errors,
+          "organizationService#addDelegate | Invalid organization data.",
+          "Invalid organization data"
+        )
+      )
     );
 }
 

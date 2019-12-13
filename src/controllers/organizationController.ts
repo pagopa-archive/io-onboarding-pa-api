@@ -9,7 +9,6 @@ import {
   IResponseErrorNotFound,
   IResponseErrorValidation,
   IResponseSuccessJson,
-  IResponseSuccessRedirectToResource,
   ResponseErrorConflict,
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorInternal,
@@ -23,7 +22,10 @@ import { FiscalCode } from "../generated/FiscalCode";
 import { Organization } from "../generated/Organization";
 import { OrganizationCollection } from "../generated/OrganizationCollection";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
+import { OrganizationRegistrationRequest } from "../generated/OrganizationRegistrationRequest";
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
+import { RequestCollection } from "../generated/RequestCollection";
+import { UserDelegationRequest } from "../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../generated/UserRole";
 import localeIt from "../locales/it";
 import { Organization as OrganizationModel } from "../models/Organization";
@@ -31,12 +33,12 @@ import DocumentService from "../services/documentService";
 import EmailService from "../services/emailService";
 import {
   addDelegate,
+  createOnboardingRequests,
   deleteOrganization,
   findAllNotPreDraft,
   getAllOrganizations,
   getOrganizationFromUserEmail,
-  getOrganizationInstanceFromDelegateEmail,
-  registerOrganization
+  getOrganizationInstanceFromDelegateEmail
 } from "../services/organizationService";
 import { withUserFromRequest } from "../types/user";
 import { log } from "../utils/logger";
@@ -86,7 +88,7 @@ export default class OrganizationController {
     | IResponseErrorInternal
     | IResponseErrorNotFound
     | IResponseErrorValidation
-    | IResponseSuccessRedirectToResource<Organization, Organization>
+    | IResponseSuccessCreation<RequestCollection>
   > {
     return withUserFromRequest(req, async user => {
       const userPermissions = accessControl.can(user.role);
@@ -104,54 +106,16 @@ export default class OrganizationController {
           if (isSome(maybeResponse)) {
             return maybeResponse.value;
           }
-          const errorResponseOrSuccessResponse = await registerOrganization(
+          const errorResponseOrSuccessResponse = await createOnboardingRequests(
             organizationRegistrationParams,
             user
-          );
-          return errorResponseOrSuccessResponse.map(async response => {
-            const organization = response.payload;
-            // TODO:
-            //  the documents must be stored on cloud (Azure Blob Storage).
-            //  @see https://www.pivotaltracker.com/story/show/169644958
-            const outputFolder = `./documents/${organization.ipa_code}`;
-            try {
-              await fs.promises.mkdir(outputFolder, { recursive: true });
-              const arrayOfMaybeError = await Promise.all([
-                this.documentService.generateDocument(
-                  localeIt.organizationController.registerOrganization.contract.replace(
-                    "%s",
-                    `${organization.name} ${organization.fiscal_code}`
-                  ),
-                  `${outputFolder}/contract.pdf`
-                ),
-                this.documentService.generateDocument(
-                  // TODO:
-                  //  refactor this operation using an internationalization framework allowing params interpolation in strings.
-                  //  @see https://www.pivotaltracker.com/story/show/169644146
-                  localeIt.organizationController.registerOrganization.delegation
-                    .replace(
-                      "%legalRepresentative%",
-                      `${organizationRegistrationParams.legal_representative.given_name} ${organizationRegistrationParams.legal_representative.family_name}`
-                    )
-                    .replace("%organizationName%", organization.name)
-                    .replace(
-                      "%delegate%",
-                      `${user.givenName} ${user.familyName}`
-                    ),
-                  `${outputFolder}/mandate-${user.fiscalCode.toLowerCase()}.pdf`
-                )
-              ]);
-              const someError = arrayOfMaybeError.find(isSome);
-              if (someError) {
-                log.error(someError.value);
-                return ResponseErrorInternal("Internal server error");
-              }
-              return response;
-            } catch (error) {
-              log.error(error);
-              return ResponseErrorInternal("Internal server error");
-            }
-          }).value;
+          ).run();
+          return errorResponseOrSuccessResponse.map(successResponse =>
+            this.createOnboardingDocuments(
+              organizationRegistrationParams.ipa_code,
+              successResponse
+            )
+          ).value;
         }
       );
     });
@@ -412,6 +376,63 @@ export default class OrganizationController {
       }
     }
     return none;
+  }
+
+  private async createOnboardingDocuments(
+    ipaCode: string,
+    requestsCreationResponseSuccess: IResponseSuccessCreation<RequestCollection>
+  ): Promise<
+    IResponseErrorInternal | IResponseSuccessCreation<RequestCollection>
+  > {
+    const requests = requestsCreationResponseSuccess.value.items;
+    // TODO:
+    //  the documents must be stored on cloud (Azure Blob Storage).
+    //  @see https://www.pivotaltracker.com/story/show/169644958
+    const outputFolder = `./documents/${ipaCode}`;
+    try {
+      await fs.promises.mkdir(outputFolder, { recursive: true });
+      const arrayOfMaybeError = await Promise.all(
+        requests.map(request => {
+          if (OrganizationRegistrationRequest.is(request)) {
+            return this.documentService.generateDocument(
+              localeIt.organizationController.registerOrganization.contract.replace(
+                "%s",
+                `${request.organization.ipa_code} ${request.organization.fiscal_code}`
+              ),
+              `${outputFolder}/${request.document_id}.pdf`
+            );
+          }
+          if (UserDelegationRequest.is(request)) {
+            return this.documentService.generateDocument(
+              // TODO:
+              //  refactor this operation using an internationalization framework allowing params interpolation in strings.
+              //  @see https://www.pivotaltracker.com/story/show/169644146
+              localeIt.organizationController.registerOrganization.delegation
+                .replace(
+                  "%legalRepresentative%",
+                  `${request.organization.legal_representative.given_name} ${request.organization.legal_representative.family_name}`
+                )
+                .replace("%organizationName%", request.organization.name)
+                .replace(
+                  "%delegate%",
+                  `${request.requester.given_name} ${request.requester.family_name}`
+                ),
+              `${outputFolder}/${request.document_id}.pdf`
+            );
+          }
+          return Promise.resolve(some(Error("Wrong data")));
+        })
+      );
+      const someError = arrayOfMaybeError.find(isSome);
+      if (someError) {
+        log.error(someError.value);
+        return ResponseErrorInternal("Internal server error");
+      }
+      return requestsCreationResponseSuccess;
+    } catch (error) {
+      log.error(error);
+      return ResponseErrorInternal("Internal server error");
+    }
   }
 
   private async signAndSendDocuments(

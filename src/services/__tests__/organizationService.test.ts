@@ -2,20 +2,19 @@ import { isLeft, isRight, right } from "fp-ts/lib/Either";
 import { isNone, isSome, some } from "fp-ts/lib/Option";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Sequelize } from "sequelize";
-import { EmailAddress } from "../../generated/EmailAddress";
 import { FiscalCode } from "../../generated/FiscalCode";
-import { Organization } from "../../generated/Organization";
-import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationStatusEnum } from "../../generated/OrganizationRegistrationStatus";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
+import { RequestStatusEnum } from "../../generated/RequestStatus";
+import { RequestTypeEnum } from "../../generated/RequestType";
 import { UserRoleEnum } from "../../generated/UserRole";
 import {
   addDelegate,
+  createOnboardingRequests,
   getAllOrganizations,
   getOrganizationFromUserEmail,
-  getOrganizationInstanceFromDelegateEmail,
-  registerOrganization
+  getOrganizationInstanceFromDelegateEmail
 } from "../organizationService";
 
 jest.mock("../../database/db", () => ({
@@ -38,6 +37,11 @@ import {
   init as initOrganizationUser,
   OrganizationUser as OrganizationUserModel
 } from "../../models/OrganizationUser";
+import {
+  createAssociations as createRequestAssociations,
+  init as initRequest,
+  Request as RequestModel
+} from "../../models/Request";
 import {
   createAssociations as createSessionAssociations,
   init as initSession,
@@ -148,6 +152,26 @@ const noOrgDelegateParams = {
   workEmail: "no-work@example.com"
 };
 
+const validPublicAdministrationAttributes = {
+  Cf: "86000470830",
+  cf_validato: "S",
+  cod_amm: "generic_code",
+  cogn_resp: "Rossi",
+  des_amm: "Name of the Public Administration",
+  mail1: "pec1@email.net",
+  mail2: "pec2@email.net",
+  mail3: "simple@email.net",
+  mail4: "null",
+  mail5: "null",
+  nome_resp: "Mario",
+  tipo_mail1: "pec",
+  tipo_mail2: "pec",
+  tipo_mail3: "altro",
+  tipo_mail4: "null",
+  tipo_mail5: "null",
+  titolo_resp: "presidente"
+};
+
 // tslint:disable-next-line:no-let
 let user: LoggedUser;
 // tslint:disable-next-line:no-let
@@ -158,6 +182,10 @@ let registeredOrgDelegate1: UserModel;
 let registeredOrgDelegate2: UserModel;
 // tslint:disable-next-line:no-let
 let noOrgDelegate: UserModel;
+// tslint:disable-next-line:no-let
+let validPublicAdministration: IpaPublicAdministrationModel;
+// tslint:disable-next-line:no-let
+let invalidPublicAdministration: IpaPublicAdministrationModel;
 
 beforeAll(async () => {
   initIpaPublicAdministration();
@@ -165,15 +193,30 @@ beforeAll(async () => {
   initOrganizationUser();
   initUser();
   initSession();
+  initRequest();
   await IpaPublicAdministrationModel.sync({ force: true });
   await OrganizationUserModel.sync({ force: true });
   await OrganizationModel.sync({ force: true });
   await UserModel.sync({ force: true });
   await SessionModel.sync({ force: true });
+  await RequestModel.sync({ force: true });
 
   createOrganizationAssociations();
   createUserAssociations();
   createSessionAssociations();
+  createRequestAssociations();
+
+  [
+    validPublicAdministration,
+    invalidPublicAdministration
+  ] = await IpaPublicAdministrationModel.bulkCreate([
+    validPublicAdministrationAttributes,
+    {
+      ...validPublicAdministrationAttributes,
+      Cf: "not-compliant-fiscal-code",
+      cod_amm: "invalid-administration-code"
+    }
+  ]);
 
   userInstance = await UserModel.create(userInfo, {
     include: [
@@ -247,7 +290,15 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await IpaPublicAdministrationModel.destroy({
+    force: true,
+    truncate: true
+  });
   await OrganizationUserModel.destroy({
+    force: true,
+    truncate: true
+  });
+  await OrganizationModel.destroy({
     force: true,
     truncate: true
   });
@@ -255,38 +306,18 @@ afterAll(async () => {
     force: true,
     where: { userEmail: userInfo.email }
   });
+  await RequestModel.destroy({
+    force: true,
+    truncate: true
+  });
   await UserModel.destroy({
     force: true,
     where: { email: userInfo.email }
   });
-  await OrganizationModel.destroy({
-    force: true,
-    truncate: true
-  });
 });
 
 describe("OrganizationService", () => {
-  describe("#registerOrganization()", () => {
-    const validPublicAdministrationAttributes = {
-      Cf: "86000470830",
-      cf_validato: "S",
-      cod_amm: "generic_code",
-      cogn_resp: "Rossi",
-      des_amm: "Name of the Public Administration",
-      mail1: "pec1@email.net",
-      mail2: "pec2@email.net",
-      mail3: "simple@email.net",
-      mail4: "null",
-      mail5: "null",
-      nome_resp: "Mario",
-      tipo_mail1: "pec",
-      tipo_mail2: "pec",
-      tipo_mail3: "altro",
-      tipo_mail4: "null",
-      tipo_mail5: "null",
-      titolo_resp: "presidente"
-    };
-
+  describe("#createOnboardingRequests()", () => {
     const validNewOrganizationParams: OrganizationRegistrationParams = {
       ipa_code: "generic_code" as NonEmptyString,
       legal_representative: {
@@ -300,66 +331,85 @@ describe("OrganizationService", () => {
     };
 
     describe("when the public administration is valid", () => {
-      const ipaCodeOfValidPublicAdministration = "valid_public_administration_code" as NonEmptyString;
-
-      beforeEach(async () =>
-        IpaPublicAdministrationModel.create({
-          ...validPublicAdministrationAttributes,
-          cod_amm: ipaCodeOfValidPublicAdministration
-        })
-      );
-
-      afterEach(async () => {
-        await IpaPublicAdministrationModel.destroy({
-          force: true,
-          where: { cod_amm: ipaCodeOfValidPublicAdministration }
-        });
-        await OrganizationUserModel.destroy({
-          force: true,
-          where: {
-            organizationIpaCode: ipaCodeOfValidPublicAdministration,
-            userEmail: userInfo.email
-          }
-        });
-      });
-
-      it("should return a right value with a success response containing the new organization", async () => {
-        const newOrganizationParams: OrganizationRegistrationParams = {
+      it("should return a right value with a success response containing the new requests", async () => {
+        const newOrganizationParams = {
           ...validNewOrganizationParams,
-          ipa_code: ipaCodeOfValidPublicAdministration
-        };
-        const expectedResult: Organization = {
-          fiscal_code: validPublicAdministrationAttributes.Cf as OrganizationFiscalCode,
-          ipa_code: ipaCodeOfValidPublicAdministration,
-          legal_representative: {
-            ...newOrganizationParams.legal_representative,
-            email: validPublicAdministrationAttributes.mail1 as EmailAddress,
-            role: UserRoleEnum.ORG_MANAGER
-          },
-          links: [
+          ipa_code: validPublicAdministration.cod_amm
+        } as OrganizationRegistrationParams;
+        const expectedResult = {
+          items: [
             {
-              href: `/organizations/${newOrganizationParams.ipa_code}`,
-              rel: "self"
+              document_id: expect.any(String),
+              id: expect.any(Number),
+              organization: {
+                fiscal_code: validPublicAdministration.Cf,
+                ipa_code: validPublicAdministration.cod_amm,
+                legal_representative: {
+                  ...newOrganizationParams.legal_representative,
+                  email: validPublicAdministration.get(
+                    "mail" + newOrganizationParams.selected_pec_label
+                  ),
+                  role: UserRoleEnum.ORG_MANAGER
+                },
+                name: validPublicAdministration.des_amm,
+                pec: validPublicAdministration.get(
+                  "mail" + newOrganizationParams.selected_pec_label
+                ),
+                registration_status:
+                  OrganizationRegistrationStatusEnum.PRE_DRAFT,
+                scope: newOrganizationParams.scope
+              },
+              requester: {
+                email: user.email,
+                family_name: user.familyName,
+                fiscal_code: user.fiscalCode,
+                given_name: user.givenName,
+                role: user.role
+              },
+              status: RequestStatusEnum.CREATED,
+              type: RequestTypeEnum.ORGANIZATION_REGISTRATION
             },
             {
-              href: `/organizations/${newOrganizationParams.ipa_code}`,
-              rel: "edit"
+              document_id: expect.any(String),
+              id: expect.any(Number),
+              organization: {
+                fiscal_code: validPublicAdministration.Cf,
+                ipa_code: validPublicAdministration.cod_amm,
+                legal_representative: {
+                  ...newOrganizationParams.legal_representative,
+                  email: validPublicAdministration.get(
+                    "mail" + newOrganizationParams.selected_pec_label
+                  ),
+                  role: UserRoleEnum.ORG_MANAGER
+                },
+                name: validPublicAdministration.des_amm,
+                pec: validPublicAdministration.get(
+                  "mail" + newOrganizationParams.selected_pec_label
+                ),
+                registration_status:
+                  OrganizationRegistrationStatusEnum.PRE_DRAFT,
+                scope: newOrganizationParams.scope
+              },
+              requester: {
+                email: user.email,
+                family_name: user.familyName,
+                fiscal_code: user.fiscalCode,
+                given_name: user.givenName,
+                role: user.role
+              },
+              status: RequestStatusEnum.CREATED,
+              type: RequestTypeEnum.USER_DELEGATION
             }
-          ],
-          name: validPublicAdministrationAttributes.des_amm as NonEmptyString,
-          pec: validPublicAdministrationAttributes.mail1 as EmailAddress,
-          registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
-          scope: newOrganizationParams.scope
+          ]
         };
-        const result = await registerOrganization(newOrganizationParams, user);
+        const result = await createOnboardingRequests(
+          newOrganizationParams,
+          user
+        ).run();
         expect(result).not.toBeNull();
         expect(isRight(result)).toBeTruthy();
-        expect(result.value).toHaveProperty(
-          "kind",
-          "IResponseSuccessRedirectToResource"
-        );
-        expect(result.value).toHaveProperty("payload", expectedResult);
-        expect(result.value).toHaveProperty("resource", expectedResult);
+        expect(result.value).toHaveProperty("kind", "IResponseSuccessCreation");
+        expect(result.value).toHaveProperty("value", expectedResult);
       });
     });
 
@@ -371,7 +421,10 @@ describe("OrganizationService", () => {
           ...validNewOrganizationParams,
           ipa_code: ipaCodeOfNotExistingPublicAdministration
         };
-        const result = await registerOrganization(newOrganizationParams, user);
+        const result = await createOnboardingRequests(
+          newOrganizationParams,
+          user
+        ).run();
         expect(result).not.toBeNull();
         expect(isLeft(result)).toBeTruthy();
         expect(result.value).toHaveProperty("kind", "IResponseErrorNotFound");
@@ -379,28 +432,15 @@ describe("OrganizationService", () => {
     });
 
     describe("when the public administration is invalid", () => {
-      const ipaCodeOfInvalidPublicAdministration = "invalid_public_administration_code" as NonEmptyString;
-
-      beforeEach(async () =>
-        IpaPublicAdministrationModel.create({
-          ...validPublicAdministrationAttributes,
-          Cf: "wrong_fiscal_code",
-          cod_amm: ipaCodeOfInvalidPublicAdministration
-        })
-      );
-
-      afterEach(async () =>
-        IpaPublicAdministrationModel.destroy({
-          force: true,
-          where: { cod_amm: ipaCodeOfInvalidPublicAdministration }
-        })
-      );
       it("should return an internal error response", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
-          ipa_code: ipaCodeOfInvalidPublicAdministration
+          ipa_code: invalidPublicAdministration.cod_amm as NonEmptyString
         };
-        const result = await registerOrganization(newOrganizationParams, user);
+        const result = await createOnboardingRequests(
+          newOrganizationParams,
+          user
+        ).run();
         expect(result).not.toBeNull();
         expect(isLeft(result)).toBeTruthy();
         expect(result.value).toHaveProperty("kind", "IResponseErrorInternal");
@@ -408,39 +448,42 @@ describe("OrganizationService", () => {
     });
 
     describe("when the public administration is already registered", () => {
-      const ipaCodeOfRegisteredPublicAdministration = "already_registered" as NonEmptyString;
+      const organizationRegistrationDocumentId = process.hrtime().join("");
 
       beforeEach(async () => {
-        await IpaPublicAdministrationModel.create({
-          ...validPublicAdministrationAttributes,
-          cod_amm: ipaCodeOfRegisteredPublicAdministration
-        });
-        await OrganizationModel.create({
-          fiscalCode: validPublicAdministrationAttributes.Cf,
-          ipaCode: ipaCodeOfRegisteredPublicAdministration,
-          name: validPublicAdministrationAttributes.des_amm,
-          pec: validPublicAdministrationAttributes.mail1,
-          registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
-          scope: OrganizationScopeEnum.LOCAL
+        await RequestModel.create({
+          documentId: process.hrtime().join(""),
+          legalRepresentativeEmail: validPublicAdministration.mail1,
+          legalRepresentativeFamilyName: "Spano'",
+          legalRepresentativeFiscalCode: "BCDFGH12A21Z123D",
+          legalRepresentativeGivenName: "Ignazio Alfonso",
+          legalRepresentativePhoneNumber: "5550000000",
+          organizationFiscalCode: validPublicAdministration.Cf,
+          organizationIpaCode: validPublicAdministration.cod_amm,
+          organizationName: validPublicAdministration.des_amm,
+          organizationPec: validPublicAdministration.mail1,
+          organizationScope: "NATIONAL" as OrganizationScopeEnum,
+          status: RequestStatusEnum.ACCEPTED,
+          type: RequestTypeEnum.ORGANIZATION_REGISTRATION,
+          userEmail: user.email
         });
       });
 
       afterEach(async () => {
-        await IpaPublicAdministrationModel.destroy({
+        await RequestModel.destroy({
           force: true,
-          where: { cod_amm: ipaCodeOfRegisteredPublicAdministration }
-        });
-        await OrganizationModel.destroy({
-          force: true,
-          where: { ipaCode: ipaCodeOfRegisteredPublicAdministration }
+          where: { documentId: organizationRegistrationDocumentId }
         });
       });
       it("should return an internal error response", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
-          ipa_code: ipaCodeOfRegisteredPublicAdministration
+          ipa_code: validPublicAdministration.cod_amm as NonEmptyString
         };
-        const result = await registerOrganization(newOrganizationParams, user);
+        const result = await createOnboardingRequests(
+          newOrganizationParams,
+          user
+        ).run();
         expect(result).not.toBeNull();
         expect(isLeft(result)).toBeTruthy();
         expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");

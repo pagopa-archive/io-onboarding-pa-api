@@ -116,8 +116,9 @@ paths:
           $ref: "#/components/responses/403Forbidden"
     post:
       description: |-
-        Creates a new organization associated with its legal responsible,
-        the user calling this endpoint is also associated to the organization as its delegate.
+        Creates the requests for the onboarding of an administration,
+        i.e. the registration request for the administration
+        and the delegation request for the user performing the action.
       operationId: createOrganizations
       security:
         - bearerAuth: []
@@ -130,15 +131,10 @@ paths:
         <<: *common-responses
         "201":
           description: The registered organization
-          headers:
-            Location:
-              description: URI of the created organization
-              schema:
-                type: string
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organization"
+                $ref: "#/components/schemas/RequestCollection"
         "403":
           $ref: "#/components/responses/403Forbidden"
         "404":
@@ -365,6 +361,11 @@ components:
         - "ACCEPTED"
         - "REJECTED"
         - "ERRORED"
+    RequestType:
+      type: string
+      x-extensible-enum:
+        - "ORGANIZATION_REGISTRATION"
+        - "USER_DELEGATION"
     UserRole:
       type: string
       x-extensible-enum:
@@ -618,7 +619,7 @@ components:
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
           }]
         }
-    Organization:
+    OrganizationToBeRegistered:
       type: object
       properties:
         fiscal_code:
@@ -644,7 +645,7 @@ components:
       required:
         - fiscal_code
         - ipa_code
-        - links
+        - legal_representative
         - name
         - pec
         - registration_status
@@ -661,6 +662,36 @@ components:
             "email": "indirizzo00@email.pec.it",
             "role": "ORG_MANAGER"
           },
+          "name": "Comune di Gioiosa Marea",
+          "pec": "indirizzo00@email.pec.it",
+          "registration_status": "PRE_DRAFT",
+          "scope": "NATIONAL"
+        }
+    Organization:
+      allOf:
+        - $ref: "#/components/schemas/OrganizationToBeRegistered"
+        - type: object
+          properties:
+            links:
+              $ref: "#/components/schemas/Links"
+          required:
+            - links
+      example:
+        {
+          "fiscal_code": "86000470830",
+          "ipa_code": "c_e043",
+          "legal_representative": {
+            "family_name": "Spano'",
+            "given_name": "Ignazio Alfonso",
+            "fiscal_code": "BCDFGH12A21Z123D",
+            "phone_number": "5550000000",
+            "email": "indirizzo00@email.pec.it",
+            "role": "ORG_MANAGER"
+          },
+          "links": [{
+            "href": "https://api.pa-onboarding.dev.io.italia.it/organizations/c_e956",
+            "rel": "self"
+          }],
           "name": "Comune di Gioiosa Marea",
           "pec": "indirizzo00@email.pec.it",
           "registration_status": "PRE_DRAFT",
@@ -738,6 +769,121 @@ components:
         - fiscal_code
         - given_name
         - role
+    UserDelegationRequest:
+      type: object
+      properties:
+        organization:
+          $ref: "#/components/schemas/OrganizationToBeRegistered"
+        document_id:
+          <<: *non-empty-string
+        id:
+          type: integer
+        requester:
+          $ref: "#/components/schemas/OrganizationDelegate"
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        type:
+          type: string
+          x-extensible-enum:
+            - "USER_DELEGATION"
+      required:
+        - document_id
+        - id
+        - organization
+        - requester
+        - status
+        - type
+      example:
+        {
+          document_id: "document-id",
+          id: 12345,
+          organization: {
+            "fiscal_code": "86000470830",
+            "ipa_code": "c_e043",
+            "legal_representative": {
+              "family_name": "Spano'",
+              "given_name": "Ignazio Alfonso",
+              "fiscal_code": "BCDFGH12A21Z123D",
+              "phone_number": "5550000000",
+              "email": "indirizzo00@email.pec.it",
+              "role": "ORG_MANAGER"
+            },
+            "name": "Comune di Gioiosa Marea",
+            "pec": "indirizzo00@email.pec.it",
+            "registration_status": "PRE_DRAFT",
+            "scope": "NATIONAL"
+          },
+          requester: {
+            "email": "delegate@example.com",
+            "family_name": "Rossi",
+            "fiscal_code": "RSSMTT77S12A123D",
+            "given_name": "Matteo",
+            "role": "ORG_DELEGATE"
+          },
+          status: "SUBMITTED",
+          type: "USER_DELEGATION"
+        }
+    OrganizationRegistrationRequest:
+      type: object
+      properties:
+        organization:
+          $ref: "#/components/schemas/OrganizationToBeRegistered"
+        document_id:
+          <<: *non-empty-string
+        id:
+          type: integer
+        requester:
+          $ref: "#/components/schemas/OrganizationDelegate"
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        type:
+          type: string
+          x-extensible-enum:
+            - "ORGANIZATION_REGISTRATION"
+      required:
+        - document_id
+        - id
+        - organization
+        - status
+        - type
+      example:
+        {
+          document_id: "document-id",
+          id: 12345,
+          organization: {
+            "fiscal_code": "86000470830",
+            "ipa_code": "c_e043",
+            "legal_representative": {
+              "family_name": "Spano'",
+              "given_name": "Ignazio Alfonso",
+              "fiscal_code": "BCDFGH12A21Z123D",
+              "phone_number": "5550000000",
+              "email": "indirizzo00@email.pec.it",
+              "role": "ORG_MANAGER"
+            },
+            "name": "Comune di Gioiosa Marea",
+            "pec": "indirizzo00@email.pec.it",
+            "registration_status": "PRE_DRAFT",
+            "scope": "NATIONAL"
+          },
+          status: "SUBMITTED",
+          type: "USER_DELEGATION"
+        }
+    Request:
+      oneOf:
+        - $ref: "#/components/schemas/OrganizationRegistrationRequest"
+        - $ref: "#/components/schemas/UserDelegationRequest"
+      discriminator:
+        propertyName: type
+    RequestCollection:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Request"
+      required:
+        - items
   securitySchemes:
     bearerAuth:
       type: apiKey

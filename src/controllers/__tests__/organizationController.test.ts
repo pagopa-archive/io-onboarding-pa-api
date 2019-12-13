@@ -2,13 +2,13 @@ import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
 import { Task } from "fp-ts/lib/Task";
 import {
+  fromEither,
   left as leftTaskEither,
   right as rightTaskEither
 } from "fp-ts/lib/TaskEither";
 import {
   ResponseErrorInternal,
-  ResponseErrorNotFound,
-  ResponseSuccessRedirectToResource
+  ResponseErrorNotFound
 } from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import * as mockFs from "mock-fs";
@@ -20,8 +20,12 @@ import { Organization } from "../../generated/Organization";
 import { OrganizationDelegate } from "../../generated/OrganizationDelegate";
 import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
+import { OrganizationRegistrationRequest } from "../../generated/OrganizationRegistrationRequest";
 import { OrganizationRegistrationStatusEnum } from "../../generated/OrganizationRegistrationStatus";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
+import { RequestStatusEnum } from "../../generated/RequestStatus";
+import { RequestTypeEnum } from "../../generated/RequestType";
+import { UserDelegationRequest } from "../../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../../generated/UserRole";
 import { Organization as OrganizationModel } from "../../models/Organization";
 import DocumentService from "../../services/documentService";
@@ -48,9 +52,9 @@ const mockedLoggedDelegate: LoggedUser = {
   }
 } as LoggedUser;
 
-const mockRegisterOrganization = jest.spyOn(
+const mockCreateOnboardingRequests = jest.spyOn(
   organizationService,
-  "registerOrganization"
+  "createOnboardingRequests"
 );
 
 const mockAddDelegate = jest.spyOn(organizationService, "addDelegate");
@@ -81,6 +85,49 @@ const mockedOrganizationRegistrationParams = {
   scope: "LOCAL",
   selected_pec_label: "1"
 } as OrganizationRegistrationParams;
+
+const onboardingOrganizationParams = {
+  fiscal_code: "86000470830",
+  ipa_code: "c_e043",
+  legal_representative: {
+    email: "indirizzo00@email.pec.it",
+    family_name: "Spano'",
+    fiscal_code: "BCDFGH12A21Z123D",
+    given_name: "Ignazio Alfonso",
+    phone_number: "5550000000",
+    role: "ORG_MANAGER"
+  },
+  name: "Comune di Gioiosa Marea",
+  pec: "indirizzo00@email.pec.it",
+  registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
+  scope: "NATIONAL" as OrganizationScopeEnum
+};
+
+const onboardingRequesterParams = {
+  email: "user@email.net",
+  family_name: "Rossi",
+  fiscal_code: "RSSMRA66A11B123S",
+  given_name: "Mario",
+  role: UserRoleEnum.ORG_DELEGATE
+} as OrganizationDelegate;
+
+const mockedCreatedOrganizationRegistrationRequest = {
+  document_id: process.hrtime().join(""),
+  id: Number(process.hrtime().join("")),
+  organization: onboardingOrganizationParams,
+  requester: onboardingRequesterParams,
+  status: RequestStatusEnum.CREATED,
+  type: RequestTypeEnum.ORGANIZATION_REGISTRATION.valueOf()
+} as OrganizationRegistrationRequest;
+
+const mockedCreatedUserDelegationRequest = {
+  document_id: process.hrtime().join(""),
+  id: Number(process.hrtime().join("")),
+  organization: onboardingOrganizationParams,
+  requester: onboardingRequesterParams,
+  status: RequestStatusEnum.CREATED,
+  type: RequestTypeEnum.USER_DELEGATION.valueOf()
+} as UserDelegationRequest;
 
 const mockedPreDraftOrganization: Organization = {
   fiscal_code: "86000470830" as OrganizationFiscalCode,
@@ -250,8 +297,8 @@ describe("OrganizationController", () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         Promise.resolve(right(none))
       );
-      mockRegisterOrganization.mockReturnValue(
-        Promise.resolve(
+      mockCreateOnboardingRequests.mockReturnValue(
+        fromEither(
           left(
             ResponseErrorNotFound(
               "Not found",
@@ -273,14 +320,15 @@ describe("OrganizationController", () => {
     });
 
     it("should return an internal server error if the generation of documents fails", async () => {
-      mockRegisterOrganization.mockReturnValue(
-        Promise.resolve(
+      mockCreateOnboardingRequests.mockReturnValue(
+        fromEither(
           right(
-            ResponseSuccessRedirectToResource(
-              mockedPreDraftOrganization,
-              mockedPreDraftOrganization.links[0].href,
-              mockedPreDraftOrganization
-            )
+            ResponseSuccessCreation({
+              items: [
+                mockedCreatedOrganizationRegistrationRequest,
+                mockedCreatedUserDelegationRequest
+              ]
+            })
           )
         )
       );
@@ -298,19 +346,17 @@ describe("OrganizationController", () => {
     });
 
     it("should return a success response if the registration process completes successfully", async () => {
+      const expectedResponseValue = {
+        items: [
+          mockedCreatedOrganizationRegistrationRequest,
+          mockedCreatedUserDelegationRequest
+        ]
+      };
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         Promise.resolve(right(none))
       );
-      mockRegisterOrganization.mockReturnValue(
-        Promise.resolve(
-          right(
-            ResponseSuccessRedirectToResource(
-              mockedPreDraftOrganization,
-              mockedPreDraftOrganization.links[0].href,
-              mockedPreDraftOrganization
-            )
-          )
-        )
+      mockCreateOnboardingRequests.mockReturnValue(
+        fromEither(right(ResponseSuccessCreation(expectedResponseValue)))
       );
       mockGenerateDocument.mockReturnValue(none);
       const req = mockReq();
@@ -320,10 +366,8 @@ describe("OrganizationController", () => {
       const result = await organizationController.registerOrganization(req);
       expect(result).toEqual({
         apply: expect.any(Function),
-        detail: mockedPreDraftOrganization.links[0].href,
-        kind: "IResponseSuccessRedirectToResource",
-        payload: mockedPreDraftOrganization,
-        resource: mockedPreDraftOrganization
+        kind: "IResponseSuccessCreation",
+        value: expectedResponseValue
       });
     });
   });
