@@ -116,9 +116,13 @@ paths:
           $ref: "#/components/responses/403Forbidden"
     post:
       description: |-
-        Creates the requests for the onboarding of an administration,
-        i.e. the registration request for the administration
-        and the delegation request for the user performing the action.
+        Creates the requests for the onboarding of an administration, i.e.:
+          - the registration request for the administration
+          - the delegation request for the user performing the action
+
+        In case of success, the expected payload is a request collection
+        containing the OrganizationRegistrationRequest object and the UserDelegationRequest object
+        for the requests that have just been created.
       operationId: createOrganizations
       security:
         - bearerAuth: []
@@ -354,10 +358,16 @@ components:
         - "LOCAL"
         - "NATIONAL"
     RequestStatus:
+      description: |-
+        An enumerator of available statuses for a request.
+        Two different statuses of `CREATED` and `SUBMITTED` are available in order to map
+        the different steps for an organization registration and a user delegation, respectively:
+        1. the user creates the request with its related document
+        2. the user sends the document to the legal representative
       type: string
       x-extensible-enum:
-        - "CREATED"
-        - "SUBMITTED"
+        - "CREATED" #document creation
+        - "SUBMITTED" #document send
         - "ACCEPTED"
         - "REJECTED"
         - "ERRORED"
