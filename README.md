@@ -125,8 +125,7 @@ NodeJS and [Yarn](https://yarnpkg.com/lang/en/).
 nvm install $(< .node-version)
 nvm use $(< .node-version)
 yarn install
-yarn build
-yarn start
+yarn watch
 ```
 
 Remember that in this setup you must connect the application
