@@ -11,10 +11,8 @@ const emailService = new EmailService({
     pass: getRequiredEnvVar("EMAIL_PASSWORD"),
     user: getRequiredEnvVar("EMAIL_USER")
   },
-  debug: getRequiredEnvVar("NODE_ENV") === "development",
   from: getRequiredEnvVar("EMAIL_SENDER"),
   host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
-  logger: getRequiredEnvVar("NODE_ENV") === "development",
   port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
   secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
 });
