@@ -398,15 +398,16 @@ export function createOnboardingRequests(
           RequestModel.bulkCreate([
             {
               ...requestParams,
-              documentId:
-                requestParams.organizationFiscalCode +
-                process.hrtime().join(""),
+              documentId: `${
+                requestParams.organizationFiscalCode
+              }-${process.hrtime().join("")}`,
               type: RequestTypeEnum.ORGANIZATION_REGISTRATION
             },
             {
               ...requestParams,
-              documentId:
-                user.fiscalCode.toLowerCase() + process.hrtime().join(""),
+              documentId: `${user.fiscalCode.toLowerCase()}-${process
+                .hrtime()
+                .join("")}`,
               type: RequestTypeEnum.USER_DELEGATION
             }
           ]),
