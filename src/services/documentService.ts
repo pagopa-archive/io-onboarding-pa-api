@@ -25,6 +25,10 @@ export default class DocumentService {
               )
             );
           }
+          // TODO: add the id of the related request to the document metadata
+          // @see:
+          // - https://www.pivotaltracker.com/story/show/170101233
+          // - https://www.pivotaltracker.com/story/show/170098805
           const contract = new PdfDocument();
           contract.text(content);
           const stream = contract.pipe(fs.createWriteStream(tempFilePath));
