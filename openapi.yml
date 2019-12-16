@@ -370,7 +370,7 @@ components:
         - "SUBMITTED" #document send
         - "ACCEPTED"
         - "REJECTED"
-        - "ERRORED"
+        - "FAILED"
     RequestType:
       type: string
       x-extensible-enum:
