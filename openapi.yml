@@ -165,7 +165,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organization"
+                $ref: "#/components/schemas/OrganizationResult"
         "403":
           $ref: "#/components/responses/403Forbidden"
         "404":
@@ -629,7 +629,7 @@ components:
             "href": "https://api.pa-onboarding.dev.io.italia.it/public-administrations/c_e044"
           }]
         }
-    OrganizationToBeRegistered:
+    Organization:
       type: object
       properties:
         fiscal_code:
@@ -638,8 +638,6 @@ components:
           <<: *non-empty-string
         legal_representative:
           $ref: "#/components/schemas/LegalRepresentative"
-        links:
-          $ref: "#/components/schemas/Links"
         name:
           <<: *non-empty-string
         pec:
@@ -677,9 +675,9 @@ components:
           "registration_status": "PRE_DRAFT",
           "scope": "NATIONAL"
         }
-    Organization:
+    OrganizationResult:
       allOf:
-        - $ref: "#/components/schemas/OrganizationToBeRegistered"
+        - $ref: "#/components/schemas/Organization"
         - type: object
           properties:
             links:
@@ -755,7 +753,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Organization"
+            $ref: "#/components/schemas/OrganizationResult"
       required:
         - items
     OrganizationDelegate:
@@ -783,7 +781,7 @@ components:
       type: object
       properties:
         organization:
-          $ref: "#/components/schemas/OrganizationToBeRegistered"
+          $ref: "#/components/schemas/Organization"
         document_id:
           <<: *non-empty-string
         id:
@@ -837,7 +835,7 @@ components:
       type: object
       properties:
         organization:
-          $ref: "#/components/schemas/OrganizationToBeRegistered"
+          $ref: "#/components/schemas/Organization"
         document_id:
           <<: *non-empty-string
         id:

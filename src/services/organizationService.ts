@@ -25,9 +25,9 @@ import { Op, QueryTypes } from "sequelize";
 import { ADMINISTRATION_SEARCH_RESULTS_LIMIT } from "../config";
 import sequelize from "../database/db";
 import { FoundAdministration } from "../generated/FoundAdministration";
-import { Organization } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
+import { OrganizationResult } from "../generated/OrganizationResult";
 import { Request } from "../generated/Request";
 import { RequestCollection } from "../generated/RequestCollection";
 import { RequestStatusEnum } from "../generated/RequestStatus";
@@ -468,7 +468,7 @@ export function addDelegate(
 ): TaskEither<
   // tslint:disable-next-line:max-union-size
   IResponseErrorInternal | IResponseErrorNotFound | IResponseErrorConflict,
-  IResponseSuccessCreation<Organization>
+  IResponseSuccessCreation<OrganizationResult>
 > {
   const internalErrorHandler = (error: unknown) =>
     genericInternalUnknownErrorHandler(
@@ -591,7 +591,7 @@ export async function getOrganizationInstanceFromDelegateEmail(
 
 export async function getOrganizationFromUserEmail(
   userEmail: string
-): Promise<Either<Error, Option<Organization>>> {
+): Promise<Either<Error, Option<OrganizationResult>>> {
   try {
     const userInstance = await User.findOne({
       include: [
@@ -637,7 +637,7 @@ export async function getOrganizationFromUserEmail(
     }
     const errorsOrOrganization: Either<
       Errors,
-      Organization
+      OrganizationResult
     > = toOrganizationObject(userInstance.organizations[0]);
     return errorsOrOrganization.fold(
       errors =>
@@ -655,7 +655,7 @@ export async function getOrganizationFromUserEmail(
 }
 
 export async function getAllOrganizations(): Promise<
-  Either<Error, ReadonlyArray<Organization>>
+  Either<Error, ReadonlyArray<OrganizationResult>>
 > {
   const errorOrOrganizationInstances = await tryCatch(
     async () =>

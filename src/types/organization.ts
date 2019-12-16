@@ -3,7 +3,7 @@ import { Errors } from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { FoundNotRegisteredAdministration } from "../generated/FoundNotRegisteredAdministration";
 import { FoundRegisteredAdministration } from "../generated/FoundRegisteredAdministration";
-import { Organization } from "../generated/Organization";
+import { OrganizationResult } from "../generated/OrganizationResult";
 import { UserRoleEnum } from "../generated/UserRole";
 import { Organization as OrganizationModel } from "../models/Organization";
 import { IIpaPublicAdministrationRaw } from "./PublicAdministration";
@@ -90,7 +90,7 @@ export function fromPublicAdministrationToFoundAdministration(
 
 export function toOrganizationObject(
   organizationInstance: OrganizationModel
-): Either<Errors, Organization> {
+): Either<Errors, OrganizationResult> {
   const legalRepresentative = {
     email: organizationInstance.legalRepresentative.email,
     family_name: organizationInstance.legalRepresentative.familyName,
@@ -111,7 +111,7 @@ export function toOrganizationObject(
         role: user.role,
         work_email: user.workEmail || undefined
       }));
-  return Organization.decode({
+  return OrganizationResult.decode({
     fiscal_code: organizationInstance.fiscalCode,
     ipa_code: organizationInstance.ipaCode,
     legal_representative: legalRepresentative,

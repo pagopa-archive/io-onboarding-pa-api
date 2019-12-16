@@ -19,11 +19,11 @@ import accessControl, { Resource } from "../acl/acl";
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
 import { FiscalCode } from "../generated/FiscalCode";
-import { Organization } from "../generated/Organization";
 import { OrganizationCollection } from "../generated/OrganizationCollection";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationRequest } from "../generated/OrganizationRegistrationRequest";
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
+import { OrganizationResult } from "../generated/OrganizationResult";
 import { RequestCollection } from "../generated/RequestCollection";
 import { UserDelegationRequest } from "../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../generated/UserRole";
@@ -191,7 +191,7 @@ export default class OrganizationController {
     | IResponseErrorForbiddenNotAuthorized
     | IResponseErrorNotFound
     | IResponseErrorConflict
-    | IResponseSuccessCreation<Organization>
+    | IResponseSuccessCreation<OrganizationResult>
   > {
     return withUserFromRequest(req, async user => {
       const userPermissions = accessControl.can(user.role);
