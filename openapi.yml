@@ -875,7 +875,7 @@ components:
             "scope": "NATIONAL"
           },
           status: "SUBMITTED",
-          type: "USER_DELEGATION"
+          type: "ORGANIZATION_REGISTRATION"
         }
     Request:
       oneOf:
