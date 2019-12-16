@@ -3,17 +3,16 @@
 
 # URL da usare per generare l'entityID dell'IdP e gli URL degli endpoint
 # SAML indicati nel metadata dell'IdP
-base_url: "http://spid-testenv2:8088"
+base_url: "http://localhost:8088"
 
 # Chiave e certificato necessari per la firma dei messaggi SAML
 key_file: "./conf/idp.key"
 cert_file: "./conf/idp.crt"
 
-
 # CONFIGURAZIONE SERVICE PROVIDER
 
-# Si possono configurare più Service Provider. Per leggere i metadati da un 
-# file .xml è sufficiente inserirne il path sotto "local"; per leggerli da 
+# Si possono configurare più Service Provider. Per leggere i metadati da un
+# file .xml è sufficiente inserirne il path sotto "local"; per leggerli da
 # un URL remoto bisogna invece inserirlo sotto "remote".
 metadata:
   local:
@@ -21,8 +20,6 @@ metadata:
 #  remote:
 #    - "http://spid-sp/metadata"
 #  db: 'postgresql+psycopg2://postgres:@localhost:5432/exampledb'
-     
-
 
 # CONFIGURAZIONE TESTENV WEB SERVER
 
@@ -52,7 +49,7 @@ users_file: "conf/users.json"
 # Abilita (true) o disabilita (false) la possibilità di aggiungere nuovi utenti
 can_add_user: true
 
-# Abilita (true) o disbilita (false) l'interfaccia /admin che consente di gestire 
+# Abilita (true) o disbilita (false) l'interfaccia /admin che consente di gestire
 # gli oggetti nel database
 database_admin_interface: false
 

@@ -1,4 +1,23 @@
-<?xml version="1.0"?><EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" entityID="https://spid.agid.gov.it/cd" ID="https___spid_agid_gov_it_cd"><Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI="#https___spid_agid_gov_it_cd"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>FzfvrltuB+cpG4pYJlU4tOQJ/yBuXOPiKJ+voezaX5U=</DigestValue></Reference></SignedInfo><SignatureValue>k6ciZkDBhPtpq1Wq+Kd2/qaT31C2GdGUSmakvSoTnho6l4Yw04o/o/GIk1rWuPacbcpAxfDZJK0sNpAejGIm6o3PPvyXMSrYfhQP/GV6l0ITAea4NolaJqk0tWPJXEiixkDHqAOqpmEBcs5Y8C5hsfIe+9EZfO2zydtP4e6ZbxxN3FspQFEwL9t8exfBVlVsKykn8FU4FH9VV2ZRi1rTvV15LKA7Q9rbueCdD3aNSz9Q8c19kBh1sKBBlCyP/lQ1IjPm1F9aV0+kifjfQFEoBlHELWbrCFUIc40MmrxSzbIwMyodY5asMmj8mgkqbNWcSvK4xbuvhq2nYb0eRzY7KseIaWDv3mlidtUd0EqWsoJJoh9lTpSO9NhLHNkP4sL87HTwBnA/m/xd3QqBIT7jST4BhzLWoL8dXnzyvOi/6sB3C50mMz0YifEstvNBAWl88YUAa6XNnBLLjcw4xzBZmyjJ5Q6zh+2691T/oltNQiZUNa7xWm0PQdd4WqxXrYH9PdWqfFnTru8PRQDdPvkRmM8jTuCE/sso2gLRpeJ3ClxwXAn8Pe6Qm6L7jFgwzrAy2Ip2kXhCny/kzFYgnFYuDtN6+qKrVnfoWdCjDOJBo3TtSYWO5gspgP5BVAtvlpd/1uLPrYFfKzZp0ty3tsZLxv+ikFYukIN7AT/Vcq9JnFY=</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIFsjCCA5qgAwIBAgIJAJAXeuc41BJUMA0GCSqGSIb3DQEBCwUAMG4xCzAJBgNV
+<?xml version="1.0"?>
+<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" 
+    xmlns:ds="http://www.w3.org/2000/09/xmldsig#" entityID="https://spid.agid.gov.it/cd" ID="https___spid_agid_gov_it_cd">
+    <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+        <SignedInfo>
+            <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+            <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+            <Reference URI="#https___spid_agid_gov_it_cd">
+                <Transforms>
+                    <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                    <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                </Transforms>
+                <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                <DigestValue>FzfvrltuB+cpG4pYJlU4tOQJ/yBuXOPiKJ+voezaX5U=</DigestValue>
+            </Reference>
+        </SignedInfo>
+        <SignatureValue>k6ciZkDBhPtpq1Wq+Kd2/qaT31C2GdGUSmakvSoTnho6l4Yw04o/o/GIk1rWuPacbcpAxfDZJK0sNpAejGIm6o3PPvyXMSrYfhQP/GV6l0ITAea4NolaJqk0tWPJXEiixkDHqAOqpmEBcs5Y8C5hsfIe+9EZfO2zydtP4e6ZbxxN3FspQFEwL9t8exfBVlVsKykn8FU4FH9VV2ZRi1rTvV15LKA7Q9rbueCdD3aNSz9Q8c19kBh1sKBBlCyP/lQ1IjPm1F9aV0+kifjfQFEoBlHELWbrCFUIc40MmrxSzbIwMyodY5asMmj8mgkqbNWcSvK4xbuvhq2nYb0eRzY7KseIaWDv3mlidtUd0EqWsoJJoh9lTpSO9NhLHNkP4sL87HTwBnA/m/xd3QqBIT7jST4BhzLWoL8dXnzyvOi/6sB3C50mMz0YifEstvNBAWl88YUAa6XNnBLLjcw4xzBZmyjJ5Q6zh+2691T/oltNQiZUNa7xWm0PQdd4WqxXrYH9PdWqfFnTru8PRQDdPvkRmM8jTuCE/sso2gLRpeJ3ClxwXAn8Pe6Qm6L7jFgwzrAy2Ip2kXhCny/kzFYgnFYuDtN6+qKrVnfoWdCjDOJBo3TtSYWO5gspgP5BVAtvlpd/1uLPrYFfKzZp0ty3tsZLxv+ikFYukIN7AT/Vcq9JnFY=</SignatureValue>
+        <KeyInfo>
+            <X509Data>
+                <X509Certificate>MIIFsjCCA5qgAwIBAgIJAJAXeuc41BJUMA0GCSqGSIb3DQEBCwUAMG4xCzAJBgNV
     BAYTAklUMQ4wDAYDVQQIDAVJdGFseTENMAsGA1UEBwwEUm9tZTENMAsGA1UECgwE
     QUNNRTEWMBQGA1UECwwNSVQgRGVwYXJ0bWVudDEZMBcGA1UEAwwQYXBpLml0YWxp
     YS5sb2NhbDAeFw0xOTA4MDUwOTA1NDhaFw0yMDA4MDQwOTA1NDhaMG4xCzAJBgNV
@@ -27,9 +46,11 @@
     jT2Xzez2kyoZ1JU/auajHX2LhyA9oaXU7hN+dBLB/0tvyJUXgInkOpsQGO1D7WOi
     DPkPx5CX9wDZLaemYn6+PyWUjiOogoyORyF7EyMFRHZwixeFoRPg3zyAu6T5ATse
     PwyeVh6W05FgEa8xKtTf1aur0PWA/7XnomU7hU0VUkdUPM2uLUdCFzgbXCEQyK5l
-    tIuWjsiv3F0ZR5ZOvfydUoQJNsmRsFYOqV2g0z1ScVhtO42vK33+4tJQaRHmbw0J
-    fEctKa2UJKYGIiIjJbqrKwRzpZ/37w==
-</X509Certificate></X509Data></KeyInfo></Signature>
+    tIuWjsiv3F0ZR5ZOvfydUoQJNsmRsFYOqV2g0z1ScVhtO42vK33+4tJQaRHmbw0J fEctKa2UJKYGIiIjJbqrKwRzpZ/37w==
+                </X509Certificate>
+            </X509Data>
+        </KeyInfo>
+    </Signature>
     <SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol" AuthnRequestsSigned="true" WantAssertionsSigned="true">
         <KeyDescriptor use="signing">
             <ds:KeyInfo>
@@ -63,17 +84,14 @@
                         jT2Xzez2kyoZ1JU/auajHX2LhyA9oaXU7hN+dBLB/0tvyJUXgInkOpsQGO1D7WOi
                         DPkPx5CX9wDZLaemYn6+PyWUjiOogoyORyF7EyMFRHZwixeFoRPg3zyAu6T5ATse
                         PwyeVh6W05FgEa8xKtTf1aur0PWA/7XnomU7hU0VUkdUPM2uLUdCFzgbXCEQyK5l
-                        tIuWjsiv3F0ZR5ZOvfydUoQJNsmRsFYOqV2g0z1ScVhtO42vK33+4tJQaRHmbw0J
-                        fEctKa2UJKYGIiIjJbqrKwRzpZ/37w==
+                        tIuWjsiv3F0ZR5ZOvfydUoQJNsmRsFYOqV2g0z1ScVhtO42vK33+4tJQaRHmbw0J fEctKa2UJKYGIiIjJbqrKwRzpZ/37w==
                     </ds:X509Certificate>
                 </ds:X509Data>
             </ds:KeyInfo>
         </KeyDescriptor>
-        <SingleLogoutService
-                Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-                Location="http://io-onboarding-backend:3000/spid/logout" />
+        <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="http://localhost:3000/spid/logout" />
         <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
-        <AssertionConsumerService index="2" isDefault="true" Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="http://io-onboarding-backend:3000/assertion-consumer-service"/>
+        <AssertionConsumerService index="2" isDefault="true" Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="http://localhost:3000/assertion-consumer-service"/>
         <AttributeConsumingService index="2">
             <ServiceName xml:lang="it">Required attributes</ServiceName>
             <RequestedAttribute Name="email" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic" FriendlyName="Email"/>

@@ -106,11 +106,11 @@ export async function populateIpaPublicAdministrationTable():
     initIpaPublicAdministration();
     const IpaPublicAdministrationCount = await IpaPublicAdministrationModel.count();
     if (IpaPublicAdministrationCount === 0) {
-      log.debug("Populating IpaPublicAdministration table...");
+      log.info("Populating IpaPublicAdministration table...");
       await upsertFromIpa();
       return true;
     } else {
-      log.debug("IpaPublicAdministration table already populated.");
+      log.info("IpaPublicAdministration table already populated.");
       return false;
     }
   } catch (error) {
