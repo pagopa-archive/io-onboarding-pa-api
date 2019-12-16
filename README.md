@@ -101,7 +101,7 @@ docker-compose up
 ```
 
 > The _docker-compose.yaml_ file sources variables from a _.env_ file that must be
-> placed in the root folder of this repository. An example file _.env.example_ is
+> placed in the root folder of this repository. An example file _env.example_ is
 > distributed with the code.
 
 The backend REST APIs can be now accessed at
