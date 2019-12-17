@@ -1,23 +1,14 @@
 import { TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
 import { FetchOptions } from "imap";
 import * as Imap from "imap-simple";
-import { IMessageAttachment } from "../domain/models";
+import { IEmailAttachmentStatus } from "../domain/models";
 
 // Open a connection to imap server
-export const imap = (
-  imapOptions: Imap.ImapSimpleOptions
-): TaskEither<Error, Imap.ImapSimple> => {
-  return tryCatch(
-    () => Imap.connect(imapOptions),
-    reason => new Error(String(reason))
-  );
-};
-
 export type ImapConnect = (
   options: Imap.ImapSimpleOptions
 ) => Promise<Imap.ImapSimple>;
 
-export const imap2 = (
+export const imap = (
   connect: ImapConnect,
   imapOptions: Imap.ImapSimpleOptions
 ) => {
@@ -71,15 +62,28 @@ export const extractAttachment = (
   message: Imap.Message,
   // tslint:disable-next-line: no-any
   attach: any
-): TaskEither<Error, IMessageAttachment> => {
+): TaskEither<Error, IEmailAttachmentStatus> => {
   return tryCatch(
     () =>
       imapServer.getPartData(message, attach).then(attachment => {
-        return {
-          data: attachment,
-          filename: attach.disposition.params.filename,
-          message: message.attributes.uid.toString()
-        };
+        return message.parts
+          .filter(partHeader => partHeader.which === "HEADER")
+          .map(header => {
+            return {
+              attachments: [
+                {
+                  data: attachment,
+                  filename: attach.disposition.params.filename,
+                  message: message.attributes.uid.toString()
+                }
+              ],
+              date: header.body.date as readonly string[],
+              from: header.body.from as readonly string[],
+              messageId: message.attributes.uid.toString(),
+              subject: header.body.subject as readonly string[],
+              to: header.body.to as readonly string[]
+            };
+          })[0];
       }),
     reason => new Error(String(reason))
   );
@@ -90,7 +94,7 @@ export const getAttachments = (
   imapServer: Imap.ImapSimple,
   messages: readonly Imap.Message[]
   // tslint:disable-next-line: readonly-array
-): Array<TaskEither<Error, IMessageAttachment>> => {
+): Array<TaskEither<Error, IEmailAttachmentStatus>> => {
   return messages
     .map(message => {
       const parts = Imap.getParts(

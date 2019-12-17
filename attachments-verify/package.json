@@ -1,7 +1,7 @@
 {
-  "name": "TODO",
+  "name": "attachments-verify",
   "version": "0.0.1",
-  "description": "TODO",
+  "description": "Connect to an imap server download emails and verify signatures",
   "repository": "https://github.com/teamdigitale/TODO",
   "author": "https://teamdigitale.governo.it",
   "license": "MIT",
