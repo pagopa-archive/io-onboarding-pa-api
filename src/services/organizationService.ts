@@ -48,29 +48,15 @@ import {
   isIpaPublicAdministrationProperty
 } from "../types/PublicAdministration";
 import { LoggedUser } from "../types/user";
+import {
+  genericInternalUnknownErrorHandler,
+  genericInternalValidationErrorsHandler
+} from "../utils/errorHandlers";
 import { log } from "../utils/logger";
 import {
   IResponseSuccessCreation,
   ResponseSuccessCreation
 } from "../utils/responses";
-
-const genericInternalUnknownErrorHandler = (
-  error: unknown,
-  logMessage: string,
-  errorDetail: string
-) => {
-  log.error(logMessage + " %s", error);
-  return ResponseErrorInternal(errorDetail);
-};
-
-const genericInternalValidationErrorsHandler = (
-  errors: Errors,
-  logMessage: string,
-  errorDetail: string
-) => {
-  log.error(logMessage + " %s", errorsToReadableMessages(errors).join(" / "));
-  return ResponseErrorInternal(errorDetail);
-};
 
 /**
  * Retrieve from the db all the public administrations whose names match the provided value.

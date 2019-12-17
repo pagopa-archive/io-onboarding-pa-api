@@ -1,6 +1,8 @@
-import { Request } from "express";
+import { Request as ExpressRequest } from "express";
+import { array } from "fp-ts/lib/Array";
 import { isLeft } from "fp-ts/lib/Either";
 import { isNone, isSome, none, Option, some } from "fp-ts/lib/Option";
+import { TaskEither, taskEither, tryCatch } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
 import {
   IResponseErrorConflict,
@@ -24,6 +26,7 @@ import { OrganizationRegistrationParams } from "../generated/OrganizationRegistr
 import { OrganizationRegistrationRequest } from "../generated/OrganizationRegistrationRequest";
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { OrganizationResult } from "../generated/OrganizationResult";
+import { Request } from "../generated/Request";
 import { RequestCollection } from "../generated/RequestCollection";
 import { UserDelegationRequest } from "../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../generated/UserRole";
@@ -41,6 +44,7 @@ import {
   getOrganizationInstanceFromDelegateEmail
 } from "../services/organizationService";
 import { withUserFromRequest } from "../types/user";
+import { genericInternalUnknownErrorHandler } from "../utils/errorHandlers";
 import { log } from "../utils/logger";
 import {
   IResponseDownload,
@@ -60,7 +64,7 @@ export default class OrganizationController {
   ) {}
 
   public async findPublicAdministration(
-    req: Request
+    req: ExpressRequest
   ): Promise<
     | IResponseErrorValidation
     | IResponseErrorInternal
@@ -80,7 +84,7 @@ export default class OrganizationController {
   }
 
   public registerOrganization(
-    req: Request
+    req: ExpressRequest
   ): Promise<
     // tslint:disable-next-line:max-union-size
     | IResponseErrorConflict
@@ -110,11 +114,12 @@ export default class OrganizationController {
             organizationRegistrationParams,
             user
           ).run();
-          return errorResponseOrSuccessResponse.map(successResponse =>
-            this.createOnboardingDocuments(
-              organizationRegistrationParams.ipa_code,
-              successResponse
-            )
+          return errorResponseOrSuccessResponse.map(
+            async successResponse =>
+              (await this.createOnboardingDocuments(
+                organizationRegistrationParams.ipa_code,
+                successResponse
+              ).run()).value
           ).value;
         }
       );
@@ -122,7 +127,7 @@ export default class OrganizationController {
   }
 
   public getOrganizations(
-    req: Request
+    req: ExpressRequest
   ): Promise<
     // tslint:disable-next-line:max-union-size
     | IResponseErrorValidation
@@ -183,7 +188,7 @@ export default class OrganizationController {
   }
 
   public addDelegate(
-    req: Request
+    req: ExpressRequest
   ): Promise<
     // tslint:disable-next-line:max-union-size
     | IResponseErrorValidation
@@ -254,7 +259,7 @@ export default class OrganizationController {
   }
 
   public getDocument(
-    req: Request
+    req: ExpressRequest
   ): Promise<
     // tslint:disable-next-line:max-union-size
     | IResponseErrorValidation
@@ -282,7 +287,7 @@ export default class OrganizationController {
   }
 
   public async sendDocuments(
-    req: Request
+    req: ExpressRequest
   ): Promise<
     // tslint:disable-next-line:max-union-size
     | IResponseErrorValidation
@@ -378,61 +383,84 @@ export default class OrganizationController {
     return none;
   }
 
-  private async createOnboardingDocuments(
+  private createOnboardingDocuments(
     ipaCode: string,
     requestsCreationResponseSuccess: IResponseSuccessCreation<RequestCollection>
-  ): Promise<
-    IResponseErrorInternal | IResponseSuccessCreation<RequestCollection>
+  ): TaskEither<
+    IResponseErrorInternal,
+    IResponseSuccessCreation<RequestCollection>
   > {
-    const requests = requestsCreationResponseSuccess.value.items;
     // TODO:
     //  the documents must be stored on cloud (Azure Blob Storage).
     //  @see https://www.pivotaltracker.com/story/show/169644958
     const outputFolder = `./documents/${ipaCode}`;
-    try {
-      await fs.promises.mkdir(outputFolder, { recursive: true });
-      const arrayOfMaybeError = await Promise.all(
-        requests.map(request => {
+    const createDocumentPerRequest = (request: Request) => {
+      const rejectError = (maybeError: Option<Error>) => {
+        if (isSome(maybeError)) {
+          return Promise.reject(maybeError.value);
+        }
+      };
+      return tryCatch<IResponseErrorInternal, undefined>(
+        () => {
           if (OrganizationRegistrationRequest.is(request)) {
-            return this.documentService.generateDocument(
-              localeIt.organizationController.registerOrganization.contract.replace(
-                "%s",
-                `${request.organization.ipa_code} ${request.organization.fiscal_code}`
-              ),
-              `${outputFolder}/${request.document_id}.pdf`
-            );
+            return this.documentService
+              .generateDocument(
+                localeIt.organizationController.registerOrganization.contract.replace(
+                  "%s",
+                  `${request.organization.ipa_code} ${request.organization.fiscal_code}`
+                ),
+                `${outputFolder}/${request.document_id}.pdf`
+              )
+              .then(rejectError);
           }
           if (UserDelegationRequest.is(request)) {
-            return this.documentService.generateDocument(
-              // TODO:
-              //  refactor this operation using an internationalization framework allowing params interpolation in strings.
-              //  @see https://www.pivotaltracker.com/story/show/169644146
-              localeIt.organizationController.registerOrganization.delegation
-                .replace(
-                  "%legalRepresentative%",
-                  `${request.organization.legal_representative.given_name} ${request.organization.legal_representative.family_name}`
-                )
-                .replace("%organizationName%", request.organization.name)
-                .replace(
-                  "%delegate%",
-                  `${request.requester.given_name} ${request.requester.family_name}`
-                ),
-              `${outputFolder}/${request.document_id}.pdf`
-            );
+            return this.documentService
+              .generateDocument(
+                // TODO:
+                //  refactor this operation using an internationalization framework allowing params interpolation in strings.
+                //  @see https://www.pivotaltracker.com/story/show/169644146
+                localeIt.organizationController.registerOrganization.delegation
+                  .replace(
+                    "%legalRepresentative%",
+                    `${request.organization.legal_representative.given_name} ${request.organization.legal_representative.family_name}`
+                  )
+                  .replace("%organizationName%", request.organization.name)
+                  .replace(
+                    "%delegate%",
+                    `${request.requester.given_name} ${request.requester.family_name}`
+                  ),
+                `${outputFolder}/${request.document_id}.pdf`
+              )
+              .then(rejectError);
           }
-          return Promise.resolve(some(Error("Wrong data")));
-        })
+          return Promise.reject(new Error("Wrong data"));
+        },
+        (error: unknown) =>
+          genericInternalUnknownErrorHandler(
+            error,
+            "organizationController#createOnboardingDocuments | An error occurred during document generation.",
+            "An error occurred during document generation."
+          )
       );
-      const someError = arrayOfMaybeError.find(isSome);
-      if (someError) {
-        log.error(someError.value);
-        return ResponseErrorInternal("Internal server error");
-      }
-      return requestsCreationResponseSuccess;
-    } catch (error) {
-      log.error(error);
-      return ResponseErrorInternal("Internal server error");
-    }
+    };
+    const traverseResult = (
+      successResponse: IResponseSuccessCreation<RequestCollection>
+    ) =>
+      array
+        .traverse(taskEither)(
+          [...successResponse.value.items],
+          createDocumentPerRequest
+        )
+        .map(() => requestsCreationResponseSuccess);
+    return tryCatch(
+      () => fs.promises.mkdir(outputFolder, { recursive: true }),
+      (error: unknown) =>
+        genericInternalUnknownErrorHandler(
+          error,
+          "organizationController#createOnboardingDocuments | An error occurred creating documents folder.",
+          "An error occurred creating documents folder."
+        )
+    ).chain(() => traverseResult(requestsCreationResponseSuccess));
   }
 
   private async signAndSendDocuments(
