@@ -112,17 +112,18 @@ export default class OrganizationController {
           if (isSome(maybeResponse)) {
             return maybeResponse.value;
           }
-          const errorResponseOrSuccessResponse = await createOnboardingRequests(
+          const responseErrorOrResponseSucces = createOnboardingRequests(
             organizationRegistrationParams,
             user
-          ).run();
-          return errorResponseOrSuccessResponse.map(
-            async successResponse =>
-              (await this.createOnboardingDocuments(
+          )
+            .chain(successResponse =>
+              this.createOnboardingDocuments(
                 organizationRegistrationParams.ipa_code,
                 successResponse
-              ).run()).value
-          ).value;
+              )
+            )
+            .run();
+          return (await responseErrorOrResponseSucces).value;
         }
       );
     });
