@@ -92,7 +92,9 @@ export default class OrganizationController {
     | IResponseErrorInternal
     | IResponseErrorNotFound
     | IResponseErrorValidation
-    | IResponseSuccessCreation<RequestCollection>
+    | IResponseSuccessCreation<
+        OrganizationRegistrationRequest | UserDelegationRequest
+      >
   > {
     return withUserFromRequest(req, async user => {
       const userPermissions = accessControl.can(user.role);
@@ -385,10 +387,14 @@ export default class OrganizationController {
 
   private createOnboardingDocuments(
     ipaCode: string,
-    requestsCreationResponseSuccess: IResponseSuccessCreation<RequestCollection>
+    requestsCreationResponseSuccess: IResponseSuccessCreation<
+      OrganizationRegistrationRequest | UserDelegationRequest
+    >
   ): TaskEither<
     IResponseErrorInternal,
-    IResponseSuccessCreation<RequestCollection>
+    IResponseSuccessCreation<
+      OrganizationRegistrationRequest | UserDelegationRequest
+    >
   > {
     // TODO:
     //  the documents must be stored on cloud (Azure Blob Storage).
@@ -443,15 +449,6 @@ export default class OrganizationController {
           )
       );
     };
-    const traverseResult = (
-      successResponse: IResponseSuccessCreation<RequestCollection>
-    ) =>
-      array
-        .traverse(taskEither)(
-          [...successResponse.value.items],
-          createDocumentPerRequest
-        )
-        .map(() => requestsCreationResponseSuccess);
     return tryCatch(
       () => fs.promises.mkdir(outputFolder, { recursive: true }),
       (error: unknown) =>
@@ -460,7 +457,11 @@ export default class OrganizationController {
           "organizationController#createOnboardingDocuments | An error occurred creating documents folder.",
           "An error occurred creating documents folder."
         )
-    ).chain(() => traverseResult(requestsCreationResponseSuccess));
+    )
+      .chain(() =>
+        createDocumentPerRequest(requestsCreationResponseSuccess.value)
+      )
+      .map(() => requestsCreationResponseSuccess);
   }
 
   private async signAndSendDocuments(

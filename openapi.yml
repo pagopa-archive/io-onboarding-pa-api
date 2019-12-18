@@ -116,13 +116,7 @@ paths:
           $ref: "#/components/responses/403Forbidden"
     post:
       description: |-
-        Creates the requests for the onboarding of an administration, i.e.:
-          - the registration request for the administration
-          - the delegation request for the user performing the action
-
-        In case of success, the expected payload is a request collection
-        containing the OrganizationRegistrationRequest object and the UserDelegationRequest object
-        for the requests that have just been created.
+        Creates a request for the onboarding of an administration and returns it in the payload of a successful response
       operationId: createOrganizations
       security:
         - bearerAuth: []
@@ -726,6 +720,8 @@ components:
             - given_name
             - fiscal_code
             - phone_number
+        request_type:
+          $ref: "#/components/schemas/RequestType"
         scope:
           $ref: '#/components/schemas/OrganizationScope'
         selected_pec_label:
@@ -744,6 +740,7 @@ components:
             "fiscal_code": "BCDFGH12A21Z123D",
             "phone_number": "3331111111"
           },
+          "request_type": "ORGANIZATION_REGISTRATION",
           "scope": "NATIONAL",
           "selected_pec_label": "1"
         }

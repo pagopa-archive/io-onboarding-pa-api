@@ -322,14 +322,7 @@ describe("OrganizationController", () => {
     it("should return an internal server error if the generation of documents fails", async () => {
       mockCreateOnboardingRequests.mockReturnValue(
         fromEither(
-          right(
-            ResponseSuccessCreation({
-              items: [
-                mockedCreatedOrganizationRegistrationRequest,
-                mockedCreatedUserDelegationRequest
-              ]
-            })
-          )
+          right(ResponseSuccessCreation(mockedCreatedUserDelegationRequest))
         )
       );
       mockGenerateDocument.mockReturnValue(Promise.resolve(some(Error())));
@@ -346,17 +339,13 @@ describe("OrganizationController", () => {
     });
 
     it("should return a success response if the registration process completes successfully", async () => {
-      const expectedResponseValue = {
-        items: [
-          mockedCreatedOrganizationRegistrationRequest,
-          mockedCreatedUserDelegationRequest
-        ]
-      };
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         Promise.resolve(right(none))
       );
       mockCreateOnboardingRequests.mockReturnValue(
-        fromEither(right(ResponseSuccessCreation(expectedResponseValue)))
+        fromEither(
+          right(ResponseSuccessCreation(mockedCreatedUserDelegationRequest))
+        )
       );
       mockGenerateDocument.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
@@ -367,7 +356,7 @@ describe("OrganizationController", () => {
       expect(result).toEqual({
         apply: expect.any(Function),
         kind: "IResponseSuccessCreation",
-        value: expectedResponseValue
+        value: mockedCreatedUserDelegationRequest
       });
     });
   });

@@ -26,12 +26,12 @@ import { ADMINISTRATION_SEARCH_RESULTS_LIMIT } from "../config";
 import sequelize from "../database/db";
 import { FoundAdministration } from "../generated/FoundAdministration";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
+import { OrganizationRegistrationRequest } from "../generated/OrganizationRegistrationRequest";
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { OrganizationResult } from "../generated/OrganizationResult";
 import { Request } from "../generated/Request";
-import { RequestCollection } from "../generated/RequestCollection";
 import { RequestStatusEnum } from "../generated/RequestStatus";
-import { RequestTypeEnum } from "../generated/RequestType";
+import { UserDelegationRequest } from "../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../generated/UserRole";
 import { IpaPublicAdministration as IpaPublicAdministrationModel } from "../models/IpaPublicAdministration";
 import { Organization as OrganizationModel } from "../models/Organization";
@@ -251,10 +251,10 @@ function checkOnboardingCapability(
 }
 
 /**
- * Creates the requests for the onboarding of an administration,
- * i.e. the registration request for the administration and the delegation request for the user performing the action,
- * and returns them in a success creation response.
- * @param newOrganizationParams The parameters required to create the requests
+ * Creates a request needed for the onboarding of an administration,
+ * i.e. the registration request for the administration or the delegation request for the user performing the action,
+ * and returns it in a success creation response.
+ * @param newOrganizationParams The parameters required to create the request
  * @param user The user who is performing the operation
  */
 export function createOnboardingRequests(
@@ -266,7 +266,9 @@ export function createOnboardingRequests(
   | IResponseErrorConflict
   | IResponseErrorNotFound
   | IResponseErrorValidation,
-  IResponseSuccessCreation<RequestCollection>
+  IResponseSuccessCreation<
+    OrganizationRegistrationRequest | UserDelegationRequest
+  >
 > {
   const internalErrorHandler = (error: unknown) =>
     genericInternalUnknownErrorHandler(
@@ -300,8 +302,7 @@ export function createOnboardingRequests(
       ipaPublicAdministration
     );
   };
-
-  const loadRequesters = (requestModel: RequestModel) =>
+  const loadRequester = (requestModel: RequestModel) =>
     tryCatch(
       () =>
         requestModel.reload({
@@ -314,7 +315,6 @@ export function createOnboardingRequests(
         }),
       internalErrorHandler
     );
-
   return tryCatch<
     // tslint:disable-next-line:max-union-size
     | IResponseErrorInternal
@@ -377,74 +377,61 @@ export function createOnboardingRequests(
         organizationPec,
         organizationScope: newOrganizationParams.scope,
         status: RequestStatusEnum.CREATED,
+        type: newOrganizationParams.request_type,
         userEmail: user.email
       };
       return tryCatch(
         () =>
-          RequestModel.bulkCreate([
-            {
-              ...requestParams,
-              documentId: `${
-                requestParams.organizationFiscalCode
-              }-${process.hrtime().join("")}`,
-              type: RequestTypeEnum.ORGANIZATION_REGISTRATION
-            },
-            {
-              ...requestParams,
-              documentId: `${user.fiscalCode.toLowerCase()}-${process
-                .hrtime()
-                .join("")}`,
-              type: RequestTypeEnum.USER_DELEGATION
-            }
-          ]),
+          RequestModel.create({
+            ...requestParams,
+            documentId: `${
+              requestParams.organizationFiscalCode
+            }-${process.hrtime().join("")}`
+          }),
         internalErrorHandler
       )
-        .chain(requestModels =>
-          array.traverse(taskEither)(requestModels, loadRequesters)
-        )
-        .chain(requestModels =>
-          array.traverse(taskEither)(requestModels, requestModel =>
-            fromEither(
-              Request.decode({
-                document_id: requestModel.documentId,
-                id: requestModel.id,
-                organization: {
-                  fiscal_code: requestModel.organizationFiscalCode,
-                  ipa_code: requestModel.organizationIpaCode,
-                  legal_representative: {
-                    email: requestModel.organizationPec,
-                    family_name: requestModel.legalRepresentativeFamilyName,
-                    fiscal_code: requestModel.legalRepresentativeFiscalCode,
-                    given_name: requestModel.legalRepresentativeGivenName,
-                    phone_number: requestModel.legalRepresentativePhoneNumber,
-                    role: UserRoleEnum.ORG_MANAGER
-                  },
-                  name: requestModel.organizationName,
-                  pec: requestModel.organizationPec,
-                  registration_status:
-                    OrganizationRegistrationStatusEnum.PRE_DRAFT,
-                  scope: requestModel.organizationScope
+        .chain(loadRequester)
+        .chain(requestModel =>
+          fromEither(
+            Request.decode({
+              document_id: requestModel.documentId,
+              id: requestModel.id,
+              organization: {
+                fiscal_code: requestModel.organizationFiscalCode,
+                ipa_code: requestModel.organizationIpaCode,
+                legal_representative: {
+                  email: requestModel.organizationPec,
+                  family_name: requestModel.legalRepresentativeFamilyName,
+                  fiscal_code: requestModel.legalRepresentativeFiscalCode,
+                  given_name: requestModel.legalRepresentativeGivenName,
+                  phone_number: requestModel.legalRepresentativePhoneNumber,
+                  role: UserRoleEnum.ORG_MANAGER
                 },
-                requester: requestModel.requester && {
-                  email: requestModel.requester.email,
-                  family_name: requestModel.requester.familyName,
-                  fiscal_code: requestModel.requester.fiscalCode,
-                  given_name: requestModel.requester.givenName,
-                  role: UserRoleEnum.ORG_DELEGATE
-                },
-                status: requestModel.status,
-                type: requestModel.type
-              })
-            ).mapLeft(errors =>
-              genericInternalValidationErrorsHandler(
-                errors,
-                "organizationService#createOnboardingRequests | Invalid data.",
-                "Invalid data"
-              )
+                name: requestModel.organizationName,
+                pec: requestModel.organizationPec,
+                registration_status:
+                  OrganizationRegistrationStatusEnum.PRE_DRAFT,
+                scope: requestModel.organizationScope
+              },
+              requester: requestModel.requester && {
+                email: requestModel.requester.email,
+                family_name: requestModel.requester.familyName,
+                fiscal_code: requestModel.requester.fiscalCode,
+                given_name: requestModel.requester.givenName,
+                role: UserRoleEnum.ORG_DELEGATE
+              },
+              status: requestModel.status,
+              type: requestModel.type
+            })
+          ).mapLeft(errors =>
+            genericInternalValidationErrorsHandler(
+              errors,
+              "organizationService#createOnboardingRequests | Invalid data.",
+              "Invalid data"
             )
           )
         )
-        .map(requests => ResponseSuccessCreation({ items: requests }));
+        .map(request => ResponseSuccessCreation(request));
     });
 }
 

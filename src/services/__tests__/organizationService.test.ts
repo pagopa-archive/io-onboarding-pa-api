@@ -318,7 +318,7 @@ afterAll(async () => {
 
 describe("OrganizationService", () => {
   describe("#createOnboardingRequests()", () => {
-    const validNewOrganizationParams: OrganizationRegistrationParams = {
+    const validNewOrganizationParams = {
       ipa_code: "generic_code" as NonEmptyString,
       legal_representative: {
         family_name: "Rossi" as NonEmptyString,
@@ -326,81 +326,46 @@ describe("OrganizationService", () => {
         given_name: "Alberto" as NonEmptyString,
         phone_number: "3330000000" as NonEmptyString
       },
+      request_type: RequestTypeEnum.ORGANIZATION_REGISTRATION,
       scope: OrganizationScopeEnum.LOCAL,
       selected_pec_label: "1" as NonEmptyString
     };
 
     describe("when the public administration is valid", () => {
-      it("should return a right value with a success response containing the new requests", async () => {
+      it("should return a right value with a success response containing the new request", async () => {
         const newOrganizationParams = {
           ...validNewOrganizationParams,
           ipa_code: validPublicAdministration.cod_amm
         } as OrganizationRegistrationParams;
         const expectedResult = {
-          items: [
-            {
-              document_id: expect.any(String),
-              id: expect.any(Number),
-              organization: {
-                fiscal_code: validPublicAdministration.Cf,
-                ipa_code: validPublicAdministration.cod_amm,
-                legal_representative: {
-                  ...newOrganizationParams.legal_representative,
-                  email: validPublicAdministration.get(
-                    "mail" + newOrganizationParams.selected_pec_label
-                  ),
-                  role: UserRoleEnum.ORG_MANAGER
-                },
-                name: validPublicAdministration.des_amm,
-                pec: validPublicAdministration.get(
-                  "mail" + newOrganizationParams.selected_pec_label
-                ),
-                registration_status:
-                  OrganizationRegistrationStatusEnum.PRE_DRAFT,
-                scope: newOrganizationParams.scope
-              },
-              requester: {
-                email: user.email,
-                family_name: user.familyName,
-                fiscal_code: user.fiscalCode,
-                given_name: user.givenName,
-                role: user.role
-              },
-              status: RequestStatusEnum.CREATED,
-              type: RequestTypeEnum.ORGANIZATION_REGISTRATION
+          document_id: expect.any(String),
+          id: expect.any(Number),
+          organization: {
+            fiscal_code: validPublicAdministration.Cf,
+            ipa_code: validPublicAdministration.cod_amm,
+            legal_representative: {
+              ...newOrganizationParams.legal_representative,
+              email: validPublicAdministration.get(
+                "mail" + newOrganizationParams.selected_pec_label
+              ),
+              role: UserRoleEnum.ORG_MANAGER
             },
-            {
-              document_id: expect.any(String),
-              id: expect.any(Number),
-              organization: {
-                fiscal_code: validPublicAdministration.Cf,
-                ipa_code: validPublicAdministration.cod_amm,
-                legal_representative: {
-                  ...newOrganizationParams.legal_representative,
-                  email: validPublicAdministration.get(
-                    "mail" + newOrganizationParams.selected_pec_label
-                  ),
-                  role: UserRoleEnum.ORG_MANAGER
-                },
-                name: validPublicAdministration.des_amm,
-                pec: validPublicAdministration.get(
-                  "mail" + newOrganizationParams.selected_pec_label
-                ),
-                registration_status:
-                  OrganizationRegistrationStatusEnum.PRE_DRAFT,
-                scope: newOrganizationParams.scope
-              },
-              requester: {
-                email: user.email,
-                family_name: user.familyName,
-                fiscal_code: user.fiscalCode,
-                given_name: user.givenName,
-                role: user.role
-              },
-              status: RequestStatusEnum.CREATED,
-              type: RequestTypeEnum.USER_DELEGATION
-            }
-          ]
+            name: validPublicAdministration.des_amm,
+            pec: validPublicAdministration.get(
+              "mail" + newOrganizationParams.selected_pec_label
+            ),
+            registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
+            scope: newOrganizationParams.scope
+          },
+          requester: {
+            email: user.email,
+            family_name: user.familyName,
+            fiscal_code: user.fiscalCode,
+            given_name: user.givenName,
+            role: user.role
+          },
+          status: RequestStatusEnum.CREATED,
+          type: newOrganizationParams.request_type
         };
         const result = await createOnboardingRequests(
           newOrganizationParams,
