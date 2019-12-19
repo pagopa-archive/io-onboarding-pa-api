@@ -575,7 +575,7 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
     const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
       userInfo.email,
       organizationInfo.ipaCode
-    );
+    ).run();
     expect(maybeOrganizationModel).not.toBeNull();
     expect(isRight(maybeOrganizationModel)).toBeTruthy();
     maybeOrganizationModel.fold(
@@ -591,7 +591,7 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
     const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
       "not-delegate@email.net",
       organizationInfo.ipaCode
-    );
+    ).run();
     expect(maybeOrganizationModel).not.toBeNull();
     expect(isRight(maybeOrganizationModel)).toBeTruthy();
     maybeOrganizationModel.fold(

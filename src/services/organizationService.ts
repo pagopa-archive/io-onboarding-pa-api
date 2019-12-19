@@ -52,7 +52,6 @@ import {
   genericInternalUnknownErrorHandler,
   genericInternalValidationErrorsHandler
 } from "../utils/errorHandlers";
-import { log } from "../utils/logger";
 import {
   IResponseSuccessCreation,
   ResponseSuccessCreation
@@ -534,39 +533,41 @@ export function addDelegate(
     );
 }
 
-export async function getOrganizationInstanceFromDelegateEmail(
+export function getOrganizationInstanceFromDelegateEmail(
   userEmail: string,
   ipaCode?: string
-): Promise<Either<Error, Option<OrganizationModel>>> {
-  try {
-    const organizationInstances = await OrganizationModel.findAll({
-      include: [
-        {
-          as: "users",
-          model: User,
-          required: true,
-          through: { where: { email: userEmail } }
-        },
-        {
-          as: "legalRepresentative",
-          model: User
-        }
-      ],
-      where: ipaCode ? { ipaCode } : undefined
-    });
-    if (organizationInstances.length > 1) {
-      return left(
-        Error(
-          `DB conflict error: multiple organizations associated to the user ${userEmail}`
-        )
-      );
-    }
-    return right(
+): TaskEither<Error, Option<OrganizationModel>> {
+  return tryCatch(
+    () =>
+      OrganizationModel.findAll({
+        include: [
+          {
+            as: "users",
+            model: User,
+            required: true,
+            through: { where: { email: userEmail } }
+          },
+          {
+            as: "legalRepresentative",
+            model: User
+          }
+        ],
+        where: ipaCode ? { ipaCode } : undefined
+      }),
+    error => error as Error
+  )
+    .chain(
+      fromPredicate(
+        _ => _.length <= 1,
+        () =>
+          Error(
+            `DB conflict error: multiple organizations associated to the user ${userEmail}`
+          )
+      )
+    )
+    .map(organizationInstances =>
       organizationInstances.length === 0 ? none : some(organizationInstances[0])
     );
-  } catch (error) {
-    return left(error);
-  }
 }
 
 export async function getOrganizationFromUserEmail(

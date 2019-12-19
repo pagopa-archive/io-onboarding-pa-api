@@ -308,7 +308,7 @@ export default class OrganizationController {
       const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
         user.email,
         req.params.ipaCode
-      );
+      ).run();
       return errorOrMaybeOrganizationInstance.fold(
         async error => {
           log.error("An error occurred reading from db. %s", error);
@@ -344,7 +344,7 @@ export default class OrganizationController {
   ): Promise<Option<IResponseErrorInternal | IResponseErrorConflict>> {
     const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
       userEmail
-    );
+    ).run();
     if (isLeft(errorOrMaybeOrganizationInstance)) {
       log.error(
         "An error occurred reading data from db. %s",

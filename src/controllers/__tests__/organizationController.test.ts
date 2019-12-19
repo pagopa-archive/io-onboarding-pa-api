@@ -295,7 +295,7 @@ describe("OrganizationController", () => {
 
     it("should return a not found error if the public administration does not exist", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        Promise.resolve(right(none))
+        fromEither(right(none))
       );
       mockCreateOnboardingRequests.mockReturnValue(
         fromEither(
@@ -340,7 +340,7 @@ describe("OrganizationController", () => {
 
     it("should return a success response if the registration process completes successfully", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        Promise.resolve(right(none))
+        fromEither(right(none))
       );
       mockCreateOnboardingRequests.mockReturnValue(
         fromEither(
@@ -586,7 +586,7 @@ describe("OrganizationController#sendDocuments()", () => {
 
   it("should return an internal error if the reading of the organization from the db fails", async () => {
     mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-      Promise.resolve(left(new Error("an error occurred")))
+      fromEither(left(new Error("an error occurred")))
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
@@ -602,7 +602,7 @@ describe("OrganizationController#sendDocuments()", () => {
 
   it("should return a not found error response if no organization is found for the user", async () => {
     mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-      Promise.resolve(right(none))
+      fromEither(right(none))
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
@@ -662,7 +662,7 @@ describe("OrganizationController#sendDocuments()", () => {
 
     it("should return a conflict error response if the registration status is REGISTERED", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        Promise.resolve(
+        fromEither(
           right(
             some({
               ...mockedOrganizationParams,
@@ -688,7 +688,7 @@ describe("OrganizationController#sendDocuments()", () => {
         return Promise.resolve(right(getSignedVersionBase64(contentBase64)));
       });
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        Promise.resolve(
+        fromEither(
           right(
             some({
               ...mockedOrganizationParams,
@@ -711,8 +711,8 @@ describe("OrganizationController#sendDocuments()", () => {
     });
 
     it("should send an email with signed attachments and return a no content response", async () => {
-      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() => {
-        return Promise.resolve(
+      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
+        fromEither(
           right(
             some({
               ...mockedOrganizationParams,
@@ -720,8 +720,8 @@ describe("OrganizationController#sendDocuments()", () => {
                 Promise.resolve(mockedOrganizationModel)
             } as OrganizationModel)
           )
-        );
-      });
+        )
+      );
       mockSignDocument.mockImplementation(contentBase64 => {
         return Promise.resolve(right(getSignedVersionBase64(contentBase64)));
       });
@@ -756,7 +756,7 @@ describe("OrganizationController#sendDocuments()", () => {
 
     it("should return an internal server error response if the documents signing fails", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        Promise.resolve(right(some(mockedOrganizationModel)))
+        fromEither(right(some(mockedOrganizationModel)))
       );
       mockSignDocument.mockImplementation(() =>
         Promise.resolve(left(new Error("document signing failed")))
