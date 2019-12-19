@@ -42,20 +42,6 @@ export const searchMails = (
   );
 };
 
-// Get partData attachments from message
-export const partData = (
-  imapServer: Imap.ImapSimple,
-  message: Imap.Message,
-  // tslint:disable-next-line: no-any
-  attach: any
-  // tslint:disable-next-line: no-any
-): TaskEither<Error, any> => {
-  return tryCatch(
-    () => imapServer.getPartData(message, attach),
-    reason => new Error(String(reason))
-  );
-};
-
 // Extract an attachment file
 export const extractAttachment = (
   imapServer: Imap.ImapSimple,
