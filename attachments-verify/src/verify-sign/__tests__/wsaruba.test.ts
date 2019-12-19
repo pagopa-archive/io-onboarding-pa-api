@@ -1,31 +1,9 @@
 import { right } from "fp-ts/lib/Either";
-import * as soap from "soap";
-//import { WSDL } from "soap";
-import { Client } from "soap";
-import { urlDemoAruba } from "../../domain/data";
-import * as ArubaVerify from "../../verify-sign/wsaruba";
-import { IEmailAttachmentStatus, IAttachmentStatus } from "../../domain/models";
 import { task } from "fp-ts/lib/Task";
-
-/*
-const ClientMock = ({
-  VerifyPDFAsync: jest.fn(() => Promise.resolve(right({})))
-} as unknown) as Client;
-
-jest.mock("soap", () => {
-  const originalSoapModule = jest.requireActual("soap");
-  return {
-    __esModule: true,
-    ...originalSoapModule,
-    Client: ClientMock,
-    createClientAsync: jest.fn((urlWsd: string) => Promise.resolve({}))
-    //WSDL: jest.fn()
-    //createClientAsync: jest.fn((urlWsd: string) =>
-    //Promise.resolve(new Client(new WSDL({}, urlWsd, {})))
-    //)
-  };
-});
-*/
+import * as soap from "soap";
+import { urlDemoAruba } from "../../domain/data";
+import { IEmailAttachmentStatus } from "../../domain/models";
+import * as ArubaVerify from "../../verify-sign/wsaruba";
 
 const emailAttachmentsMock = {
   attachments: [
@@ -55,8 +33,6 @@ const emailAttachmentsWithStatusMock = {
   ]
 } as IEmailAttachmentStatus;
 
-console.log(emailAttachmentsWithStatusMock);
-
 jest.mock("../../verify-sign/wsaruba", () => {
   const originalWsAruba = jest.requireActual("../../verify-sign/wsaruba");
   return {
@@ -68,10 +44,23 @@ jest.mock("../../verify-sign/wsaruba", () => {
   };
 });
 
+jest.mock("soap", () => {
+  const originalSoapModule = jest.requireActual("soap");
+  return {
+    __esModule: true,
+    ...originalSoapModule,
+    createClientAsync: jest.fn((urlWsd: string) => Promise.resolve({}))
+  };
+});
+
 describe("Connect to a wsdl Aruba Client and verify signature ", () => {
+  it("should connect to an imap server with the right credentials", async () => {
+    const wsFunc = await ArubaVerify.createClientAruba(urlDemoAruba).run();
+    expect(wsFunc.isRight()).toBeTruthy();
+  });
+
   it("it should verify the attachment has signature ", async () => {
     const verify = await ArubaVerify.verify(emailAttachmentsMock).run();
-    console.log(verify);
     expect(verify).toBeDefined();
     expect(verify).not.toBe(emailAttachmentsMock);
   });

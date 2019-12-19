@@ -6,7 +6,9 @@ import { IEmailAttachmentStatus } from "../domain/models";
 
 // Create an async ARUBA client for veryfing signature
 // URL https://vol.demo.firma-automatica.it/actalisVol/services/VerificationServiceSOAP?wsdl
-const createClientAruba = (urlWsd: string): TaskEither<Error, Client> => {
+export const createClientAruba = (
+  urlWsd: string
+): TaskEither<Error, Client> => {
   return tryCatch(
     () => soap.createClientAsync(urlWsd),
     reason => new Error(String(reason))
