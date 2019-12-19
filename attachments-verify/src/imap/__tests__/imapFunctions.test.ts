@@ -1,26 +1,19 @@
-//import { Config } from "imap";
+import { taskEither } from "fp-ts/lib/TaskEither";
 import * as Imap from "imap";
 import * as ImapSimpleModule from "imap-simple";
 import { ImapSimple } from "imap-simple";
-import * as ImapFunctions from "../imapFunctions";
-import { right } from "fp-ts/lib/Either";
-import { taskEither } from "fp-ts/lib/TaskEither";
-import { task } from "fp-ts/lib/Task";
 import { fetchOptions, searchCriteria } from "../../domain/data";
-
-//jest.mock("winston");
+import * as ImapFunctions from "../imapFunctions";
 
 const config: Imap.Config = {
   user: "xxxxxx@gmail.com",
+  // tslint:disable-next-line: object-literal-sort-keys no-hardcoded-credentials
   password: "xxxxxxx",
   host: "imap.gmail.com",
   port: 993,
   tls: true,
   authTimeout: 3000
 };
-
-// to import common
-//const aValidEmailAddress = "garibaldi@example.com" as EmailString;
 
 const imapOptions: ImapSimpleModule.ImapSimpleOptions = {
   imap: config
@@ -38,24 +31,6 @@ jest.mock("imap", () => {
     };
   });
 });
-
-/*
-jest.genMockFromModule("imap-simple");
-jest.mock("imap-simple", () => {
-  return jest
-    .fn()
-    .mockImplementation((options: ImapSimpleModule.ImapSimpleOptions) => {
-      return {
-        openBox: (boxName: string) => {
-          return new Promise((resolve, reject) => {
-            boxName === "INBOX"
-              ? resolve(boxName)
-              : reject("wrong boxName : " + boxName);
-          });
-        }
-      };
-    });
-}); */
 
 jest.mock("../../imap/imapFunctions", () => {
   const originalImapFunctions = jest.requireActual("../../imap/imapFunctions");

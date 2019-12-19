@@ -15,7 +15,8 @@ import { IEmailAttachmentStatus } from "./domain/models";
 // TODO move to some utils
 // used to create an IEmailAttachmentStatus with
 // an array of n attachments. Used to reduce from many emails with same id
-// and different attachments into one email with many attachments and staus
+// and different attachments into one email with many attachments and
+// signature  status
 const mergeSameEmails = (emails: readonly IEmailAttachmentStatus[]) => {
   const grouped = emails.reduce(
     (acc, item) => ({
