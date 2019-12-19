@@ -369,11 +369,13 @@ export default class OrganizationController {
         // The organization already associated to the user
         // is still in draft or pre-draft status,
         // so its registration process must be canceled
-        const maybeError = await deleteOrganization(organizationInstance);
-        if (isSome(maybeError)) {
+        const errorOrVoid = await deleteOrganization(
+          organizationInstance
+        ).run();
+        if (isLeft(errorOrVoid)) {
           log.error(
             `An error occurred when canceling the registration process for the organization ${organizationInstance.ipaCode}. %s`,
-            maybeError.value
+            errorOrVoid.value
           );
           return some(
             ResponseErrorInternal(

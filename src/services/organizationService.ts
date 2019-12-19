@@ -178,51 +178,58 @@ function mergePublicAdministrationsAndOrganizations(
  * @todo: the current removal process must be refactored using a soft delete
  * @see https://www.pivotaltracker.com/story/show/169889085
  */
-export async function deleteOrganization(
+export function deleteOrganization(
   organizationInstance: OrganizationModel
-): Promise<Option<Error>> {
-  try {
-    await sequelize.transaction(transaction => {
-      return OrganizationUserModel.destroy({
-        force: true,
-        transaction,
-        where: { organizationIpaCode: organizationInstance.ipaCode }
-      })
-        .then(() => {
-          return organizationInstance.destroy({ force: true, transaction });
+): TaskEither<Error, void> {
+  // TODO:
+  //  the documents must be stored on cloud (Azure Blob Storage).
+  //  @see https://www.pivotaltracker.com/story/show/169644958
+  const organizationDocumentsRoot = `./documents/${organizationInstance.ipaCode}`;
+  const forwardError = (error: unknown) => error as Error;
+  return tryCatch(
+    () =>
+      sequelize.transaction<void>(transaction => {
+        return OrganizationUserModel.destroy({
+          force: true,
+          transaction,
+          where: { organizationIpaCode: organizationInstance.ipaCode }
         })
-        .then(() => {
-          return organizationInstance.legalRepresentative.destroy({
-            force: true,
-            transaction
-          });
-        });
-    });
-    // TODO:
-    //  the documents must be stored on cloud (Azure Blob Storage).
-    //  @see https://www.pivotaltracker.com/story/show/169644958
-    const organizationDocumentsRoot = `./documents/${organizationInstance.ipaCode}`;
-    await fs.promises
-      .access(organizationDocumentsRoot)
-      .then(() => fs.promises.readdir(organizationDocumentsRoot))
-      .then(documentsArray =>
-        Promise.all(
-          documentsArray.map(documentName =>
-            fs.promises.unlink(`${organizationDocumentsRoot}/${documentName}`)
+          .then(() =>
+            organizationInstance.destroy({ force: true, transaction })
           )
+          .then(() =>
+            organizationInstance.legalRepresentative.destroy({
+              force: true,
+              transaction
+            })
+          );
+      }),
+    forwardError
+  )
+    .chain(() =>
+      tryCatch(
+        () => fs.promises.access(organizationDocumentsRoot),
+        forwardError
+      )
+    )
+    .chain(() =>
+      tryCatch(
+        () => fs.promises.readdir(organizationDocumentsRoot),
+        forwardError
+      )
+    )
+    .chain(documentsArray =>
+      array.traverse(taskEither)(documentsArray, documentName =>
+        tryCatch(
+          () =>
+            fs.promises.unlink(`${organizationDocumentsRoot}/${documentName}`),
+          forwardError
         )
       )
-      .then(() => fs.promises.rmdir(organizationDocumentsRoot))
-      .catch(error => {
-        log.error(
-          "An error occurred deleting the documents of a deleted organization. %s",
-          error
-        );
-      });
-    return none;
-  } catch (error) {
-    return some(error);
-  }
+    )
+    .chain(() =>
+      tryCatch(() => fs.promises.rmdir(organizationDocumentsRoot), forwardError)
+    );
 }
 
 function checkOnboardingCapability(
