@@ -1,9 +1,14 @@
 import { Request as ExpressRequest } from "express";
-import { array } from "fp-ts/lib/Array";
-import { isLeft } from "fp-ts/lib/Either";
+import { isLeft, right } from "fp-ts/lib/Either";
 import { isNone, isSome, none, Option, some } from "fp-ts/lib/Option";
-import { TaskEither, taskEither, tryCatch } from "fp-ts/lib/TaskEither";
+import {
+  fromEither,
+  fromPredicate,
+  TaskEither,
+  tryCatch
+} from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
+import { Errors } from "io-ts";
 import {
   IResponseErrorConflict,
   IResponseErrorForbiddenNotAuthorized,
@@ -27,7 +32,6 @@ import { OrganizationRegistrationRequest } from "../generated/OrganizationRegist
 import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { OrganizationResult } from "../generated/OrganizationResult";
 import { Request } from "../generated/Request";
-import { RequestCollection } from "../generated/RequestCollection";
 import { UserDelegationRequest } from "../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../generated/UserRole";
 import localeIt from "../locales/it";
@@ -43,8 +47,11 @@ import {
   getOrganizationFromUserEmail,
   getOrganizationInstanceFromDelegateEmail
 } from "../services/organizationService";
-import { withUserFromRequest } from "../types/user";
-import { genericInternalUnknownErrorHandler } from "../utils/errorHandlers";
+import { LoggedUser, withUserFromRequest } from "../types/user";
+import {
+  genericInternalUnknownErrorHandler,
+  genericInternalValidationErrorsHandler
+} from "../utils/errorHandlers";
 import { log } from "../utils/logger";
 import {
   IResponseDownload,
@@ -52,6 +59,7 @@ import {
   IResponseSuccessCreation,
   ResponseDownload,
   ResponseNoContent,
+  tryValidationOrCatchExternalValidationError,
   withCatchAsInternalError,
   withResultOrInternalError,
   withValidatedOrValidationError
@@ -85,48 +93,78 @@ export default class OrganizationController {
 
   public registerOrganization(
     req: ExpressRequest
-  ): Promise<
+  ): TaskEither<
     // tslint:disable-next-line:max-union-size
     | IResponseErrorConflict
     | IResponseErrorForbiddenNotAuthorized
     | IResponseErrorInternal
     | IResponseErrorNotFound
-    | IResponseErrorValidation
-    | IResponseSuccessCreation<
-        OrganizationRegistrationRequest | UserDelegationRequest
-      >
+    | IResponseErrorValidation,
+    IResponseSuccessCreation<
+      OrganizationRegistrationRequest | UserDelegationRequest
+    >
   > {
-    return withUserFromRequest(req, async user => {
-      const userPermissions = accessControl.can(user.role);
-      if (!userPermissions.createOwn(Resource.ORGANIZATION).granted) {
-        return ResponseErrorForbiddenNotAuthorized;
-      }
-      return withValidatedOrValidationError(
-        OrganizationRegistrationParams.decode(req.body),
-        async (
-          organizationRegistrationParams: OrganizationRegistrationParams
-        ) => {
-          const maybeResponse = await this.deleteAssociatedPreDraftOrganization(
-            user.email
-          );
-          if (isSome(maybeResponse)) {
-            return maybeResponse.value;
-          }
-          const responseErrorOrResponseSucces = createOnboardingRequests(
-            organizationRegistrationParams,
-            user
+    interface ITaskResults {
+      organizationRegistrationParams: OrganizationRegistrationParams;
+      successResponse: IResponseSuccessCreation<
+        OrganizationRegistrationRequest | UserDelegationRequest
+      >;
+      user: LoggedUser;
+    }
+    return fromEither<Errors, Pick<ITaskResults, "user">>(
+      LoggedUser.decode(req.user).map(user => ({
+        user
+      }))
+    )
+      .mapLeft<
+        // tslint:disable-next-line:max-union-size
+        | IResponseErrorConflict
+        | IResponseErrorForbiddenNotAuthorized
+        | IResponseErrorInternal
+        | IResponseErrorNotFound
+        | IResponseErrorValidation
+      >((errors: Errors) =>
+        genericInternalValidationErrorsHandler(
+          errors,
+          "organizationController#registerOrganization | Invalid internal data.",
+          "Invalid internal data."
+        )
+      )
+      .chain(
+        fromPredicate(
+          taskResults =>
+            accessControl
+              .can(taskResults.user.role)
+              .createOwn(Resource.ORGANIZATION).granted,
+          () => ResponseErrorForbiddenNotAuthorized
+        )
+      )
+      .chain(taskResults =>
+        tryValidationOrCatchExternalValidationError(
+          OrganizationRegistrationParams.decode(req.body)
+        ).map(organizationRegistrationParams => ({
+          organizationRegistrationParams,
+          user: taskResults.user
+        }))
+      )
+      .chain<Pick<ITaskResults, "organizationRegistrationParams" | "user">>(
+        taskResults =>
+          this.deleteAssociatedPreDraftOrganization(taskResults.user.email).map(
+            () => taskResults
           )
-            .chain(successResponse =>
-              this.createOnboardingDocuments(
-                organizationRegistrationParams.ipa_code,
-                successResponse
-              )
-            )
-            .run();
-          return (await responseErrorOrResponseSucces).value;
-        }
+      )
+      .chain<ITaskResults>(taskResults =>
+        createOnboardingRequests(
+          taskResults.organizationRegistrationParams,
+          taskResults.user
+        ).map(successResponse => ({ ...taskResults, successResponse }))
+      )
+      .chain(taskResults =>
+        this.createOnboardingDocuments(
+          taskResults.organizationRegistrationParams.ipa_code,
+          taskResults.successResponse
+        )
       );
-    });
   }
 
   public getOrganizations(
@@ -339,53 +377,46 @@ export default class OrganizationController {
     });
   }
 
-  private async deleteAssociatedPreDraftOrganization(
+  private deleteAssociatedPreDraftOrganization(
     userEmail: string
-  ): Promise<Option<IResponseErrorInternal | IResponseErrorConflict>> {
-    const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
-      userEmail
-    ).run();
-    if (isLeft(errorOrMaybeOrganizationInstance)) {
-      log.error(
-        "An error occurred reading data from db. %s",
-        errorOrMaybeOrganizationInstance.value
-      );
-      return some(
-        ResponseErrorInternal("An error occurred reading data from DB")
-      );
-    }
-    const organizationInstance = errorOrMaybeOrganizationInstance.value.toNullable();
-    if (organizationInstance) {
-      if (
-        organizationInstance.registrationStatus !==
-        OrganizationRegistrationStatusEnum.PRE_DRAFT
-      ) {
-        return some(
-          ResponseErrorConflict(
-            "There is already a registered organization associated to your account"
+  ): TaskEither<IResponseErrorInternal | IResponseErrorConflict, void> {
+    return getOrganizationInstanceFromDelegateEmail(userEmail)
+      .mapLeft<IResponseErrorInternal | IResponseErrorConflict>(error =>
+        genericInternalUnknownErrorHandler(
+          error,
+          "OrganizationController#deleteAssociatedPreDraftOrganization | An error occurred while fetching the organization for the user",
+          " An error occurred while fetching the organization for the user"
+        )
+      )
+      .chain(maybeOrganizationModel =>
+        maybeOrganizationModel.fold<
+          TaskEither<IResponseErrorConflict, OrganizationModel | undefined>
+        >(
+          fromEither(right(undefined)),
+          fromPredicate(
+            _ =>
+              _.registrationStatus ===
+              OrganizationRegistrationStatusEnum.PRE_DRAFT,
+            () =>
+              ResponseErrorConflict(
+                "There is already a registered organization associated to your account"
+              )
           )
-        );
-      } else {
-        // The organization already associated to the user
-        // is still in draft or pre-draft status,
-        // so its registration process must be canceled
-        const errorOrVoid = await deleteOrganization(
-          organizationInstance
-        ).run();
-        if (isLeft(errorOrVoid)) {
-          log.error(
-            `An error occurred when canceling the registration process for the organization ${organizationInstance.ipaCode}. %s`,
-            errorOrVoid.value
-          );
-          return some(
-            ResponseErrorInternal(
-              `An error occurred when canceling the previous registration process for the organization ${organizationInstance.ipaCode}`
+        )
+      )
+      .chain(organizationModel =>
+        organizationModel
+          ? deleteOrganization(organizationModel).mapLeft<
+              IResponseErrorInternal | IResponseErrorConflict
+            >(error =>
+              genericInternalUnknownErrorHandler(
+                error,
+                "OrganizationController#deleteAssociatedPreDraftOrganization | An error occurred when canceling the registration process for the organization.",
+                "An error occurred when canceling the registration process for the organization"
+              )
             )
-          );
-        }
-      }
-    }
-    return none;
+          : fromEither(right(undefined))
+      );
   }
 
   private createOnboardingDocuments(

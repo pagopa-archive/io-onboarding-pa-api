@@ -42,7 +42,7 @@ import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
 import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
 import { getRequiredEnvVar } from "./utils/environment";
-import { toExpressHandler } from "./utils/express";
+import { toExpressHandler, toFunctionalExpressHandler } from "./utils/express";
 
 // Private key used in SAML authentication to a SPID IDP.
 const samlKey = () => {
@@ -202,7 +202,7 @@ function registerRoutes(
   app.post(
     "/organizations",
     bearerTokenAuth,
-    toExpressHandler(
+    toFunctionalExpressHandler(
       organizationController.registerOrganization,
       organizationController
     )

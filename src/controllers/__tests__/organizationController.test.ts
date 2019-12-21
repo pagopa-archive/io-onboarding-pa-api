@@ -1,4 +1,4 @@
-import { left, right } from "fp-ts/lib/Either";
+import { isLeft, isRight, left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
 import { Task } from "fp-ts/lib/Task";
 import {
@@ -269,8 +269,11 @@ describe("OrganizationController", () => {
       req.user = mockedLoggedUser;
       req.body = mockedOrganizationRegistrationParams;
       const organizationController = await getOrganizationController();
-      const result = await organizationController.registerOrganization(req);
-      expect(result).toEqual({
+      const result = await organizationController
+        .registerOrganization(req)
+        .run();
+      expect(isLeft(result)).toBeTruthy();
+      expect(result.value).toEqual({
         apply: expect.any(Function),
         detail: expect.any(String),
         kind: "IResponseErrorForbiddenNotAuthorized"
@@ -285,8 +288,11 @@ describe("OrganizationController", () => {
         scope: "INTERNATIONAL"
       };
       const organizationController = await getOrganizationController();
-      const result = await organizationController.registerOrganization(req);
-      expect(result).toEqual({
+      const result = await organizationController
+        .registerOrganization(req)
+        .run();
+      expect(isLeft(result)).toBeTruthy();
+      expect(result.value).toEqual({
         apply: expect.any(Function),
         detail: expect.any(String),
         kind: "IResponseErrorValidation"
@@ -311,8 +317,11 @@ describe("OrganizationController", () => {
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
       const organizationController = await getOrganizationController();
-      const result = await organizationController.registerOrganization(req);
-      expect(result).toEqual({
+      const result = await organizationController
+        .registerOrganization(req)
+        .run();
+      expect(isLeft(result)).toBeTruthy();
+      expect(result.value).toEqual({
         apply: expect.any(Function),
         detail: expect.any(String),
         kind: "IResponseErrorNotFound"
@@ -330,8 +339,11 @@ describe("OrganizationController", () => {
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
       const organizationController = await getOrganizationController();
-      const result = await organizationController.registerOrganization(req);
-      expect(result).toEqual({
+      const result = await organizationController
+        .registerOrganization(req)
+        .run();
+      expect(isLeft(result)).toBeTruthy();
+      expect(result.value).toEqual({
         apply: expect.any(Function),
         detail: expect.any(String),
         kind: "IResponseErrorInternal"
@@ -352,8 +364,11 @@ describe("OrganizationController", () => {
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
       const organizationController = await getOrganizationController();
-      const result = await organizationController.registerOrganization(req);
-      expect(result).toEqual({
+      const result = await organizationController
+        .registerOrganization(req)
+        .run();
+      expect(isRight(result)).toBeTruthy();
+      expect(result.value).toEqual({
         apply: expect.any(Function),
         kind: "IResponseSuccessCreation",
         value: mockedCreatedUserDelegationRequest
