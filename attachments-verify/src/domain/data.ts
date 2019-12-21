@@ -1,6 +1,7 @@
 import { Config, FetchOptions } from "imap";
 import * as Imap from "imap-simple";
 import { getRequiredEnvVar } from "../../../src/utils/environment";
+import { log } from "../../../src/utils/logger";
 
 const config: Config = {
   user: getRequiredEnvVar("IMAP_MAIL"),
@@ -15,7 +16,7 @@ const config: Config = {
 export const imapOption: Imap.ImapSimpleOptions = {
   imap: config,
   // tslint:disable-next-line: no-console
-  onmail: (num: number) => console.log(num)
+  onmail: (num: number) => log.info(num.toString)
 };
 
 // tslint:disable-next-line: readonly-array
