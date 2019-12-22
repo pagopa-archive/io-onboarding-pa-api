@@ -1,9 +1,11 @@
 import { Request as ExpressRequest } from "express";
 import { isLeft, right } from "fp-ts/lib/Either";
 import { isNone, isSome, none, Option, some } from "fp-ts/lib/Option";
+import { Task } from "fp-ts/lib/Task";
 import {
   fromEither,
   fromPredicate,
+  left as leftTask,
   TaskEither,
   tryCatch
 } from "fp-ts/lib/TaskEither";
@@ -269,22 +271,24 @@ export default class OrganizationController {
               "An error occurred while generating mandate document"
             );
           }
-          const maybeError = await this.documentService.generateDocument(
-            // TODO:
-            //  refactor this operation using an internationalization framework allowing params interpolation in strings.
-            //  @see https://www.pivotaltracker.com/story/show/169644146
-            localeIt.organizationController.registerOrganization.delegation
-              .replace(
-                "%legalRepresentative%",
-                `${legalRepresentative.given_name} ${legalRepresentative.family_name}`
-              )
-              .replace("%organizationName%", organization.name)
-              .replace("%delegate%", `${user.givenName} ${user.familyName}`),
-            `documents/${
-              organization.ipa_code
-            }/mandate-${user.fiscalCode.toLowerCase()}.pdf`
-          );
-          if (isSome(maybeError)) {
+          const maybeError = await this.documentService
+            .generateDocument(
+              // TODO:
+              //  refactor this operation using an internationalization framework allowing params interpolation in strings.
+              //  @see https://www.pivotaltracker.com/story/show/169644146
+              localeIt.organizationController.registerOrganization.delegation
+                .replace(
+                  "%legalRepresentative%",
+                  `${legalRepresentative.given_name} ${legalRepresentative.family_name}`
+                )
+                .replace("%organizationName%", organization.name)
+                .replace("%delegate%", `${user.givenName} ${user.familyName}`),
+              `documents/${
+                organization.ipa_code
+              }/mandate-${user.fiscalCode.toLowerCase()}.pdf`
+            )
+            .run();
+          if (isLeft(maybeError)) {
             log.error(
               "An error occurred while generating a mandate document. %s",
               maybeError.value
@@ -435,52 +439,35 @@ export default class OrganizationController {
     //  @see https://www.pivotaltracker.com/story/show/169644958
     const outputFolder = `./documents/${ipaCode}`;
     const createDocumentPerRequest = (request: Request) => {
-      const rejectError = (maybeError: Option<Error>) => {
-        if (isSome(maybeError)) {
-          return Promise.reject(maybeError.value);
-        }
-      };
-      return tryCatch<IResponseErrorInternal, undefined>(
-        () => {
-          if (OrganizationRegistrationRequest.is(request)) {
-            return this.documentService
-              .generateDocument(
-                localeIt.organizationController.registerOrganization.contract.replace(
-                  "%s",
-                  `${request.organization.ipa_code} ${request.organization.fiscal_code}`
-                ),
-                `${outputFolder}/${request.document_id}.pdf`
-              )
-              .then(rejectError);
-          }
-          if (UserDelegationRequest.is(request)) {
-            return this.documentService
-              .generateDocument(
-                // TODO:
-                //  refactor this operation using an internationalization framework allowing params interpolation in strings.
-                //  @see https://www.pivotaltracker.com/story/show/169644146
-                localeIt.organizationController.registerOrganization.delegation
-                  .replace(
-                    "%legalRepresentative%",
-                    `${request.organization.legal_representative.given_name} ${request.organization.legal_representative.family_name}`
-                  )
-                  .replace("%organizationName%", request.organization.name)
-                  .replace(
-                    "%delegate%",
-                    `${request.requester.given_name} ${request.requester.family_name}`
-                  ),
-                `${outputFolder}/${request.document_id}.pdf`
-              )
-              .then(rejectError);
-          }
-          return Promise.reject(new Error("Wrong data"));
-        },
-        (error: unknown) =>
-          genericInternalUnknownErrorHandler(
-            error,
-            "organizationController#createOnboardingDocuments | An error occurred during document generation.",
-            "An error occurred during document generation."
-          )
+      if (OrganizationRegistrationRequest.is(request)) {
+        return this.documentService.generateDocument(
+          localeIt.organizationController.registerOrganization.contract.replace(
+            "%s",
+            `${request.organization.ipa_code} ${request.organization.fiscal_code}`
+          ),
+          `${outputFolder}/${request.document_id}.pdf`
+        );
+      }
+      if (UserDelegationRequest.is(request)) {
+        return this.documentService.generateDocument(
+          // TODO:
+          //  refactor this operation using an internationalization framework allowing params interpolation in strings.
+          //  @see https://www.pivotaltracker.com/story/show/169644146
+          localeIt.organizationController.registerOrganization.delegation
+            .replace(
+              "%legalRepresentative%",
+              `${request.organization.legal_representative.given_name} ${request.organization.legal_representative.family_name}`
+            )
+            .replace("%organizationName%", request.organization.name)
+            .replace(
+              "%delegate%",
+              `${request.requester.given_name} ${request.requester.family_name}`
+            ),
+          `${outputFolder}/${request.document_id}.pdf`
+        );
+      }
+      return leftTask<Error, undefined>(
+        new Task(() => Promise.reject(new Error("Wrong data")))
       );
     };
     return tryCatch(
@@ -493,7 +480,14 @@ export default class OrganizationController {
         )
     )
       .chain(() =>
-        createDocumentPerRequest(requestsCreationResponseSuccess.value)
+        createDocumentPerRequest(requestsCreationResponseSuccess.value).mapLeft(
+          error =>
+            genericInternalUnknownErrorHandler(
+              error,
+              "organizationController#createOnboardingDocuments | An error occurred during document generation.",
+              "An error occurred during document generation."
+            )
+        )
       )
       .map(() => requestsCreationResponseSuccess);
   }

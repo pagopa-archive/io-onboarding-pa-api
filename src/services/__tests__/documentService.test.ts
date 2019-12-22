@@ -1,9 +1,10 @@
-import { isLeft, isRight } from "fp-ts/lib/Either";
+import { isLeft, isRight, left } from "fp-ts/lib/Either";
 import { isSome, none, some } from "fp-ts/lib/Option";
 import * as fs from "fs";
 import * as soap from "soap";
 import { getRequiredEnvVar } from "../../utils/environment";
 import DocumentService from "../documentService";
+import { fromEither } from "fp-ts/lib/TaskEither";
 
 async function getDocumentService(): Promise<DocumentService> {
   return new DocumentService(
@@ -20,18 +21,15 @@ describe("DocumentService", () => {
         .then(documentService =>
           documentService
             .generateDocument("IO contract", validOutputPath)
+            .run()
             .then(result => {
-              expect(result).toEqual(none);
+              expect(isRight(result)).toBeTruthy();
               fs.access(validOutputPath, error => {
                 expect(error).toBeNull();
                 expect(error).toBeDefined();
                 fs.unlink(validOutputPath, done);
               });
-            })
-            .catch(() => {
-              done.fail(
-                new Error("Document generation promise rejected unexpectedly")
-              );
+              done();
             })
         )
         .catch(done.fail);
@@ -43,14 +41,13 @@ describe("DocumentService", () => {
           (DocumentService.prototype as unknown) as { convertToPdfA: () => {} },
           "convertToPdfA"
         )
-        .mockReturnValue(Promise.resolve(some(new Error("Error"))));
+        .mockReturnValue(fromEither(left(new Error("Error"))));
       const documentService = await getDocumentService();
-      const result = await documentService.generateDocument(
-        "IO contract",
-        validOutputPath
-      );
+      const result = await documentService
+        .generateDocument("IO contract", validOutputPath)
+        .run();
       mockConvertToPdfA.mockRestore();
-      expect(isSome(result)).toBeTruthy();
+      expect(isLeft(result)).toBeTruthy();
       return fs.access(validOutputPath, error => {
         expect(error).not.toBeNull();
       });

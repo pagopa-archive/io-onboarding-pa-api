@@ -334,7 +334,7 @@ describe("OrganizationController", () => {
           right(ResponseSuccessCreation(mockedCreatedUserDelegationRequest))
         )
       );
-      mockGenerateDocument.mockReturnValue(Promise.resolve(some(Error())));
+      mockGenerateDocument.mockReturnValue(fromEither(left(Error())));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
@@ -359,7 +359,7 @@ describe("OrganizationController", () => {
           right(ResponseSuccessCreation(mockedCreatedUserDelegationRequest))
         )
       );
-      mockGenerateDocument.mockReturnValue(Promise.resolve(none));
+      mockGenerateDocument.mockReturnValue(fromEither(right(undefined)));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
@@ -539,7 +539,7 @@ describe("OrganizationController#addDelegate()", () => {
       )
     );
     mockGenerateDocument.mockReturnValue(
-      Promise.resolve(some(new Error("An error occurred")))
+      fromEither(left(new Error("An error occurred")))
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
@@ -567,7 +567,7 @@ describe("OrganizationController#addDelegate()", () => {
         )
       )
     );
-    mockGenerateDocument.mockReturnValue(Promise.resolve(none));
+    mockGenerateDocument.mockReturnValue(fromEither(right(undefined)));
     const req = mockReq();
     req.user = mockedLoggedDelegate;
     req.params = { ipaCode: registeredOrganization.ipa_code };
