@@ -260,7 +260,7 @@ async function getOrganizationController(): Promise<OrganizationController> {
 
 describe("OrganizationController", () => {
   describe("#registerOrganization()", () => {
-    it("should return a forbidden error response if the user is not a delegate", async () => {
+    it("should return a left task with a forbidden error response if the user is not a delegate", async () => {
       const mockedLoggedUser: LoggedUser = {
         ...mockedLoggedDelegate,
         role: UserRoleEnum.DEVELOPER
@@ -280,7 +280,7 @@ describe("OrganizationController", () => {
       });
     });
 
-    it("should return a validation error if the organization parameters are invalid", async () => {
+    it("should return a left task with a validation error response if the organization parameters are invalid", async () => {
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.body = {
@@ -299,7 +299,7 @@ describe("OrganizationController", () => {
       });
     });
 
-    it("should return a not found error if the public administration does not exist", async () => {
+    it("should return a left task with a not found error response if the public administration does not exist", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         fromEither(right(none))
       );
@@ -328,7 +328,7 @@ describe("OrganizationController", () => {
       });
     });
 
-    it("should return an internal server error if the generation of documents fails", async () => {
+    it("should return a left task with an internal error response if the generation of documents fails", async () => {
       mockCreateOnboardingRequests.mockReturnValue(
         fromEither(
           right(ResponseSuccessCreation(mockedCreatedUserDelegationRequest))
@@ -350,7 +350,7 @@ describe("OrganizationController", () => {
       });
     });
 
-    it("should return a success response if the registration process completes successfully", async () => {
+    it("should return a right task with a success response if the registration process completes successfully", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         fromEither(right(none))
       );

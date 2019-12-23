@@ -1,10 +1,9 @@
 import { isLeft, isRight, left } from "fp-ts/lib/Either";
-import { isSome, none, some } from "fp-ts/lib/Option";
+import { fromEither } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
 import * as soap from "soap";
 import { getRequiredEnvVar } from "../../utils/environment";
 import DocumentService from "../documentService";
-import { fromEither } from "fp-ts/lib/TaskEither";
 
 async function getDocumentService(): Promise<DocumentService> {
   return new DocumentService(
@@ -16,7 +15,7 @@ const validOutputPath = `${process.hrtime().join("")}.pdf`;
 
 describe("DocumentService", () => {
   describe("#generateDocument()", () => {
-    it("returns a promise of none if the document generation succeeds", done => {
+    it("should return a right task with undefined if the document generation succeeds", done => {
       getDocumentService()
         .then(documentService =>
           documentService
@@ -35,7 +34,7 @@ describe("DocumentService", () => {
         .catch(done.fail);
     });
 
-    it("returns a promise of some error if the document generation fails", async () => {
+    it("should return a left task with an error if the document generation fails", async () => {
       const mockConvertToPdfA = jest
         .spyOn(
           (DocumentService.prototype as unknown) as { convertToPdfA: () => {} },
@@ -56,7 +55,7 @@ describe("DocumentService", () => {
 });
 
 describe("DocumentService#signDocument()", () => {
-  it("should return a right string if the signing succeeds", async () => {
+  it("should resolve with a right string if the signing succeeds", async () => {
     const base64string = await fs.promises.readFile(
       "./src/__mocks__/mockUnsignedFile.pdf",
       "base64"
@@ -66,7 +65,7 @@ describe("DocumentService#signDocument()", () => {
     expect(isRight(result)).toBeTruthy();
   });
 
-  it("should return a left error if the signing fails", async () => {
+  it("should reject with a left error if the signing fails", async () => {
     const documentService = await getDocumentService();
     const result = await documentService.signDocument("");
     expect(isLeft(result)).toBeTruthy();

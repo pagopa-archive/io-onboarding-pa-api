@@ -332,7 +332,7 @@ describe("OrganizationService", () => {
     };
 
     describe("when the public administration is valid", () => {
-      it("should return a right value with a success response containing the new request", async () => {
+      it("should return a right task with a success response containing the new request", async () => {
         const newOrganizationParams = {
           ...validNewOrganizationParams,
           ipa_code: validPublicAdministration.cod_amm
@@ -381,7 +381,7 @@ describe("OrganizationService", () => {
     describe("when the public administration does not exist", () => {
       const ipaCodeOfNotExistingPublicAdministration = "not_existing_public_administration" as NonEmptyString;
 
-      it("should return a left value with a not found error response", async () => {
+      it("should return a left task with a not found error response", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
           ipa_code: ipaCodeOfNotExistingPublicAdministration
@@ -397,7 +397,7 @@ describe("OrganizationService", () => {
     });
 
     describe("when the public administration is invalid", () => {
-      it("should return an internal error response", async () => {
+      it("should return a left task with an internal error response", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
           ipa_code: invalidPublicAdministration.cod_amm as NonEmptyString
@@ -440,7 +440,7 @@ describe("OrganizationService", () => {
           where: { documentId: organizationRegistrationDocumentId }
         });
       });
-      it("should return an internal error response", async () => {
+      it("should return a left task with an internal error response", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
           ipa_code: validPublicAdministration.cod_amm as NonEmptyString
@@ -458,7 +458,7 @@ describe("OrganizationService", () => {
 });
 
 describe("OrganizationService#addDelegate()", () => {
-  it("should return a left value with a not found error response if the ipa code doesn't match an existing organization", async () => {
+  it("should return a left task with a not found error response if the ipa code doesn't match an existing organization", async () => {
     const result = await addDelegate(
       "not existing org",
       "any-user@example.com"
@@ -467,7 +467,7 @@ describe("OrganizationService#addDelegate()", () => {
     expect(result.value).toHaveProperty("kind", "IResponseErrorNotFound");
   });
 
-  it("should return a left value with a conflict error response if the ipa code doesn't match a registered organization", async () => {
+  it("should return a left task with a conflict error response if the ipa code doesn't match a registered organization", async () => {
     const result = await addDelegate(
       mockPreDraftOrganizationParams.ipaCode,
       "any-user@example.com"
@@ -484,7 +484,7 @@ describe("OrganizationService#addDelegate()", () => {
       })
     );
 
-    it("should return a right value with a success response containing the whole organization", async () => {
+    it("should return a right task with a success response containing the whole organization", async () => {
       const expectedResult = toOrganizationObject(({
         ...mockRegisteredOrganizationParams,
         legalRepresentative: registeredOrgLegalRepresentativeParams,
@@ -571,7 +571,7 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
     });
   });
 
-  it("should return a right value with some organization model if the user is the delegate of an organization", async () => {
+  it("should return a right task with some organization model if the user is the delegate of an organization", async () => {
     const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
       userInfo.email,
       organizationInfo.ipaCode
@@ -587,7 +587,7 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
     );
   });
 
-  it("should return a right value with none if the user is not the delegate of an organization", async () => {
+  it("should return a right task with none if the user is not the delegate of an organization", async () => {
     const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
       "not-delegate@email.net",
       organizationInfo.ipaCode
@@ -605,7 +605,7 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
 });
 
 describe("OrganizationService#getOrganizationFromUserEmail()", () => {
-  it("should return a right value with none if the delegate has no association with any organization", async () => {
+  it("should resolve with a right value with none if the delegate has no association with any organization", async () => {
     // this is the case of a user logged it with SPID who never started any registration process
     const errorOrSomeOrganization = await getOrganizationFromUserEmail(
       noOrgDelegateParams.email
@@ -620,7 +620,7 @@ describe("OrganizationService#getOrganizationFromUserEmail()", () => {
     );
   });
 
-  it("should return a right value with none if the delegate is associated with an organization in a PRE_DRAFT registration status", async () => {
+  it("should resolve with a right value with none if the delegate is associated with an organization in a PRE_DRAFT registration status", async () => {
     // this is the case of a user logged it with SPID who never started any registration process
     const errorOrSomeOrganization = await getOrganizationFromUserEmail(
       preDraftOrgDelegateParams.email
@@ -635,7 +635,7 @@ describe("OrganizationService#getOrganizationFromUserEmail()", () => {
     );
   });
 
-  it("should return a right value with some organization it the user is associated to an organization", async () => {
+  it("should resolve with a right value with some organization it the user is associated to an organization", async () => {
     const expectedValue = right(
       some(
         toOrganizationObject(({
@@ -666,7 +666,7 @@ describe("OrganizationService#getOrganizationFromUserEmail()", () => {
 });
 
 describe("OrganizationService#getOrganizationFromUserEmail()", () => {
-  it("should return a right value with organizations", async () => {
+  it("should resolve with a right value with organizations", async () => {
     const expectedValue = right([
       toOrganizationObject(({
         ...mockRegisteredOrganizationParams,
