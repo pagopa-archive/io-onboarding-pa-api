@@ -39,14 +39,14 @@ export default class DocumentService {
                 removeCallback();
                 reject(error);
               });
-              stream.on("finish", () => {
+              stream.on("finish", () =>
                 this.convertToPdfA(tempFilePath, documentPath)
                   .fold(reject, resolve)
                   .map(_ => {
                     removeCallback();
                   })
-                  .run();
-              });
+                  .run()
+              );
             }
           );
         });
