@@ -152,7 +152,7 @@ export default class OrganizationController {
         ).map(successResponse => ({ ...taskResults, successResponse }))
       )
       .chain(taskResults =>
-        this.createOnboardingDocuments(
+        this.createOnboardingDocument(
           taskResults.organizationRegistrationParams.ipa_code,
           taskResults.successResponse
         )
@@ -298,7 +298,7 @@ export default class OrganizationController {
     });
   }
 
-  private createOnboardingDocuments(
+  private createOnboardingDocument(
     ipaCode: string,
     requestsCreationResponseSuccess: IResponseSuccessCreation<
       OrganizationRegistrationRequest | UserDelegationRequest
@@ -348,7 +348,7 @@ export default class OrganizationController {
       (error: unknown) =>
         genericInternalUnknownErrorHandler(
           error,
-          "organizationController#createOnboardingDocuments | An error occurred creating documents folder.",
+          "organizationController#createOnboardingDocument | An error occurred creating documents folder.",
           "An error occurred creating documents folder."
         )
     )
@@ -357,7 +357,7 @@ export default class OrganizationController {
           error =>
             genericInternalUnknownErrorHandler(
               error,
-              "organizationController#createOnboardingDocuments | An error occurred during document generation.",
+              "organizationController#createOnboardingDocument | An error occurred during document generation.",
               "An error occurred during document generation."
             )
         )
