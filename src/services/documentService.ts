@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import { Either, left, right } from "fp-ts/lib/Either";
 import { Task } from "fp-ts/lib/Task";
-import { TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
 import * as PdfDocument from "pdfkit";
 import * as soap from "soap";

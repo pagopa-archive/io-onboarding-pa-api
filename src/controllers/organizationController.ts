@@ -1,11 +1,9 @@
 import { Request as ExpressRequest } from "express";
 import { isLeft, left, right } from "fp-ts/lib/Either";
 import { isNone, isSome, none, Option, some } from "fp-ts/lib/Option";
-import { Task } from "fp-ts/lib/Task";
 import {
   fromEither,
   fromPredicate,
-  left as leftTask,
   TaskEither,
   tryCatch
 } from "fp-ts/lib/TaskEither";
