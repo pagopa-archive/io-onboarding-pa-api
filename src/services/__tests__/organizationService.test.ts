@@ -10,7 +10,6 @@ import { RequestStatusEnum } from "../../generated/RequestStatus";
 import { RequestTypeEnum } from "../../generated/RequestType";
 import { UserRoleEnum } from "../../generated/UserRole";
 import {
-  addDelegate,
   createOnboardingRequest,
   getAllOrganizations,
   getOrganizationFromUserEmail,
@@ -457,62 +456,6 @@ describe("OrganizationService", () => {
         expect(result).not.toBeNull();
         expect(isLeft(result)).toBeTruthy();
         expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");
-      });
-    });
-  });
-});
-
-describe("OrganizationService#addDelegate()", () => {
-  it("should return a left task with a not found error response if the ipa code doesn't match an existing organization", async () => {
-    const result = await addDelegate(
-      "not existing org",
-      "any-user@example.com"
-    ).run();
-    expect(isLeft(result)).toBeTruthy();
-    expect(result.value).toHaveProperty("kind", "IResponseErrorNotFound");
-  });
-
-  it("should return a left task with a conflict error response if the ipa code doesn't match a registered organization", async () => {
-    const result = await addDelegate(
-      mockPreDraftOrganizationParams.ipaCode,
-      "any-user@example.com"
-    ).run();
-    expect(isLeft(result)).toBeTruthy();
-    expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");
-  });
-
-  describe("when no error occurs", () => {
-    afterEach(async () =>
-      OrganizationUserModel.destroy({
-        force: true,
-        where: { userEmail: noOrgDelegate.email }
-      })
-    );
-
-    it("should return a right task with a success response containing the whole organization", async () => {
-      const expectedResult = toOrganizationObject(({
-        ...mockRegisteredOrganizationParams,
-        legalRepresentative: registeredOrgLegalRepresentativeParams,
-        users: [
-          registeredOrgDelegate1,
-          registeredOrgDelegate2,
-          noOrgDelegate
-        ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      } as unknown) as OrganizationModel).fold(
-        () => {
-          fail("toOrganizationObject error");
-        },
-        value => value
-      );
-      const result = await addDelegate(
-        mockRegisteredOrganizationParams.ipaCode,
-        noOrgDelegateParams.email
-      ).run();
-      expect(isRight(result)).toBeTruthy();
-      expect(result.value).toEqual({
-        apply: expect.any(Function),
-        kind: "IResponseSuccessCreation",
-        value: expectedResult
       });
     });
   });

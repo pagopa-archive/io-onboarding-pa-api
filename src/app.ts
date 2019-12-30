@@ -208,12 +208,6 @@ function registerRoutes(
     )
   );
 
-  app.post(
-    "/organizations/:ipaCode/delegates",
-    bearerTokenAuth,
-    toExpressHandler(organizationController.addDelegate, organizationController)
-  );
-
   app.get(
     "/organizations/:ipaCode/documents/:fileName",
     bearerTokenAuth,

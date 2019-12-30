@@ -139,33 +139,6 @@ paths:
           $ref: "#/components/responses/404NotFound"
         "409":
           $ref: "#/components/responses/409Conflict"
-  /organizations/{ipaCode}/delegates:
-    post:
-      description: Add a delegate to an organization
-      operationId: addDelegate
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: ipaCode
-          in: path
-          required: true
-          description: The IPA code of the organization the documents belong to
-          schema:
-            <<: *non-empty-string
-      responses:
-        <<: *common-responses
-        "201":
-          description: The registered organization, including all its delegates
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Organization"
-        "403":
-          $ref: "#/components/responses/403Forbidden"
-        "404":
-          $ref: "#/components/responses/404NotFound"
-        "409":
-          $ref: "#/components/responses/409Conflict"
 
   /organizations/{ipaCode}/signed-documents:
     post:
