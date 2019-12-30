@@ -108,9 +108,7 @@ export const withValidatedOrValidationError = <T, U>(
  * Calls the provided function with the valid response, or else returns an
  * IResponseErrorValidation with the validation errors.
  */
-export const tryValidationOrCatchExternalValidationError = <T>(
-  response: t.Validation<T>
-) =>
+export const withValidationOrError = <T>(response: t.Validation<T>) =>
   fromEither(response).mapLeft(errors =>
     ResponseErrorValidation(
       "Bad request",

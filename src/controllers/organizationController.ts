@@ -61,10 +61,10 @@ import {
   IResponseSuccessCreation,
   ResponseDownload,
   ResponseNoContent,
-  tryValidationOrCatchExternalValidationError,
   withCatchAsInternalError,
   withResultOrInternalError,
-  withValidatedOrValidationError
+  withValidatedOrValidationError,
+  withValidationOrError
 } from "../utils/responses";
 
 export default class OrganizationController {
@@ -142,7 +142,7 @@ export default class OrganizationController {
         )
       )
       .chain(taskResults =>
-        tryValidationOrCatchExternalValidationError(
+        withValidationOrError(
           OrganizationRegistrationParams.decode(req.body)
         ).map(organizationRegistrationParams => ({
           organizationRegistrationParams,
