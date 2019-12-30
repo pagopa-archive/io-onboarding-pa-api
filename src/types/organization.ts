@@ -3,7 +3,7 @@ import { Errors } from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { FoundNotRegisteredAdministration } from "../generated/FoundNotRegisteredAdministration";
 import { FoundRegisteredAdministration } from "../generated/FoundRegisteredAdministration";
-import { OrganizationResult } from "../generated/OrganizationResult";
+import { Organization as OrganizationResult } from "../generated/Organization";
 import { UserRoleEnum } from "../generated/UserRole";
 import { Organization as OrganizationModel } from "../models/Organization";
 import { IIpaPublicAdministrationRaw } from "./PublicAdministration";
@@ -115,16 +115,6 @@ export function toOrganizationObject(
     fiscal_code: organizationInstance.fiscalCode,
     ipa_code: organizationInstance.ipaCode,
     legal_representative: legalRepresentative,
-    links: [
-      {
-        href: `/organizations/${organizationInstance.ipaCode}`,
-        rel: "self"
-      },
-      {
-        href: `/organizations/${organizationInstance.ipaCode}`,
-        rel: "edit"
-      }
-    ],
     name: organizationInstance.name,
     pec: organizationInstance.pec,
     registration_status: organizationInstance.registrationStatus,

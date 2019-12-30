@@ -16,12 +16,12 @@ import * as nodemailer from "nodemailer";
 import * as soap from "soap";
 import mockReq from "../../__mocks__/mockRequest";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
+import { Organization } from "../../generated/Organization";
 import { OrganizationDelegate } from "../../generated/OrganizationDelegate";
 import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationRequest } from "../../generated/OrganizationRegistrationRequest";
 import { OrganizationRegistrationStatusEnum } from "../../generated/OrganizationRegistrationStatus";
-import { OrganizationResult as Organization } from "../../generated/OrganizationResult";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { RequestStatusEnum } from "../../generated/RequestStatus";
 import { RequestTypeEnum } from "../../generated/RequestType";
@@ -140,16 +140,6 @@ const mockedPreDraftOrganization: Organization = {
     phone_number: "5550000000",
     role: "ORG_MANAGER"
   } as LegalRepresentative,
-  links: [
-    {
-      href: "/organizations/c_e043",
-      rel: "self"
-    },
-    {
-      href: "/organizations/c_e043",
-      rel: "edit"
-    }
-  ],
   name: "Comune di Gioiosa Marea" as NonEmptyString,
   pec: "indirizzo00@email.pec.it" as EmailString,
   registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
@@ -166,16 +156,6 @@ const mockedRegisteredOrganization1: Organization = {
     phone_number: "6660000000",
     role: "ORG_MANAGER"
   } as LegalRepresentative,
-  links: [
-    {
-      href: "/organizations/qwerty",
-      rel: "self"
-    },
-    {
-      href: "/organizations/qwerty",
-      rel: "edit"
-    }
-  ],
   name: "Organizzazione registrata numero 1" as NonEmptyString,
   pec: "mocked-registered-organization-1@example.com" as EmailString,
   registration_status: OrganizationRegistrationStatusEnum.REGISTERED,
@@ -192,16 +172,6 @@ const mockedRegisteredOrganization2: Organization = {
     phone_number: "6660000000",
     role: "ORG_MANAGER"
   } as LegalRepresentative,
-  links: [
-    {
-      href: "/organizations/asd",
-      rel: "self"
-    },
-    {
-      href: "/organizations/asd",
-      rel: "edit"
-    }
-  ],
   name: "Organizzazione registrata numero 2" as NonEmptyString,
   pec: "mocked-registered-organization-2@example.com" as EmailString,
   registration_status: OrganizationRegistrationStatusEnum.REGISTERED,

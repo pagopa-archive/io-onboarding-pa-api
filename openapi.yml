@@ -159,7 +159,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrganizationResult"
+                $ref: "#/components/schemas/Organization"
         "403":
           $ref: "#/components/responses/403Forbidden"
         "404":
@@ -669,36 +669,6 @@ components:
           "registration_status": "PRE_DRAFT",
           "scope": "NATIONAL"
         }
-    OrganizationResult:
-      allOf:
-        - $ref: "#/components/schemas/Organization"
-        - type: object
-          properties:
-            links:
-              $ref: "#/components/schemas/Links"
-          required:
-            - links
-      example:
-        {
-          "fiscal_code": "86000470830",
-          "ipa_code": "c_e043",
-          "legal_representative": {
-            "family_name": "Spano'",
-            "given_name": "Ignazio Alfonso",
-            "fiscal_code": "BCDFGH12A21Z123D",
-            "phone_number": "5550000000",
-            "email": "indirizzo00@email.pec.it",
-            "role": "ORG_MANAGER"
-          },
-          "links": [{
-            "href": "https://api.pa-onboarding.dev.io.italia.it/organizations/c_e956",
-            "rel": "self"
-          }],
-          "name": "Comune di Gioiosa Marea",
-          "pec": "indirizzo00@email.pec.it",
-          "registration_status": "PRE_DRAFT",
-          "scope": "NATIONAL"
-        }
     OrganizationRegistrationParams:
       type: object
       properties:
@@ -750,7 +720,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/OrganizationResult"
+            $ref: "#/components/schemas/Organization"
       required:
         - items
     OrganizationDelegate:
