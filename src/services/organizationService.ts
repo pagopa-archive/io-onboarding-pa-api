@@ -263,7 +263,7 @@ function checkOnboardingCapability(
  * @param newOrganizationParams The parameters required to create the request
  * @param user The user who is performing the operation
  */
-export function createOnboardingRequests(
+export function createOnboardingRequest(
   newOrganizationParams: OrganizationRegistrationParams,
   user: LoggedUser
 ): TaskEither<
@@ -279,7 +279,7 @@ export function createOnboardingRequests(
   const internalErrorHandler = (error: unknown) =>
     genericInternalUnknownErrorHandler(
       error,
-      "organizationService#createOnboardingRequests | Error creating the onboarding requests.",
+      "organizationService#createOnboardingRequest | Error creating the onboarding requests.",
       "An error occurred creating the onboarding requests."
     );
   const verifyPecLabel = (
@@ -432,7 +432,7 @@ export function createOnboardingRequests(
           ).mapLeft(errors =>
             genericInternalValidationErrorsHandler(
               errors,
-              "organizationService#createOnboardingRequests | Invalid data.",
+              "organizationService#createOnboardingRequest | Invalid data.",
               "Invalid data"
             )
           )

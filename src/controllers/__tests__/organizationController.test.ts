@@ -54,7 +54,7 @@ const mockedLoggedDelegate: LoggedUser = {
 
 const mockCreateOnboardingRequests = jest.spyOn(
   organizationService,
-  "createOnboardingRequests"
+  "createOnboardingRequest"
 );
 
 const mockAddDelegate = jest.spyOn(organizationService, "addDelegate");

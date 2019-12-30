@@ -40,7 +40,7 @@ import DocumentService from "../services/documentService";
 import EmailService from "../services/emailService";
 import {
   addDelegate,
-  createOnboardingRequests,
+  createOnboardingRequest,
   deleteOrganization,
   findAllNotPreDraft,
   getAllOrganizations,
@@ -148,7 +148,7 @@ export default class OrganizationController {
         }))
       )
       .chain<ITaskResults>(taskResults =>
-        createOnboardingRequests(
+        createOnboardingRequest(
           taskResults.organizationRegistrationParams,
           taskResults.user
         ).map(successResponse => ({ ...taskResults, successResponse }))

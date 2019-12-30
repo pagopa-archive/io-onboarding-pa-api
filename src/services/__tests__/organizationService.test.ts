@@ -11,7 +11,7 @@ import { RequestTypeEnum } from "../../generated/RequestType";
 import { UserRoleEnum } from "../../generated/UserRole";
 import {
   addDelegate,
-  createOnboardingRequests,
+  createOnboardingRequest,
   getAllOrganizations,
   getOrganizationFromUserEmail,
   getOrganizationInstanceFromDelegateEmail
@@ -322,7 +322,7 @@ afterAll(async () => {
 });
 
 describe("OrganizationService", () => {
-  describe("#createOnboardingRequests()", () => {
+  describe("#createOnboardingRequest()", () => {
     const validNewOrganizationParams = {
       ipa_code: "generic_code" as NonEmptyString,
       legal_representative: {
@@ -372,7 +372,7 @@ describe("OrganizationService", () => {
           status: RequestStatusEnum.CREATED,
           type: newOrganizationParams.request_type
         };
-        const result = await createOnboardingRequests(
+        const result = await createOnboardingRequest(
           newOrganizationParams,
           user
         ).run();
@@ -391,7 +391,7 @@ describe("OrganizationService", () => {
           ...validNewOrganizationParams,
           ipa_code: ipaCodeOfNotExistingPublicAdministration
         };
-        const result = await createOnboardingRequests(
+        const result = await createOnboardingRequest(
           newOrganizationParams,
           user
         ).run();
@@ -407,7 +407,7 @@ describe("OrganizationService", () => {
           ...validNewOrganizationParams,
           ipa_code: invalidPublicAdministration.cod_amm as NonEmptyString
         };
-        const result = await createOnboardingRequests(
+        const result = await createOnboardingRequest(
           newOrganizationParams,
           user
         ).run();
@@ -450,7 +450,7 @@ describe("OrganizationService", () => {
           ...validNewOrganizationParams,
           ipa_code: validPublicAdministration.cod_amm as NonEmptyString
         };
-        const result = await createOnboardingRequests(
+        const result = await createOnboardingRequest(
           newOrganizationParams,
           user
         ).run();
