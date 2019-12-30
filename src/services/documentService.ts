@@ -1,5 +1,6 @@
 import { spawn } from "child_process";
 import { Either, left, right } from "fp-ts/lib/Either";
+import { Task } from "fp-ts/lib/Task";
 import { TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
 import * as PdfDocument from "pdfkit";
@@ -14,16 +15,18 @@ export default class DocumentService {
     content: string,
     documentPath: string
   ): TaskEither<Error, undefined> {
-    return tryCatch(
-      () => {
-        return new Promise((resolve, reject) => {
+    return new TaskEither(
+      new Task(() => {
+        return new Promise(resolve => {
           tmp.file(
             { discardDescriptor: true },
             (tempFileError, tempFilePath, ___, removeCallback) => {
               if (tempFileError) {
-                return reject(
-                  new Error(
-                    "An error occurred during temporary file generation"
+                return resolve(
+                  left(
+                    new Error(
+                      "An error occurred during temporary file generation"
+                    )
                   )
                 );
               }
@@ -37,11 +40,14 @@ export default class DocumentService {
               contract.end();
               stream.on("error", error => {
                 removeCallback();
-                reject(error);
+                resolve(left(error));
               });
               stream.on("finish", () =>
                 this.convertToPdfA(tempFilePath, documentPath)
-                  .fold(reject, resolve)
+                  .fold(
+                    error => resolve(left(error)),
+                    () => resolve(right(undefined))
+                  )
                   .map(_ => {
                     removeCallback();
                   })
@@ -50,8 +56,7 @@ export default class DocumentService {
             }
           );
         });
-      },
-      error => error as Error
+      })
     );
   }
 
@@ -99,23 +104,26 @@ export default class DocumentService {
       `-sOutputFile=${output}`,
       `${input}`
     ];
-    return tryCatch<Error, undefined>(
-      () =>
-        new Promise((resolve, reject) => {
-          const conversionProcess = spawn("gs", gsCommandArgs);
-          // tslint:disable-next-line:readonly-array
-          const logs: string[] = [];
-          conversionProcess.stdout.on("data", data => {
-            logs.push(data.toString());
-          });
-          conversionProcess.stderr.on("data", data => {
-            logs.push(data.toString());
-          });
-          conversionProcess.on("close", code => {
-            return code === 0 ? resolve() : reject(Error(logs.join(" / ")));
-          });
-        }).then(),
-      error => error as Error
+    return new TaskEither(
+      new Task(
+        () =>
+          new Promise(resolve => {
+            const conversionProcess = spawn("gs", gsCommandArgs);
+            // tslint:disable-next-line:readonly-array
+            const logs: string[] = [];
+            conversionProcess.stdout.on("data", data => {
+              logs.push(data.toString());
+            });
+            conversionProcess.stderr.on("data", data => {
+              logs.push(data.toString());
+            });
+            conversionProcess.on("close", code => {
+              return code === 0
+                ? resolve(right(undefined))
+                : resolve(left(Error(logs.join(" / "))));
+            });
+          })
+      )
     );
   }
 }
