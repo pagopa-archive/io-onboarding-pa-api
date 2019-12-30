@@ -4,11 +4,9 @@ import { none, Option, some } from "fp-ts/lib/Option";
 import {
   fromEither,
   fromPredicate,
-  taskEither,
   TaskEither,
   tryCatch
 } from "fp-ts/lib/TaskEither";
-import * as fs from "fs";
 import { Errors } from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import {
@@ -163,72 +161,6 @@ function mergePublicAdministrationsAndOrganizations(
     },
     [] as ReadonlyArray<FoundAdministration>
   );
-}
-
-/**
- * Given an organization instance, forcefully deletes from the database
- * the organization, its legal representative and the related documents.
- *
- * NOTE: this method must be used only in order to cancel
- * a registration process in a `PRE_DRAFT` status. When in such status,
- * both the organization and its legal representative can be safely removed
- * because their existence has no value outside the context of their registration process.
- *
- * @todo: the current removal process must be refactored using a soft delete
- * @see https://www.pivotaltracker.com/story/show/169889085
- */
-export function deleteOrganization(
-  organizationInstance: OrganizationModel
-): TaskEither<Error, void> {
-  // TODO:
-  //  the documents must be stored on cloud (Azure Blob Storage).
-  //  @see https://www.pivotaltracker.com/story/show/169644958
-  const organizationDocumentsRoot = `./documents/${organizationInstance.ipaCode}`;
-  const forwardError = (error: unknown) => error as Error;
-  return tryCatch(
-    () =>
-      sequelize.transaction<void>(transaction => {
-        return OrganizationUserModel.destroy({
-          force: true,
-          transaction,
-          where: { organizationIpaCode: organizationInstance.ipaCode }
-        })
-          .then(() =>
-            organizationInstance.destroy({ force: true, transaction })
-          )
-          .then(() =>
-            organizationInstance.legalRepresentative.destroy({
-              force: true,
-              transaction
-            })
-          );
-      }),
-    forwardError
-  )
-    .chain(() =>
-      tryCatch(
-        () => fs.promises.access(organizationDocumentsRoot),
-        forwardError
-      )
-    )
-    .chain(() =>
-      tryCatch(
-        () => fs.promises.readdir(organizationDocumentsRoot),
-        forwardError
-      )
-    )
-    .chain(documentsArray =>
-      array.traverse(taskEither)(documentsArray, documentName =>
-        tryCatch(
-          () =>
-            fs.promises.unlink(`${organizationDocumentsRoot}/${documentName}`),
-          forwardError
-        )
-      )
-    )
-    .chain(() =>
-      tryCatch(() => fs.promises.rmdir(organizationDocumentsRoot), forwardError)
-    );
 }
 
 function checkOnboardingCapability(

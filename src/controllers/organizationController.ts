@@ -1,6 +1,6 @@
 import { Request as ExpressRequest } from "express";
-import { isLeft, left, right } from "fp-ts/lib/Either";
-import { isNone, isSome, none, Option, some } from "fp-ts/lib/Option";
+import { isLeft, left } from "fp-ts/lib/Either";
+import { isSome, none, Option, some } from "fp-ts/lib/Option";
 import {
   fromEither,
   fromPredicate,
@@ -41,7 +41,6 @@ import EmailService from "../services/emailService";
 import {
   addDelegate,
   createOnboardingRequest,
-  deleteOrganization,
   findAllNotPreDraft,
   getAllOrganizations,
   getOrganizationFromUserEmail,
