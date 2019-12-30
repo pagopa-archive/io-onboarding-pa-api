@@ -646,12 +646,7 @@ export async function getAllOrganizations(): Promise<
             as: "legalRepresentative",
             model: User
           }
-        ],
-        where: {
-          registrationStatus: {
-            [Op.ne]: OrganizationRegistrationStatusEnum.PRE_DRAFT
-          }
-        }
+        ]
       }),
     error => error as Error
   ).run();

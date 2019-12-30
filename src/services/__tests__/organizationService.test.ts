@@ -234,10 +234,12 @@ beforeAll(async () => {
 
   const [
     registeredOrgLegalRepresentative,
+    preDraftOrgLegalRepresentative,
     preDraftOrgDelegate,
     admin
   ] = await UserModel.bulkCreate([
     registeredOrgLegalRepresentativeParams,
+    preDraftOrgLegalRepresentativeParams,
     preDraftOrgDelegateParams,
     adminParams
   ]);
@@ -287,6 +289,9 @@ beforeAll(async () => {
       userRole: UserRoleEnum.ORG_DELEGATE
     }
   });
+  await mockPreDraftOrganization.setLegalRepresentative(
+    preDraftOrgLegalRepresentative
+  );
 });
 
 afterAll(async () => {
@@ -671,6 +676,15 @@ describe("OrganizationService#getOrganizationFromUserEmail()", () => {
       toOrganizationObject(({
         ...mockRegisteredOrganizationParams,
         legalRepresentative: registeredOrgLegalRepresentativeParams
+      } as unknown) as OrganizationModel).fold(
+        () => {
+          fail("toOrganizationObject error");
+        },
+        value => value
+      ),
+      toOrganizationObject(({
+        ...mockPreDraftOrganizationParams,
+        legalRepresentative: preDraftOrgLegalRepresentativeParams
       } as unknown) as OrganizationModel).fold(
         () => {
           fail("toOrganizationObject error");
