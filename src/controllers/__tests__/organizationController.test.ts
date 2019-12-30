@@ -271,7 +271,7 @@ describe("OrganizationController", () => {
 
     it("should return a left task with a not found error response if the public administration does not exist", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        fromEither(right(none))
+        fromEither(right([]))
       );
       mockCreateOnboardingRequests.mockReturnValue(
         fromEither(
@@ -322,7 +322,7 @@ describe("OrganizationController", () => {
 
     it("should return a right task with a success response if the registration process completes successfully", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        fromEither(right(none))
+        fromEither(right([]))
       );
       mockCreateOnboardingRequests.mockReturnValue(
         fromEither(
@@ -587,7 +587,7 @@ describe("OrganizationController#sendDocuments()", () => {
 
   it("should return a not found error response if no organization is found for the user", async () => {
     mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-      fromEither(right(none))
+      fromEither(right([]))
     );
     const req = mockReq();
     req.user = mockedLoggedDelegate;
@@ -649,10 +649,10 @@ describe("OrganizationController#sendDocuments()", () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         fromEither(
           right(
-            some({
+            [{
               ...mockedOrganizationParams,
               registrationStatus: OrganizationRegistrationStatusEnum.REGISTERED
-            } as OrganizationModel)
+            } as OrganizationModel]
           )
         )
       );
@@ -675,11 +675,11 @@ describe("OrganizationController#sendDocuments()", () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         fromEither(
           right(
-            some({
+            [{
               ...mockedOrganizationParams,
               update: (params: { registrationStatus: string }) =>
                 Promise.reject(new Error("organization update failed"))
-            } as OrganizationModel)
+            } as OrganizationModel]
           )
         )
       );
@@ -699,11 +699,11 @@ describe("OrganizationController#sendDocuments()", () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         fromEither(
           right(
-            some({
+            [{
               ...mockedOrganizationParams,
               update: (params: { registrationStatus: string }) =>
                 Promise.resolve(mockedOrganizationModel)
-            } as OrganizationModel)
+            } as OrganizationModel]
           )
         )
       );
@@ -741,7 +741,7 @@ describe("OrganizationController#sendDocuments()", () => {
 
     it("should return an internal server error response if the documents signing fails", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        fromEither(right(some(mockedOrganizationModel)))
+        fromEither(right([mockedOrganizationModel]))
       );
       mockSignDocument.mockImplementation(() =>
         Promise.resolve(left(new Error("document signing failed")))

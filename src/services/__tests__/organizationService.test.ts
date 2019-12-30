@@ -577,33 +577,33 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
   });
 
   it("should return a right task with some organization model if the user is the delegate of an organization", async () => {
-    const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
+    const errorOrOrganizationModels = await getOrganizationInstanceFromDelegateEmail(
       userInfo.email,
       organizationInfo.ipaCode
     ).run();
-    expect(maybeOrganizationModel).not.toBeNull();
-    expect(isRight(maybeOrganizationModel)).toBeTruthy();
-    maybeOrganizationModel.fold(
+    expect(errorOrOrganizationModels).not.toBeNull();
+    expect(isRight(errorOrOrganizationModels)).toBeTruthy();
+    errorOrOrganizationModels.fold(
       () => fail(new Error("organizationModel was left instead of right")),
-      organizationModel => {
-        expect(isSome(organizationModel)).toBeTruthy();
-        expect(organizationModel.toNullable()).not.toBeNull();
+      organizationModels => {
+        expect(organizationModels).toEqual(expect.any(Array));
+        expect(organizationModels).not.toHaveLength(0);
       }
     );
   });
 
   it("should return a right task with none if the user is not the delegate of an organization", async () => {
-    const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
+    const errorOrOrganizationModels = await getOrganizationInstanceFromDelegateEmail(
       "not-delegate@email.net",
       organizationInfo.ipaCode
     ).run();
-    expect(maybeOrganizationModel).not.toBeNull();
-    expect(isRight(maybeOrganizationModel)).toBeTruthy();
-    maybeOrganizationModel.fold(
+    expect(errorOrOrganizationModels).not.toBeNull();
+    expect(isRight(errorOrOrganizationModels)).toBeTruthy();
+    errorOrOrganizationModels.fold(
       () => fail(new Error("organizationModel was left instead of right")),
-      organizationModel => {
-        expect(isSome(organizationModel)).toBeFalsy();
-        expect(organizationModel.toNullable()).toBeNull();
+      organizationModels => {
+        expect(organizationModels).toEqual(expect.any(Array));
+        expect(organizationModels).toHaveLength(0);
       }
     );
   });

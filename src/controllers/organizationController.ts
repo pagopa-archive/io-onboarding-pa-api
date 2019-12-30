@@ -147,12 +147,6 @@ export default class OrganizationController {
           user: taskResults.user
         }))
       )
-      .chain<Pick<ITaskResults, "organizationRegistrationParams" | "user">>(
-        taskResults =>
-          this.deleteAssociatedPreDraftOrganization(taskResults.user.email).map(
-            () => taskResults
-          )
-      )
       .chain<ITaskResults>(taskResults =>
         createOnboardingRequests(
           taskResults.organizationRegistrationParams,
@@ -355,13 +349,13 @@ export default class OrganizationController {
           return ResponseErrorInternal("An error occurred reading from db");
         },
         async maybeOrganizationInstance => {
-          if (isNone(maybeOrganizationInstance)) {
+          if (maybeOrganizationInstance.length === 0) {
             return ResponseErrorNotFound(
               "Not found",
               "The administration is not registered"
             );
           }
-          const organizationInstance = maybeOrganizationInstance.value;
+          const organizationInstance = maybeOrganizationInstance[0];
           if (
             organizationInstance.registrationStatus ===
             OrganizationRegistrationStatusEnum.REGISTERED
@@ -377,48 +371,6 @@ export default class OrganizationController {
         }
       );
     });
-  }
-
-  private deleteAssociatedPreDraftOrganization(
-    userEmail: string
-  ): TaskEither<IResponseErrorInternal | IResponseErrorConflict, void> {
-    return getOrganizationInstanceFromDelegateEmail(userEmail)
-      .mapLeft<IResponseErrorInternal | IResponseErrorConflict>(error =>
-        genericInternalUnknownErrorHandler(
-          error,
-          "OrganizationController#deleteAssociatedPreDraftOrganization | An error occurred while fetching the organization for the user",
-          " An error occurred while fetching the organization for the user"
-        )
-      )
-      .chain(maybeOrganizationModel =>
-        maybeOrganizationModel.fold<
-          TaskEither<IResponseErrorConflict, OrganizationModel | undefined>
-        >(
-          fromEither(right(undefined)),
-          fromPredicate(
-            _ =>
-              _.registrationStatus ===
-              OrganizationRegistrationStatusEnum.PRE_DRAFT,
-            () =>
-              ResponseErrorConflict(
-                "There is already a registered organization associated to your account"
-              )
-          )
-        )
-      )
-      .chain(organizationModel =>
-        organizationModel
-          ? deleteOrganization(organizationModel).mapLeft<
-              IResponseErrorInternal | IResponseErrorConflict
-            >(error =>
-              genericInternalUnknownErrorHandler(
-                error,
-                "OrganizationController#deleteAssociatedPreDraftOrganization | An error occurred when canceling the registration process for the organization.",
-                "An error occurred when canceling the registration process for the organization"
-              )
-            )
-          : fromEither(right(undefined))
-      );
   }
 
   private createOnboardingDocuments(

@@ -536,7 +536,7 @@ export function addDelegate(
 export function getOrganizationInstanceFromDelegateEmail(
   userEmail: string,
   ipaCode?: string
-): TaskEither<Error, Option<OrganizationModel>> {
+): TaskEither<Error, ReadonlyArray<OrganizationModel>> {
   return tryCatch(
     () =>
       OrganizationModel.findAll({
@@ -555,19 +555,15 @@ export function getOrganizationInstanceFromDelegateEmail(
         where: ipaCode ? { ipaCode } : undefined
       }),
     error => error as Error
-  )
-    .chain(
-      fromPredicate(
-        _ => _.length <= 1,
-        () =>
-          Error(
-            `DB conflict error: multiple organizations associated to the user ${userEmail}`
-          )
-      )
+  ).chain(
+    fromPredicate(
+      _ => !ipaCode || _.length <= 1,
+      () =>
+        Error(
+          `DB conflict error: multiple organizations associated to the user ${userEmail}`
+        )
     )
-    .map(organizationInstances =>
-      organizationInstances.length === 0 ? none : some(organizationInstances[0])
-    );
+  );
 }
 
 export async function getOrganizationFromUserEmail(
