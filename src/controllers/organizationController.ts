@@ -1,5 +1,5 @@
 import { Request as ExpressRequest } from "express";
-import { isLeft, right } from "fp-ts/lib/Either";
+import { isLeft, left, right } from "fp-ts/lib/Either";
 import { isNone, isSome, none, Option, some } from "fp-ts/lib/Option";
 import { Task } from "fp-ts/lib/Task";
 import {
@@ -466,9 +466,7 @@ export default class OrganizationController {
           `${outputFolder}/${request.document_id}.pdf`
         );
       }
-      return leftTask<Error, undefined>(
-        new Task(() => Promise.reject(new Error("Wrong data")))
-      );
+      return fromEither(left(new Error("Wrong data")));
     };
     return tryCatch(
       () => fs.promises.mkdir(outputFolder, { recursive: true }),
