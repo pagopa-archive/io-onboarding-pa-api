@@ -625,21 +625,6 @@ describe("OrganizationService#getOrganizationFromUserEmail()", () => {
     );
   });
 
-  it("should resolve with a right value with none if the delegate is associated with an organization in a PRE_DRAFT registration status", async () => {
-    // this is the case of a user logged it with SPID who never started any registration process
-    const errorOrSomeOrganization = await getOrganizationFromUserEmail(
-      preDraftOrgDelegateParams.email
-    );
-    expect(errorOrSomeOrganization).not.toBeNull();
-    expect(isRight(errorOrSomeOrganization)).toBeTruthy();
-    errorOrSomeOrganization.fold(
-      () => fail(new Error("value was left instead of right")),
-      someOrganization => {
-        expect(isNone(someOrganization)).toBeTruthy();
-      }
-    );
-  });
-
   it("should resolve with a right value with some organization it the user is associated to an organization", async () => {
     const expectedValue = right(
       some(

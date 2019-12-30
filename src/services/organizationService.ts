@@ -593,11 +593,6 @@ export async function getOrganizationFromUserEmail(
             where: {
               email: userEmail
             }
-          },
-          where: {
-            registrationStatus: {
-              [Op.ne]: OrganizationRegistrationStatusEnum.PRE_DRAFT
-            }
           }
         }
       ],
