@@ -96,7 +96,7 @@ To build the application and starts the services, run from the project root:
 ```shell
 cp env.example .env
 # edit .env
-docker-compose up -d postgresql
+docker-compose up -d database
 docker-compose up
 ```
 
@@ -121,14 +121,7 @@ you can avoid using docker and run the backend application directly.
 First, install [nvm](https://github.com/nvm-sh/nvm),
 NodeJS and [Yarn](https://yarnpkg.com/lang/en/).
 
-```shell
-nvm install $(< .node-version)
-nvm use $(< .node-version)
-yarn install
-yarn watch
-```
-
-Remember that in this setup you must connect the application
+In this setup you must connect the application
 to a running PostgreSQL instance and a configured SPID test environment.
 
 You may try with a hybrid setup starting these services using docker-compose
@@ -136,7 +129,16 @@ before running the backend since ports are exposed by default:
 
 ```shell
 # change .env *_HOST settings to point to localhost then run
-docker-compose up -d postgresql spid-testenv2 mailhog
+docker-compose up -d database spid-testenv2 mailhog
+```
+
+Finally, run the backend locally:
+
+```shell
+nvm install $(< .node-version)
+nvm use $(< .node-version)
+yarn install
+yarn watch
 ```
 
 ### Modify SPID Service Provider certificates
