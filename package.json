@@ -1,5 +1,5 @@
 {
-  "name": "io-onboarding-pa",
+  "name": "io-onboarding-pa-api",
   "version": "0.0.1",
   "description": "IO onboarding portal webapp for public administrations",
   "repository": "https://github.com/teamdigitale/io-onboarding-pa",
@@ -54,6 +54,7 @@
     "nodemon": "^2.0.2",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.12.1",
+    "release-it": "^12.4.3",
     "shx": "^0.3.2",
     "sqlite3": "^4.1.0",
     "swagger-cli": "^2.3.1",
