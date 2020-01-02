@@ -14,7 +14,6 @@ export enum Resource {
 export const EMAIL_ATTRIBUTE = "email";
 export const PASSWORD_ATTRIBUTE = "password";
 export const PHONE_NUMBER_ATTRIBUTE = "phoneNumber";
-export const REGISTRATION_STATUS_ATTRIBUTE = "registrationStatus";
 export const USER_ATTRIBUTE = "user";
 export const WORK_EMAIL_ATTRIBUTE = "workEmail";
 
@@ -113,7 +112,6 @@ const grants = {
     },
     [Resource.ORGANIZATION]: {
       [Action.READ_ANY]: [ALL_ATTRIBUTES],
-      [Action.UPDATE_ANY]: [REGISTRATION_STATUS_ATTRIBUTE],
       [Action.DELETE_ANY]: [ALL_ATTRIBUTES]
     },
     [Resource.SIGNED_DOCUMENT]: {

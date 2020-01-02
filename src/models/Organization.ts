@@ -5,7 +5,6 @@ import {
   Model
 } from "sequelize";
 import sequelize from "../database/db";
-import { OrganizationRegistrationStatus } from "../generated/OrganizationRegistrationStatus";
 import { OrganizationScope } from "../generated/OrganizationScope";
 import { OrganizationUser } from "./OrganizationUser";
 import { User } from "./User";
@@ -15,7 +14,6 @@ export class Organization extends Model {
   public ipaCode!: string; // PK
   public name!: string;
   public pec!: string;
-  public registrationStatus!: OrganizationRegistrationStatus;
   public scope!: OrganizationScope;
   public readonly createdAt!: Date;
   public readonly deletedAt!: Date;
@@ -51,12 +49,6 @@ export function init(): void {
       pec: {
         allowNull: false,
         type: new DataTypes.STRING()
-      },
-      registrationStatus: {
-        allowNull: false,
-        type: new DataTypes.ENUM(
-          ...Object.values(OrganizationRegistrationStatus)
-        )
       },
       scope: {
         allowNull: false,

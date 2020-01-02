@@ -99,10 +99,37 @@ export function up(queryInterface: QueryInterface): Promise<unknown> {
           { role: UserRoleEnum.ORG_MANAGER },
           { transaction }
         )
+      )
+      .then(() =>
+        queryInterface.removeColumn("Organizations", "registrationStatus", {
+          transaction
+        })
+      )
+      .then(() =>
+        queryInterface.sequelize.query(
+          `DROP TYPE "enum_Organizations_registrationStatus"`,
+          {
+            transaction
+          }
+        )
       );
   });
 }
 
 export function down(queryInterface: QueryInterface): Promise<void> {
-  return queryInterface.dropTable("Organizations");
+  return queryInterface.sequelize.transaction(transaction =>
+    queryInterface.dropTable("Requests").then(() =>
+      queryInterface.addColumn(
+        "Organizations",
+        "registrationStatus",
+        {
+          allowNull: false,
+          defaultValue: "PRE_DRAFT",
+          type: new DataTypes.ENUM(),
+          values: ["PRE_DRAFT", "DRAFT", "REGISTERED"]
+        },
+        { transaction }
+      )
+    )
+  );
 }

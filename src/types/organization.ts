@@ -32,7 +32,6 @@ export function fromOrganizationModelToFoundAdministration(
     ],
     name: organizationModel.name,
     pecs: { "1": organizationModel.pec },
-    registration_status: organizationModel.registrationStatus,
     scope: organizationModel.scope,
     selected_pec_label: "1"
   }).fold(
@@ -117,7 +116,6 @@ export function toOrganizationObject(
     legal_representative: legalRepresentative,
     name: organizationInstance.name,
     pec: organizationInstance.pec,
-    registration_status: organizationInstance.registrationStatus,
     scope: organizationInstance.scope,
     users
   });

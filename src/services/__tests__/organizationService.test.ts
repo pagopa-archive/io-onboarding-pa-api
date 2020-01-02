@@ -4,7 +4,6 @@ import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Sequelize } from "sequelize";
 import { FiscalCode } from "../../generated/FiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
-import { OrganizationRegistrationStatusEnum } from "../../generated/OrganizationRegistrationStatus";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { RequestStatusEnum } from "../../generated/RequestStatus";
 import { RequestTypeEnum } from "../../generated/RequestType";
@@ -109,7 +108,6 @@ const mockRegisteredOrganizationParams = {
   legalRepresentative: registeredOrgLegalRepresentativeParams,
   name: "Organizzazione 1",
   pec: "org1@example.com",
-  registrationStatus: OrganizationRegistrationStatusEnum.REGISTERED,
   scope: OrganizationScopeEnum.LOCAL
 };
 
@@ -137,7 +135,6 @@ const mockPreDraftOrganizationParams = {
   legalRepresentative: preDraftOrgLegalRepresentativeParams,
   name: "Organizzazione 2",
   pec: "org2@example.com",
-  registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
   scope: OrganizationScopeEnum.LOCAL
 };
 // Delegate with no association associated
@@ -358,7 +355,6 @@ describe("OrganizationService", () => {
             pec: validPublicAdministration.get(
               "mail" + newOrganizationParams.selected_pec_label
             ),
-            registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
             scope: newOrganizationParams.scope
           },
           requester: {
@@ -476,7 +472,6 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
     ipaCode: "org-code",
     name: "test organization",
     pec: organizationEmail,
-    registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
     scope: "NATIONAL"
   };
   beforeEach(async () => {

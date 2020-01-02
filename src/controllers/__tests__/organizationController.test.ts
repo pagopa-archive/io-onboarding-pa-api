@@ -21,7 +21,6 @@ import { OrganizationDelegate } from "../../generated/OrganizationDelegate";
 import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationRequest } from "../../generated/OrganizationRegistrationRequest";
-import { OrganizationRegistrationStatusEnum } from "../../generated/OrganizationRegistrationStatus";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
 import { RequestStatusEnum } from "../../generated/RequestStatus";
 import { RequestTypeEnum } from "../../generated/RequestType";
@@ -97,7 +96,6 @@ const onboardingOrganizationParams = {
   },
   name: "Comune di Gioiosa Marea",
   pec: "indirizzo00@email.pec.it",
-  registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
   scope: "NATIONAL" as OrganizationScopeEnum
 };
 
@@ -140,7 +138,6 @@ const mockedPreDraftOrganization: Organization = {
   } as LegalRepresentative,
   name: "Comune di Gioiosa Marea" as NonEmptyString,
   pec: "indirizzo00@email.pec.it" as EmailString,
-  registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
   scope: "NATIONAL" as OrganizationScopeEnum
 };
 const mockedRegisteredOrganization1: Organization = {
@@ -156,7 +153,6 @@ const mockedRegisteredOrganization1: Organization = {
   } as LegalRepresentative,
   name: "Organizzazione registrata numero 1" as NonEmptyString,
   pec: "mocked-registered-organization-1@example.com" as EmailString,
-  registration_status: OrganizationRegistrationStatusEnum.REGISTERED,
   scope: "NATIONAL" as OrganizationScopeEnum
 };
 const mockedRegisteredOrganization2: Organization = {
@@ -172,7 +168,6 @@ const mockedRegisteredOrganization2: Organization = {
   } as LegalRepresentative,
   name: "Organizzazione registrata numero 2" as NonEmptyString,
   pec: "mocked-registered-organization-2@example.com" as EmailString,
-  registration_status: OrganizationRegistrationStatusEnum.REGISTERED,
   scope: "NATIONAL" as OrganizationScopeEnum
 };
 const mockedDelegate1 = {
@@ -473,7 +468,6 @@ describe.skip("OrganizationController#sendDocuments()", () => {
       },
       name: "Comune di Gioiosa Marea",
       pec: "fake.address@email.pec.it",
-      registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
       scope: "NATIONAL"
     };
     const mockedOrganizationModel = mockedOrganizationParams as OrganizationModel;
@@ -503,13 +497,12 @@ describe.skip("OrganizationController#sendDocuments()", () => {
       mockSendEmail.mockReset();
     });
 
-    it("should return a conflict error response if the registration status is REGISTERED", async () => {
+    it("should return a conflict error response if the organization is registered", async () => {
       mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
         fromEither(
           right(
             [{
-              ...mockedOrganizationParams,
-              registrationStatus: OrganizationRegistrationStatusEnum.REGISTERED
+              ...mockedOrganizationParams
             } as OrganizationModel]
           )
         )

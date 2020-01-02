@@ -26,7 +26,6 @@ import { FoundAdministration } from "../generated/FoundAdministration";
 import { Organization as OrganizationResult } from "../generated/Organization";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationRequest } from "../generated/OrganizationRegistrationRequest";
-import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { Request } from "../generated/Request";
 import { RequestStatusEnum } from "../generated/RequestStatus";
 import { UserDelegationRequest } from "../generated/UserDelegationRequest";
@@ -343,8 +342,6 @@ export function createOnboardingRequest(
                 },
                 name: requestModel.organizationName,
                 pec: requestModel.organizationPec,
-                registration_status:
-                  OrganizationRegistrationStatusEnum.PRE_DRAFT,
                 scope: requestModel.organizationScope
               },
               requester: requestModel.requester && {

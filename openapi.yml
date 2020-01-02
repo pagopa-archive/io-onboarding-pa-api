@@ -319,12 +319,6 @@ components:
       format: OrganizationFiscalCode
       x-import: italia-ts-commons/lib/strings
       example: 01234567890
-    OrganizationRegistrationStatus:
-      type: string
-      x-extensible-enum:
-        - "PRE_DRAFT"
-        - "DRAFT"
-        - "REGISTERED"
     OrganizationScope:
       type: string
       x-extensible-enum:
@@ -575,8 +569,6 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/EmailAddress'
-        registration_status:
-          $ref: "#/components/schemas/OrganizationRegistrationStatus"
         scope:
           $ref: '#/components/schemas/OrganizationScope'
         selected_pec_label:
@@ -588,7 +580,6 @@ components:
         - legal_representative
         - links
         - pecs
-        - registration_status
         - scope
         - selected_pec_label
       example:
@@ -608,7 +599,6 @@ components:
             "3": "indirizzo12@email.pec.it",
             "4": "indirizzo13@email.pec.it",
           },
-          "registration_status": "DRAFT",
           "scope": "LOCAL",
           "selected_pec_label": "3",
           "links": [{
@@ -629,8 +619,6 @@ components:
           <<: *non-empty-string
         pec:
           $ref: "#/components/schemas/EmailAddress"
-        registration_status:
-          $ref: "#/components/schemas/OrganizationRegistrationStatus"
         scope:
           $ref: '#/components/schemas/OrganizationScope'
         users:
@@ -643,7 +631,6 @@ components:
         - legal_representative
         - name
         - pec
-        - registration_status
         - scope
       example:
         {
@@ -659,7 +646,6 @@ components:
           },
           "name": "Comune di Gioiosa Marea",
           "pec": "indirizzo00@email.pec.it",
-          "registration_status": "PRE_DRAFT",
           "scope": "NATIONAL"
         }
     OrganizationRegistrationParams:
@@ -778,7 +764,6 @@ components:
             },
             "name": "Comune di Gioiosa Marea",
             "pec": "indirizzo00@email.pec.it",
-            "registration_status": "PRE_DRAFT",
             "scope": "NATIONAL"
           },
           requester: {
@@ -831,7 +816,6 @@ components:
             },
             "name": "Comune di Gioiosa Marea",
             "pec": "indirizzo00@email.pec.it",
-            "registration_status": "PRE_DRAFT",
             "scope": "NATIONAL"
           },
           status: "SUBMITTED",
