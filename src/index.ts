@@ -6,16 +6,20 @@ import { upsertFromIpa } from "./services/ipaPublicAdministrationService";
 import { getRequiredEnvVar } from "./utils/environment";
 import { log } from "./utils/logger";
 
-const emailService = new EmailService({
-  auth: {
-    pass: getRequiredEnvVar("EMAIL_PASSWORD"),
-    user: getRequiredEnvVar("EMAIL_USER")
+const emailService = new EmailService(
+  {
+    auth: {
+      pass: getRequiredEnvVar("EMAIL_PASSWORD"),
+      user: getRequiredEnvVar("EMAIL_USER")
+    },
+    host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
+    port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
+    secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
   },
-  from: getRequiredEnvVar("EMAIL_SENDER"),
-  host: getRequiredEnvVar("EMAIL_SMTP_HOST"),
-  port: Number(getRequiredEnvVar("EMAIL_SMTP_PORT")),
-  secure: getRequiredEnvVar("EMAIL_SMTP_SECURE") === "true"
-});
+  {
+    from: getRequiredEnvVar("EMAIL_SENDER")
+  }
+);
 
 Promise.all([
   soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL")),
