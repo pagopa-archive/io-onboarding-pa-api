@@ -1,6 +1,6 @@
 import * as nodemailer from "nodemailer";
 import MockTransport = require("nodemailer-mock-transport");
-import EmailService, { ITransporterOptions } from "../emailService";
+import EmailService from "../emailService";
 
 describe("Email service", () => {
   const transporterOptions = {
@@ -23,9 +23,7 @@ describe("Email service", () => {
         to: "recipient@address.net"
       };
       const mockTransport = MockTransport(transporterOptions);
-      const emailServiceInstance = new EmailService(
-        (mockTransport as unknown) as ITransporterOptions
-      );
+      const emailServiceInstance = new EmailService(mockTransport, {});
       const sendingPromise = emailServiceInstance.send(validEmailOptions);
       expect(mockTransport.sentMail.length).toBe(1);
       const sentMail = mockTransport.sentMail[0];
@@ -39,9 +37,7 @@ describe("Email service", () => {
     it("should return a rejected promise when the email send fails", async () => {
       const invalidEmailOptions = {} as nodemailer.SendMailOptions;
       const mockTransport = MockTransport(transporterOptions);
-      const emailServiceInstance = new EmailService(
-        (mockTransport as unknown) as ITransporterOptions
-      );
+      const emailServiceInstance = new EmailService(mockTransport, {});
       const sendingPromise = emailServiceInstance.send(invalidEmailOptions);
       expect(mockTransport.sentMail.length).toBe(0);
       return expect(sendingPromise).rejects.not.toBeUndefined();
@@ -67,7 +63,7 @@ describe("Email service", () => {
         port: testEmailAccount.smtp.port,
         secure: testEmailAccount.smtp.secure
       };
-      const emailService = new EmailService(transporterConfig);
+      const emailService = new EmailService(transporterConfig, {});
       mockedVerify
         .mockImplementationOnce(() => Promise.resolve(true))
         .mockImplementationOnce(() => Promise.reject(new Error()));
