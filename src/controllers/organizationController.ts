@@ -475,6 +475,7 @@ export default class OrganizationController {
       const documentPath = `${outputFolder}/${request.id}.pdf`;
       if (OrganizationRegistrationRequest.is(request)) {
         return this.documentService.generateDocument(
+          request.id.toString(),
           localeIt.organizationController.registerOrganization.contract.replace(
             "%s",
             `${request.organization.ipa_code} ${request.organization.fiscal_code}`
@@ -484,6 +485,7 @@ export default class OrganizationController {
       }
       if (UserDelegationRequest.is(request)) {
         return this.documentService.generateDocument(
+          request.id.toString(),
           // TODO:
           //  refactor this operation using an internationalization framework allowing params interpolation in strings.
           //  @see https://www.pivotaltracker.com/story/show/169644146

@@ -19,7 +19,7 @@ describe("DocumentService", () => {
       getDocumentService()
         .then(documentService =>
           documentService
-            .generateDocument("IO contract", validOutputPath)
+            .generateDocument("request-id", "IO contract", validOutputPath)
             .run()
             .then(result => {
               expect(isRight(result)).toBeTruthy();
@@ -43,7 +43,7 @@ describe("DocumentService", () => {
         .mockReturnValue(fromEither(left(new Error("Error"))));
       const documentService = await getDocumentService();
       const result = await documentService
-        .generateDocument("IO contract", validOutputPath)
+        .generateDocument("request-id", "IO contract", validOutputPath)
         .run();
       mockConvertToPdfA.mockRestore();
       expect(isLeft(result)).toBeTruthy();
