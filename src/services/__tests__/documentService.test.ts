@@ -61,13 +61,13 @@ describe("DocumentService#signDocument()", () => {
       "base64"
     );
     const documentService = await getDocumentService();
-    const result = await documentService.signDocument(base64string);
+    const result = await documentService.signDocument(base64string).run();
     expect(isRight(result)).toBeTruthy();
   });
 
   it("should reject with a left error if the signing fails", async () => {
     const documentService = await getDocumentService();
-    const result = await documentService.signDocument("");
+    const result = await documentService.signDocument("").run();
     expect(isLeft(result)).toBeTruthy();
   });
 });

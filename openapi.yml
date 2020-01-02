@@ -142,7 +142,7 @@ paths:
 
   /organizations/{ipaCode}/signed-documents:
     post:
-      description: Send via email the registration documents of the organization
+      description: Signs and sends via email the onboarding documents of the organization
       operationId: sendDocuments
       security:
         - bearerAuth: []
@@ -153,6 +153,12 @@ paths:
           description: The IPA code of the organization the documents belong to
           schema:
             <<: *non-empty-string
+      requestBody:
+        description: The list of requests whose documents are to be signed and sent via email
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestIdCollection"
       responses:
         <<: *common-responses
         "204":
@@ -465,6 +471,20 @@ components:
             $ref: '#/components/schemas/FoundAdministration'
       required:
         - administrations
+    RequestIdCollection:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+      required:
+        - items
+      example:
+        {
+          items: [ 1, 2 ]
+        }
     FoundAdministration:
       oneOf:
         - $ref: '#/components/schemas/FoundNotRegisteredAdministration'

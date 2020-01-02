@@ -33,7 +33,6 @@ import { UserDelegationRequest } from "../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../generated/UserRole";
 import { IpaPublicAdministration as IpaPublicAdministrationModel } from "../models/IpaPublicAdministration";
 import { Organization as OrganizationModel } from "../models/Organization";
-import { OrganizationUser as OrganizationUserModel } from "../models/OrganizationUser";
 import { Request as RequestModel, RequestScope } from "../models/Request";
 import { User } from "../models/User";
 import {

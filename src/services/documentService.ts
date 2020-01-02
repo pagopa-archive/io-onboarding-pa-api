@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
-import { Either, left, right } from "fp-ts/lib/Either";
+import { left, right } from "fp-ts/lib/Either";
 import { Task } from "fp-ts/lib/Task";
-import { TaskEither } from "fp-ts/lib/TaskEither";
+import { fromPredicate, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
 import * as PdfDocument from "pdfkit";
 import * as soap from "soap";
@@ -60,33 +60,63 @@ export default class DocumentService {
     );
   }
 
-  public async signDocument(
+  public signDocument(
     unsignedContentBase64: string
-  ): Promise<Either<Error, string>> {
-    try {
-      const result = await this.arssClient.pdfsignatureV2Async({
-        // For details about the parameters of pdfsignatureV2 method of ARSS,
-        // @see https://doc.demo.firma-automatica.it/manuali/manuale_arss.pdf
-        SignRequestV2: {
-          certID: "AS0", // Reserved by Aruba for future use, its value must be currently set to `AS0`
-          identity: {
-            otpPwd: getRequiredEnvVar("ARSS_IDENTITY_OTP_PWD"),
-            typeOtpAuth: getRequiredEnvVar("ARSS_IDENTITY_TYPE_OTP_AUTH"),
-            user: getRequiredEnvVar("ARSS_IDENTITY_USER"),
-            userPWD: getRequiredEnvVar("ARSS_IDENTITY_USER_PWD")
-          },
-          requiredmark: false,
-          stream: unsignedContentBase64,
-          transport: "STREAM"
-        }
-      });
-      const responseContent = result[0].return;
-      return responseContent.status === "OK"
-        ? right(responseContent.stream as string)
-        : left(new Error(result.description));
-    } catch (error) {
-      return left(error);
+  ): TaskEither<Error, string> {
+    interface IPdfsignatureV2SuccessOutput {
+      return_code: "0000";
+      status: "OK";
+      stream: string;
     }
+    interface IPdfsignatureV2ErrorOutput {
+      return_code: string;
+      status: string;
+      description: string;
+    }
+    function isIPdfsignatureV2SuccessOutput(
+      output: PdfsignatureV2Output
+    ): output is IPdfsignatureV2SuccessOutput {
+      return output.status === "OK";
+    }
+    type PdfsignatureV2Output =
+      | IPdfsignatureV2SuccessOutput
+      | IPdfsignatureV2ErrorOutput;
+    type pdfsignatureV2AsyncReturnValue = readonly [
+      { return: PdfsignatureV2Output },
+      string,
+      undefined,
+      string
+    ];
+    return tryCatch<Error, pdfsignatureV2AsyncReturnValue>(
+      () =>
+        // For details about the return value of the ARSS client method invocation,
+        // @see: https://github.com/vpulim/node-soap#clientmethodasyncargs---call-method-on-the-soap-service
+        this.arssClient.pdfsignatureV2Async({
+          // For details about the parameters of pdfsignatureV2 method of ARSS,
+          // @see https://doc.demo.firma-automatica.it/manuali/manuale_arss.pdf
+          SignRequestV2: {
+            certID: "AS0", // Reserved by Aruba for future use, its value must be currently set to `AS0`
+            identity: {
+              otpPwd: getRequiredEnvVar("ARSS_IDENTITY_OTP_PWD"),
+              typeOtpAuth: getRequiredEnvVar("ARSS_IDENTITY_TYPE_OTP_AUTH"),
+              user: getRequiredEnvVar("ARSS_IDENTITY_USER"),
+              userPWD: getRequiredEnvVar("ARSS_IDENTITY_USER_PWD")
+            },
+            requiredmark: false,
+            stream: unsignedContentBase64,
+            transport: "STREAM"
+          }
+        }),
+      error => error as Error
+    )
+      .map(result => result[0].return)
+      .chain(
+        fromPredicate(
+          isIPdfsignatureV2SuccessOutput,
+          _ => new Error((_ as IPdfsignatureV2ErrorOutput).description)
+        )
+      )
+      .map(responseContent => responseContent.stream);
   }
 
   private convertToPdfA(

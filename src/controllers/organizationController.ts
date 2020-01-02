@@ -1,9 +1,10 @@
 import { Request as ExpressRequest } from "express";
-import { isLeft, left } from "fp-ts/lib/Either";
-import { isSome, none, Option, some } from "fp-ts/lib/Option";
+import { array } from "fp-ts/lib/Array";
+import { left } from "fp-ts/lib/Either";
 import {
   fromEither,
   fromPredicate,
+  taskEither,
   TaskEither,
   tryCatch
 } from "fp-ts/lib/TaskEither";
@@ -20,30 +21,33 @@ import {
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorInternal,
   ResponseErrorNotFound,
+  ResponseErrorValidation,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import accessControl, { Resource } from "../acl/acl";
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
-import { FiscalCode } from "../generated/FiscalCode";
-import { Organization as OrganizationResult } from "../generated/Organization";
 import { OrganizationCollection } from "../generated/OrganizationCollection";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationRequest } from "../generated/OrganizationRegistrationRequest";
-import { OrganizationRegistrationStatusEnum } from "../generated/OrganizationRegistrationStatus";
 import { Request } from "../generated/Request";
+import { RequestIdCollection } from "../generated/RequestIdCollection";
+import { RequestStatusEnum } from "../generated/RequestStatus";
 import { UserDelegationRequest } from "../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../generated/UserRole";
 import localeIt from "../locales/it";
-import { Organization as OrganizationModel } from "../models/Organization";
+import {
+  Request as RequestModel,
+  RequestScope,
+  RequestType
+} from "../models/Request";
 import DocumentService from "../services/documentService";
 import EmailService from "../services/emailService";
 import {
   createOnboardingRequest,
   findAllNotPreDraft,
   getAllOrganizations,
-  getOrganizationFromUserEmail,
-  getOrganizationInstanceFromDelegateEmail
+  getOrganizationFromUserEmail
 } from "../services/organizationService";
 import { LoggedUser, withUserFromRequest } from "../types/user";
 import {
@@ -58,10 +62,17 @@ import {
   ResponseDownload,
   ResponseNoContent,
   withCatchAsInternalError,
-  withResultOrInternalError,
   withValidatedOrValidationError,
   withValidationOrError
 } from "../utils/responses";
+
+type IResponseError =
+  // tslint:disable-next-line:max-union-size
+  | IResponseErrorConflict
+  | IResponseErrorForbiddenNotAuthorized
+  | IResponseErrorInternal
+  | IResponseErrorNotFound
+  | IResponseErrorValidation;
 
 export default class OrganizationController {
   constructor(
@@ -92,12 +103,7 @@ export default class OrganizationController {
   public registerOrganization(
     req: ExpressRequest
   ): TaskEither<
-    // tslint:disable-next-line:max-union-size
-    | IResponseErrorConflict
-    | IResponseErrorForbiddenNotAuthorized
-    | IResponseErrorInternal
-    | IResponseErrorNotFound
-    | IResponseErrorValidation,
+    IResponseError,
     IResponseSuccessCreation<
       OrganizationRegistrationRequest | UserDelegationRequest
     >
@@ -114,14 +120,7 @@ export default class OrganizationController {
         user
       }))
     )
-      .mapLeft<
-        // tslint:disable-next-line:max-union-size
-        | IResponseErrorConflict
-        | IResponseErrorForbiddenNotAuthorized
-        | IResponseErrorInternal
-        | IResponseErrorNotFound
-        | IResponseErrorValidation
-      >((errors: Errors) =>
+      .mapLeft<IResponseError>((errors: Errors) =>
         genericInternalValidationErrorsHandler(
           errors,
           "organizationController#registerOrganization | Invalid internal data.",
@@ -152,10 +151,7 @@ export default class OrganizationController {
         ).map(successResponse => ({ ...taskResults, successResponse }))
       )
       .chain(taskResults =>
-        this.createOnboardingDocument(
-          taskResults.organizationRegistrationParams.ipa_code,
-          taskResults.successResponse
-        )
+        this.createOnboardingDocument(taskResults.successResponse)
       );
   }
 
@@ -248,58 +244,220 @@ export default class OrganizationController {
     });
   }
 
-  public async sendDocuments(
+  /**
+   * Submits an onboarding request by sending to the related administration an email containing the requested signed documents.
+   * In order to achieve the result, this method performs several steps:
+   * 1. Fetches the user from the request
+   * 2. Checks the user permissions
+   * 3. Validates the body request
+   * 4. Fetches and validates the requests to be submitted
+   * 5. Creates the requested signed documents
+   * 6. Sends the documents via email
+   * 7. Updates the status of the requests
+   *
+   * If any error occurs during any step of the process, a proper error response is sent to the client; otherwise, a response with no content is sent.
+   * @param req The client request
+   */
+  public sendDocuments(
     req: ExpressRequest
-  ): Promise<
-    // tslint:disable-next-line:max-union-size
-    | IResponseErrorValidation
-    | IResponseErrorForbiddenNotAuthorized
-    | IResponseErrorNotFound
-    | IResponseErrorConflict
-    | IResponseErrorInternal
-    | IResponseNoContent
-  > {
-    return withUserFromRequest(req, async user => {
-      const userPermissions = accessControl.can(user.role);
-      if (!userPermissions.createOwn(Resource.SIGNED_DOCUMENT).granted) {
-        return ResponseErrorForbiddenNotAuthorized;
-      }
-      const errorOrMaybeOrganizationInstance = await getOrganizationInstanceFromDelegateEmail(
-        user.email,
-        req.params.ipaCode
-      ).run();
-      return errorOrMaybeOrganizationInstance.fold(
-        async error => {
-          log.error("An error occurred reading from db. %s", error);
-          return ResponseErrorInternal("An error occurred reading from db");
-        },
-        async maybeOrganizationInstance => {
-          if (maybeOrganizationInstance.length === 0) {
-            return ResponseErrorNotFound(
-              "Not found",
-              "The administration is not registered"
-            );
-          }
-          const organizationInstance = maybeOrganizationInstance[0];
-          if (
-            organizationInstance.registrationStatus ===
-            OrganizationRegistrationStatusEnum.REGISTERED
-          ) {
-            return ResponseErrorConflict(
-              "The required documents have already been sent and countersigned"
-            );
-          }
-          return this.signAndSendDocuments(
-            user.fiscalCode,
-            organizationInstance
-          );
-        }
+  ): TaskEither<IResponseError, IResponseNoContent> {
+    interface ITaskResults {
+      attachments: ReadonlyArray<{
+        filename: string;
+        path: string;
+      }>;
+      requestIds: ReadonlyArray<number>;
+      requestModels: ReadonlyArray<RequestModel>;
+      user: LoggedUser;
+    }
+    const internalUnknownErrorHandler = (error: unknown, message: string) =>
+      genericInternalUnknownErrorHandler(
+        error,
+        `organizationController#sendDocuments | ${message}`,
+        message
       );
-    });
+    return fromEither<Errors, Pick<ITaskResults, "user">>(
+      LoggedUser.decode(req.user).map(user => ({
+        user
+      }))
+    )
+      .mapLeft<IResponseError>((errors: Errors) =>
+        genericInternalValidationErrorsHandler(
+          errors,
+          "organizationController#sendDocuments | Invalid internal data.",
+          "Invalid internal data."
+        )
+      )
+      .chain(
+        fromPredicate(
+          taskResults =>
+            accessControl
+              .can(taskResults.user.role)
+              .createOwn(Resource.SIGNED_DOCUMENT).granted,
+          () => ResponseErrorForbiddenNotAuthorized
+        )
+      )
+      .chain<Pick<ITaskResults, "user" | "requestIds">>(taskResults =>
+        withValidationOrError(RequestIdCollection.decode(req.body))
+          .chain(
+            fromPredicate(
+              _ => _.items.length > 0,
+              () =>
+                ResponseErrorValidation(
+                  "Bad request",
+                  "No request ids provided"
+                )
+            )
+          )
+
+          .map(requestIdCollection => ({
+            requestIds: requestIdCollection.items,
+            user: taskResults.user
+          }))
+      )
+      .chain<Pick<ITaskResults, "requestModels">>(taskResults =>
+        array
+          .traverse(taskEither)([...taskResults.requestIds], requestId =>
+            tryCatch<IResponseError, RequestModel>(
+              () =>
+                RequestModel.scope(RequestScope.INCLUDE_REQUESTER).findOne({
+                  where: { id: requestId }
+                }),
+              error =>
+                internalUnknownErrorHandler(
+                  error,
+                  "An error occurred while reading from the database."
+                )
+            )
+              .chain(
+                fromPredicate(
+                  _ => _ !== null,
+                  () =>
+                    ResponseErrorNotFound(
+                      "Request not found",
+                      `The request ${requestId} does not exist`
+                    )
+                )
+              )
+              .chain(
+                fromPredicate(
+                  _ =>
+                    _.type === RequestType.USER_DELEGATION ||
+                    _.type === RequestType.ORGANIZATION_REGISTRATION,
+                  () =>
+                    ResponseErrorValidation(
+                      "Bad request",
+                      `The type of request ${requestId} is invalid`
+                    )
+                )
+              )
+              .chain(
+                fromPredicate(
+                  _ => _.requester !== null,
+                  () => ResponseErrorInternal("Invalid internal data")
+                )
+              )
+              .chain(
+                fromPredicate(
+                  _ => _.requester!.email === taskResults.user.email,
+                  () => ResponseErrorForbiddenNotAuthorized
+                )
+              )
+              .chain(
+                fromPredicate(
+                  _ => _.status === RequestStatusEnum.CREATED,
+                  () =>
+                    ResponseErrorConflict(
+                      `The document for the request ${requestId} has already been sent.`
+                    )
+                )
+              )
+          )
+          .chain(
+            fromPredicate(
+              _ =>
+                _.every((request, index, requests) =>
+                  index === 0
+                    ? true
+                    : request.organizationPec ===
+                      requests[index - 1].organizationPec
+                ),
+              () =>
+                ResponseErrorConflict(
+                  `The requests should be sent to different email addresses.`
+                )
+            )
+          )
+          .map(requestModels => ({ requestModels }))
+      )
+      .chain(taskResults =>
+        array
+          .traverse(taskEither)(
+            [...taskResults.requestModels],
+            requestModel => {
+              // TODO:
+              //  the documents must be stored on cloud (Azure Blob Storage).
+              //  @see https://www.pivotaltracker.com/story/show/169644958
+              const documentName = `${requestModel.id}.pdf`;
+              const unsignedDocumentPath = `./documents/unsigned/${documentName}`;
+              const signedDocumentPath = `./documents/signed/${documentName}`;
+              return this.createSignedDocument(
+                unsignedDocumentPath,
+                signedDocumentPath
+              ).map(() => ({
+                filename: `documento-${requestModel.id}.pdf`,
+                path: signedDocumentPath
+              }));
+            }
+          )
+          .map(attachments => ({
+            attachments,
+            requestModels: taskResults.requestModels
+          }))
+      )
+      .chain(taskResults =>
+        tryCatch(
+          () =>
+            this.emailService.send({
+              attachments: taskResults.attachments,
+              html:
+                localeIt.organizationController.sendDocuments.registrationEmail
+                  .content,
+              subject:
+                localeIt.organizationController.sendDocuments.registrationEmail
+                  .subject,
+              text:
+                localeIt.organizationController.sendDocuments.registrationEmail
+                  .content,
+              to: taskResults.requestModels[0].organizationPec
+            }),
+          error =>
+            internalUnknownErrorHandler(
+              error,
+              "An error occurred while sending email."
+            )
+        ).map(() => taskResults)
+      )
+      .chain(taskResults =>
+        array
+          .traverse(taskEither)([...taskResults.requestModels], requestModel =>
+            tryCatch(
+              () =>
+                requestModel.update({
+                  status: RequestStatusEnum.SUBMITTED
+                }),
+              error =>
+                internalUnknownErrorHandler(
+                  error,
+                  "An error occurred while updating request status."
+                )
+            )
+          )
+          .map(_ => ResponseNoContent())
+      );
   }
 
   private createOnboardingDocument(
-    ipaCode: string,
     requestsCreationResponseSuccess: IResponseSuccessCreation<
       OrganizationRegistrationRequest | UserDelegationRequest
     >
@@ -312,15 +470,16 @@ export default class OrganizationController {
     // TODO:
     //  the documents must be stored on cloud (Azure Blob Storage).
     //  @see https://www.pivotaltracker.com/story/show/169644958
-    const outputFolder = `./documents/${ipaCode}`;
+    const outputFolder = `./documents/unsigned`;
     const createDocumentPerRequest = (request: Request) => {
+      const documentPath = `${outputFolder}/${request.id}.pdf`;
       if (OrganizationRegistrationRequest.is(request)) {
         return this.documentService.generateDocument(
           localeIt.organizationController.registerOrganization.contract.replace(
             "%s",
             `${request.organization.ipa_code} ${request.organization.fiscal_code}`
           ),
-          `${outputFolder}/${request.document_id}.pdf`
+          documentPath
         );
       }
       if (UserDelegationRequest.is(request)) {
@@ -338,7 +497,7 @@ export default class OrganizationController {
               "%delegate%",
               `${request.requester.given_name} ${request.requester.family_name}`
             ),
-          `${outputFolder}/${request.document_id}.pdf`
+          documentPath
         );
       }
       return fromEither(left(new Error("Wrong data")));
@@ -365,107 +524,57 @@ export default class OrganizationController {
       .map(() => requestsCreationResponseSuccess);
   }
 
-  private async signAndSendDocuments(
-    delegateFiscalCode: FiscalCode,
-    organizationInstance: OrganizationModel
-  ): Promise<IResponseErrorInternal | IResponseNoContent> {
-    // TODO:
-    //  the documents must be stored on cloud (Azure Blob Storage).
-    //  @see https://www.pivotaltracker.com/story/show/169644958
-    const unsignedContractPath = `./documents/${organizationInstance.ipaCode}/contract.pdf`;
-    const signedContractPath = `./documents/${organizationInstance.ipaCode}/signed-contract.pdf`;
-    const unsignedMandatePath = `./documents/${
-      organizationInstance.ipaCode
-    }/mandate-${delegateFiscalCode.toLocaleLowerCase()}.pdf`;
-    const signedMandatePath = `./documents/${
-      organizationInstance.ipaCode
-    }/signed-mandate-${delegateFiscalCode.toLocaleLowerCase()}.pdf`;
-
-    const arrayOfMaybeError = await Promise.all([
-      this.createSignedDocument(unsignedContractPath, signedContractPath),
-      this.createSignedDocument(unsignedMandatePath, signedMandatePath)
-    ]);
-    const errorsArray = arrayOfMaybeError.filter(isSome);
-    if (errorsArray.length > 0) {
-      errorsArray.forEach(error =>
-        log.error("An error occurred while signing documents. %s", error)
-      );
-      return ResponseErrorInternal("An error occurred while signing documents");
-    }
-    try {
-      await organizationInstance.update({
-        registrationStatus: OrganizationRegistrationStatusEnum.DRAFT
-      });
-    } catch (error) {
-      log.error("An error occurred updating registration status. %s", error);
-      return ResponseErrorInternal(
-        "An error occurred updating registration status"
-      );
-    }
-    try {
-      await this.emailService.send({
-        attachments: [
-          {
-            filename: "contratto.pdf",
-            path: signedContractPath
-          },
-          {
-            filename: `delega-${delegateFiscalCode.toLocaleLowerCase()}.pdf`,
-            path: signedMandatePath
-          }
-        ],
-        html:
-          localeIt.organizationController.sendDocuments.registrationEmail
-            .content,
-        subject:
-          localeIt.organizationController.sendDocuments.registrationEmail
-            .subject,
-        text:
-          localeIt.organizationController.sendDocuments.registrationEmail
-            .content,
-        to: organizationInstance.pec
-      });
-    } catch (error) {
-      log.error("An error occurred sending email. %s", error);
-      return ResponseErrorInternal("An error occurred sending email");
-    }
-    return ResponseNoContent();
-  }
-
-  private async createSignedDocument(
+  private createSignedDocument(
     inputPath: string,
     outputPath: string
-  ): Promise<Option<Error>> {
-    try {
-      const unsignedContentBase64 = await fs.promises.readFile(inputPath, {
-        encoding: "base64"
-      });
-      const errorOrSignedContentBase64 = await this.documentService.signDocument(
-        unsignedContentBase64
-      );
-      return errorOrSignedContentBase64.fold(
-        async error => {
-          log.error("An error occurred while signing document. %s", error);
-          return some(error);
-        },
-        async signedContentBase64 => {
-          try {
-            await fs.promises.writeFile(outputPath, signedContentBase64, {
+  ): TaskEither<IResponseErrorInternal, void> {
+    return tryCatch(
+      () => fs.promises.mkdir("./documents/signed", { recursive: true }),
+      (error: unknown) =>
+        genericInternalUnknownErrorHandler(
+          error,
+          "organizationController#createOnboardingDocument | An error occurred creating documents folder.",
+          "An error occurred creating documents folder."
+        )
+    )
+      .chain(() =>
+        tryCatch(
+          () =>
+            fs.promises.readFile(inputPath, {
               encoding: "base64"
-            });
-            return none;
-          } catch (error) {
-            log.error(
-              "An error occurred while saving signed document. %s",
-              error
-            );
-            return some(error);
-          }
-        }
+            }),
+          error =>
+            genericInternalUnknownErrorHandler(
+              error,
+              "OrganizationController#createSignedDocument | An error occurred while reading unsigned document file.",
+              "An error occurred while reading unsigned document file"
+            )
+        )
+      )
+      .chain(unsignedDocumentContent =>
+        this.documentService
+          .signDocument(unsignedDocumentContent)
+          .mapLeft(error =>
+            genericInternalUnknownErrorHandler(
+              error,
+              "OrganizationController#createSignedDocument | An error occurred while signing the document.",
+              "An error occurred while signing the document."
+            )
+          )
+      )
+      .chain(signedContentBase64 =>
+        tryCatch(
+          () =>
+            fs.promises.writeFile(outputPath, signedContentBase64, {
+              encoding: "base64"
+            }),
+          error =>
+            genericInternalUnknownErrorHandler(
+              error,
+              "OrganizationController#createSignedDocument | An error occurred while saving signed document file.",
+              "An error occurred while saving signed document file"
+            )
+        )
       );
-    } catch (error) {
-      log.error("An error occurred while reading unsigned document. %s", error);
-      return some(error);
-    }
   }
 }

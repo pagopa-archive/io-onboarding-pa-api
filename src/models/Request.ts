@@ -34,7 +34,7 @@ export class Request extends Model {
   public readonly deletedAt!: Date;
   public readonly updatedAt!: Date;
 
-  public readonly requester?: User;
+  public readonly requester!: User | null;
 }
 
 export function init(): void {
