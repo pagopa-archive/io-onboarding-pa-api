@@ -132,7 +132,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RequestCollection"
+                $ref: "#/components/schemas/Request"
         "403":
           $ref: "#/components/responses/403Forbidden"
         "404":
@@ -843,15 +843,6 @@ components:
         - $ref: "#/components/schemas/UserDelegationRequest"
       discriminator:
         propertyName: type
-    RequestCollection:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/Request"
-      required:
-        - items
   securitySchemes:
     bearerAuth:
       type: apiKey
