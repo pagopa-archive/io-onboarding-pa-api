@@ -18,11 +18,6 @@ export function up(queryInterface: QueryInterface): Promise<unknown> {
             allowNull: true,
             type: new DataTypes.DATE()
           },
-          documentId: {
-            allowNull: true,
-            type: new DataTypes.STRING(),
-            unique: true
-          },
           id: {
             autoIncrement: true,
             primaryKey: true,

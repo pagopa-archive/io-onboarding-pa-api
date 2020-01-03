@@ -339,7 +339,6 @@ describe("OrganizationService", () => {
           ipa_code: validPublicAdministration.cod_amm
         } as OrganizationRegistrationParams;
         const expectedResult = {
-          document_id: expect.any(String),
           id: expect.any(Number),
           organization: {
             fiscal_code: validPublicAdministration.Cf,
@@ -413,11 +412,8 @@ describe("OrganizationService", () => {
     });
 
     describe("when the public administration is already registered", () => {
-      const organizationRegistrationDocumentId = process.hrtime().join("");
-
       beforeEach(async () => {
         await RequestModel.create({
-          documentId: process.hrtime().join(""),
           legalRepresentativeEmail: validPublicAdministration.mail1,
           legalRepresentativeFamilyName: "Spano'",
           legalRepresentativeFiscalCode: "BCDFGH12A21Z123D",
@@ -437,7 +433,10 @@ describe("OrganizationService", () => {
       afterEach(async () => {
         await RequestModel.destroy({
           force: true,
-          where: { documentId: organizationRegistrationDocumentId }
+          where: {
+            organizationIpaCode: validPublicAdministration.cod_amm,
+            status: RequestStatusEnum.ACCEPTED
+          }
         });
       });
       it("should return a left task with an internal error response", async () => {

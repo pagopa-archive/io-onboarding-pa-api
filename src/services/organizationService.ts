@@ -314,20 +314,13 @@ export function createOnboardingRequest(
         userEmail: user.email
       };
       return tryCatch(
-        () =>
-          RequestModel.create({
-            ...requestParams,
-            documentId: `${
-              requestParams.organizationFiscalCode
-            }-${process.hrtime().join("")}`
-          }),
+        () => RequestModel.create(requestParams),
         internalErrorHandler
       )
         .chain(loadRequester)
         .chain(requestModel =>
           fromEither(
             Request.decode({
-              document_id: requestModel.documentId,
               id: requestModel.id,
               organization: {
                 fiscal_code: requestModel.organizationFiscalCode,

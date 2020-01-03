@@ -728,8 +728,6 @@ components:
       properties:
         organization:
           $ref: "#/components/schemas/Organization"
-        document_id:
-          <<: *non-empty-string
         id:
           type: integer
         requester:
@@ -741,7 +739,6 @@ components:
           x-extensible-enum:
             - "USER_DELEGATION"
       required:
-        - document_id
         - id
         - organization
         - requester
@@ -749,7 +746,6 @@ components:
         - type
       example:
         {
-          document_id: "document-id",
           id: 12345,
           organization: {
             "fiscal_code": "86000470830",
@@ -781,8 +777,6 @@ components:
       properties:
         organization:
           $ref: "#/components/schemas/Organization"
-        document_id:
-          <<: *non-empty-string
         id:
           type: integer
         requester:
@@ -794,14 +788,12 @@ components:
           x-extensible-enum:
             - "ORGANIZATION_REGISTRATION"
       required:
-        - document_id
         - id
         - organization
         - status
         - type
       example:
         {
-          document_id: "document-id",
           id: 12345,
           organization: {
             "fiscal_code": "86000470830",

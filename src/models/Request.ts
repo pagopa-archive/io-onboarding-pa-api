@@ -17,7 +17,6 @@ export enum RequestScope {
 
 export class Request extends Model {
   public id!: number;
-  public documentId!: string;
   public legalRepresentativeFamilyName!: string;
   public legalRepresentativeGivenName!: string;
   public legalRepresentativeFiscalCode!: string;
@@ -40,11 +39,6 @@ export class Request extends Model {
 export function init(): void {
   Request.init(
     {
-      documentId: {
-        allowNull: true,
-        type: new DataTypes.STRING(),
-        unique: true
-      },
       id: {
         autoIncrement: true,
         primaryKey: true,

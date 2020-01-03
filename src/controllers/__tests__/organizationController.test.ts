@@ -80,7 +80,6 @@ const mockedLoggedDelegate: LoggedUser = {
 } as LoggedUser;
 
 const requestCommonProperties = {
-  documentId: "document-id",
   legalRepresentativeFamilyName: "Spano'",
   legalRepresentativeFiscalCode: "BCDFGH12A21Z123D",
   legalRepresentativeGivenName: "Ignazio Alfonso",
@@ -157,7 +156,6 @@ const onboardingRequesterParams = {
 } as OrganizationDelegate;
 
 const mockedCreatedOrganizationRegistrationRequest = {
-  document_id: process.hrtime().join(""),
   id: Number(process.hrtime().join("")),
   organization: onboardingOrganizationParams,
   requester: onboardingRequesterParams,
@@ -166,7 +164,6 @@ const mockedCreatedOrganizationRegistrationRequest = {
 } as OrganizationRegistrationRequest;
 
 const mockedCreatedUserDelegationRequest = {
-  document_id: process.hrtime().join(""),
   id: Number(process.hrtime().join("")),
   organization: onboardingOrganizationParams,
   requester: onboardingRequesterParams,
@@ -489,30 +486,25 @@ describe("OrganizationController#sendDocuments()", () => {
     });
     organizationRegistrationRequestModel = await RequestModel.create({
       ...requestCommonProperties,
-      documentId: "organization-registration-document-from-logged-delegate",
       type: RequestTypeEnum.ORGANIZATION_REGISTRATION,
       userEmail: loggedDelegateModel.email
     });
     userDelegationRequestModel = await RequestModel.create({
       ...requestCommonProperties,
-      documentId: "user-delegation-document-from-logged-delegate",
       type: RequestTypeEnum.USER_DELEGATION,
       userEmail: loggedDelegateModel.email
     });
     requestModelFromOtherUser = await RequestModel.create({
       ...requestCommonProperties,
-      documentId: "document-from-other-user",
       userEmail: otherUserModel.email
     });
     requestModelForAnotherAdministration = await RequestModel.create({
       ...requestCommonProperties,
-      documentId: "document-for-another-administration",
       organizationPec: "other-administration@example.com",
       userEmail: loggedDelegateModel.email
     });
     requestModelAlreadySubmitted = await RequestModel.create({
       ...requestCommonProperties,
-      documentId: "document-already-sent",
       status: RequestStatusEnum.SUBMITTED,
       type: RequestTypeEnum.USER_DELEGATION,
       userEmail: loggedDelegateModel.email
