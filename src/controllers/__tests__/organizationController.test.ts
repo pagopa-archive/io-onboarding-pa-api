@@ -1,18 +1,11 @@
 import { isLeft, isRight, left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
-import { Task } from "fp-ts/lib/Task";
-import {
-  fromEither,
-  left as leftTaskEither,
-  right as rightTaskEither
-} from "fp-ts/lib/TaskEither";
-import {
-  ResponseErrorInternal,
-  ResponseErrorNotFound
-} from "italia-ts-commons/lib/responses";
+import { fromEither } from "fp-ts/lib/TaskEither";
+import { ResponseErrorNotFound } from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import * as mockFs from "mock-fs";
 import * as nodemailer from "nodemailer";
+import { Op, Sequelize } from "sequelize";
 import * as soap from "soap";
 import mockReq from "../../__mocks__/mockRequest";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
@@ -26,7 +19,6 @@ import { RequestStatusEnum } from "../../generated/RequestStatus";
 import { RequestTypeEnum } from "../../generated/RequestType";
 import { UserDelegationRequest } from "../../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../../generated/UserRole";
-import { Organization as OrganizationModel } from "../../models/Organization";
 import DocumentService from "../../services/documentService";
 import EmailService from "../../services/emailService";
 import * as organizationService from "../../services/organizationService";
@@ -34,6 +26,42 @@ import { LoggedUser } from "../../types/user";
 import { getRequiredEnvVar } from "../../utils/environment";
 import { ResponseSuccessCreation } from "../../utils/responses";
 import OrganizationController from "../organizationController";
+
+jest.mock("../../database/db", () => ({
+  default: new Sequelize({
+    dialect: "sqlite",
+    logging: false
+  })
+}));
+
+import {
+  init as initIpaPublicAdministration,
+  IpaPublicAdministration as IpaPublicAdministrationModel
+} from "../../models/IpaPublicAdministration";
+import {
+  createAssociations as createOrganizationAssociations,
+  init as initOrganization,
+  Organization as OrganizationModel
+} from "../../models/Organization";
+import {
+  init as initOrganizationUser,
+  OrganizationUser as OrganizationUserModel
+} from "../../models/OrganizationUser";
+import {
+  createAssociations as createRequestAssociations,
+  init as initRequest,
+  Request as RequestModel
+} from "../../models/Request";
+import {
+  createAssociations as createSessionAssociations,
+  init as initSession,
+  Session as SessionModel
+} from "../../models/Session";
+import {
+  createAssociations as createUserAssociations,
+  init as initUser,
+  User as UserModel
+} from "../../models/User";
 
 const mockedLoggedDelegate: LoggedUser = {
   createdAt: new Date(1518010929530),
@@ -50,6 +78,21 @@ const mockedLoggedDelegate: LoggedUser = {
     token: "user-token"
   }
 } as LoggedUser;
+
+const requestCommonProperties = {
+  documentId: "document-id",
+  legalRepresentativeFamilyName: "Spano'",
+  legalRepresentativeFiscalCode: "BCDFGH12A21Z123D",
+  legalRepresentativeGivenName: "Ignazio Alfonso",
+  legalRepresentativePhoneNumber: "5550000000",
+  organizationFiscalCode: "86000470830",
+  organizationIpaCode: "c_e043",
+  organizationName: "Comune di Gioiosa Marea",
+  organizationPec: "indirizzo00@email.pec.it",
+  organizationScope: "NATIONAL",
+  status: RequestStatusEnum.CREATED,
+  type: RequestTypeEnum.ORGANIZATION_REGISTRATION
+};
 
 const mockCreateOnboardingRequests = jest.spyOn(
   organizationService,
@@ -69,6 +112,12 @@ const mockGetOrganizationFromUserEmail = jest.spyOn(
 const mockGetAllOrganizations = jest.spyOn(
   organizationService,
   "getAllOrganizations"
+);
+
+const mockedRequestModelFindOne = jest.spyOn(RequestModel, "findOne");
+const mockedRequestModelInstanceUpdate = jest.spyOn(
+  RequestModel.prototype,
+  "update"
 );
 
 const mockedOrganizationRegistrationParams = {
@@ -404,7 +453,118 @@ describe("OrganizationController", () => {
   });
 });
 
-describe.skip("OrganizationController#sendDocuments()", () => {
+describe("OrganizationController#sendDocuments()", () => {
+  // tslint:disable-next-line:no-let
+  let organizationRegistrationRequestModel: RequestModel;
+  // tslint:disable-next-line:no-let
+  let userDelegationRequestModel: RequestModel;
+  // tslint:disable-next-line:no-let
+  let requestModelFromOtherUser: RequestModel;
+  // tslint:disable-next-line:no-let
+  let requestModelForAnotherAdministration: RequestModel;
+  // tslint:disable-next-line:no-let
+  let requestModelAlreadySubmitted: RequestModel;
+  // tslint:disable-next-line:no-let
+  let loggedDelegateModel: UserModel;
+  // tslint:disable-next-line:no-let
+  let otherUserModel: UserModel;
+  beforeAll(async () => {
+    initIpaPublicAdministration();
+    initOrganization();
+    initOrganizationUser();
+    initUser();
+    initSession();
+    initRequest();
+    await IpaPublicAdministrationModel.sync({ force: true });
+    await OrganizationUserModel.sync({ force: true });
+    await OrganizationModel.sync({ force: true });
+    await UserModel.sync({ force: true });
+    await SessionModel.sync({ force: true });
+    await RequestModel.sync({ force: true });
+
+    loggedDelegateModel = await UserModel.create(mockedLoggedDelegate);
+    otherUserModel = await UserModel.create({
+      ...mockedLoggedDelegate,
+      email: "other-user@example.com"
+    });
+    organizationRegistrationRequestModel = await RequestModel.create({
+      ...requestCommonProperties,
+      documentId: "organization-registration-document-from-logged-delegate",
+      type: RequestTypeEnum.ORGANIZATION_REGISTRATION,
+      userEmail: loggedDelegateModel.email
+    });
+    userDelegationRequestModel = await RequestModel.create({
+      ...requestCommonProperties,
+      documentId: "user-delegation-document-from-logged-delegate",
+      type: RequestTypeEnum.USER_DELEGATION,
+      userEmail: loggedDelegateModel.email
+    });
+    requestModelFromOtherUser = await RequestModel.create({
+      ...requestCommonProperties,
+      documentId: "document-from-other-user",
+      userEmail: otherUserModel.email
+    });
+    requestModelForAnotherAdministration = await RequestModel.create({
+      ...requestCommonProperties,
+      documentId: "document-for-another-administration",
+      organizationPec: "other-administration@example.com",
+      userEmail: loggedDelegateModel.email
+    });
+    requestModelAlreadySubmitted = await RequestModel.create({
+      ...requestCommonProperties,
+      documentId: "document-already-sent",
+      status: RequestStatusEnum.SUBMITTED,
+      type: RequestTypeEnum.USER_DELEGATION,
+      userEmail: loggedDelegateModel.email
+    });
+
+    createOrganizationAssociations();
+    createUserAssociations();
+    createSessionAssociations();
+    createRequestAssociations();
+    await organizationRegistrationRequestModel.reload({
+      include: [{ model: UserModel, as: "requester" }]
+    });
+    await userDelegationRequestModel.reload({
+      include: [{ model: UserModel, as: "requester" }]
+    });
+    await requestModelFromOtherUser.reload({
+      include: [{ model: UserModel, as: "requester" }]
+    });
+    await requestModelForAnotherAdministration.reload({
+      include: [{ model: UserModel, as: "requester" }]
+    });
+    await requestModelAlreadySubmitted.reload({
+      include: [{ model: UserModel, as: "requester" }]
+    });
+  });
+  afterAll(async () => {
+    await IpaPublicAdministrationModel.destroy({
+      force: true,
+      truncate: true
+    });
+    await OrganizationUserModel.destroy({
+      force: true,
+      truncate: true
+    });
+    await OrganizationModel.destroy({
+      force: true,
+      truncate: true
+    });
+    await SessionModel.destroy({
+      force: true,
+      truncate: true
+    });
+    await RequestModel.destroy({
+      force: true,
+      truncate: true
+    });
+    await UserModel.destroy({
+      force: true,
+      truncate: true
+    });
+  });
+
   it("should return a forbidden error response if the user is not a delegate", async () => {
     const mockedLoggedUser: LoggedUser = {
       ...mockedLoggedDelegate,
@@ -413,66 +573,122 @@ describe.skip("OrganizationController#sendDocuments()", () => {
     const req = mockReq();
     req.user = mockedLoggedUser;
     req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+    req.body = { items: [1, 2] };
     const organizationController = await getOrganizationController();
-    const result = await organizationController.sendDocuments(req);
-    expect(result).toEqual({
+    const result = await organizationController.sendDocuments(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
       apply: expect.any(Function),
       detail: expect.any(String),
       kind: "IResponseErrorForbiddenNotAuthorized"
     });
   });
 
-  it("should return an internal error if the reading of the organization from the db fails", async () => {
-    mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-      fromEither(left(new Error("an error occurred")))
-    );
+  it("should return an error validation response when the request is invalid", async () => {
     const req = mockReq();
     req.user = mockedLoggedDelegate;
     req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+    req.body = { items: 1 };
     const organizationController = await getOrganizationController();
-    const result = await organizationController.sendDocuments(req);
-    expect(result).toEqual({
+    const result = await organizationController.sendDocuments(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorValidation"
+    });
+  });
+
+  it("should return an internal error if the reading of a request from the db fails", async () => {
+    mockedRequestModelFindOne.mockRejectedValueOnce(new Error("db error"));
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+    req.body = { items: [1, 2] };
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.sendDocuments(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
       apply: expect.any(Function),
       detail: expect.any(String),
       kind: "IResponseErrorInternal"
     });
   });
 
-  it("should return a not found error response if no organization is found for the user", async () => {
-    mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-      fromEither(right([]))
-    );
+  it("should return a not found error if any of the provided id refers to a not existing request", async () => {
     const req = mockReq();
     req.user = mockedLoggedDelegate;
     req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+    req.body = { items: [Date.now()] };
     const organizationController = await getOrganizationController();
-    const result = await organizationController.sendDocuments(req);
-    expect(result).toEqual({
+    const result = await organizationController.sendDocuments(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
       apply: expect.any(Function),
       detail: expect.any(String),
       kind: "IResponseErrorNotFound"
     });
   });
 
-  describe("when the organization is found", () => {
-    const mockedOrganizationParams = {
-      fiscalCode: "86000470830",
-      ipaCode: "c_e043",
-      legalRepresentative: {
-        email: "fake.address@email.pec.it",
-        familyName: "Spano'",
-        fiscalCode: "BCDFGH12A21Z123D",
-        givenName: "Ignazio Alfonso",
-        phoneNumber: "5550000000",
-        role: "ORG_MANAGER"
-      },
-      name: "Comune di Gioiosa Marea",
-      pec: "fake.address@email.pec.it",
-      scope: "NATIONAL"
+  it("should return a forbidden error response if any of the provided ids refers to a requests created by a different user", async () => {
+    mockedRequestModelFindOne.mockResolvedValueOnce(requestModelFromOtherUser);
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+    req.body = { items: [1] };
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.sendDocuments(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorForbiddenNotAuthorized"
+    });
+  });
+
+  it("should return a conflict error response if any of the provided ids refers to request whose status is not CREATED", async () => {
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+    req.body = {
+      items: [
+        organizationRegistrationRequestModel.id,
+        requestModelAlreadySubmitted.id
+      ]
     };
-    const mockedOrganizationModel = mockedOrganizationParams as OrganizationModel;
-    const contractContent = "contract-content";
-    const mandateContent = "mandate-content";
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.sendDocuments(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorConflict"
+    });
+  });
+
+  it("should return a conflict error response if the provided ids refer to requests to be sent to different email addresses", async () => {
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+    req.body = {
+      items: [
+        organizationRegistrationRequestModel.id,
+        requestModelForAnotherAdministration.id
+      ]
+    };
+    const organizationController = await getOrganizationController();
+    const result = await organizationController.sendDocuments(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorConflict"
+    });
+  });
+
+  describe("when the request is valid and the provided id refer to valid requests", () => {
+    // tslint:disable-next-line:no-let
+    let validRequestsToBeSubmitted: ReadonlyArray<RequestModel>;
 
     function getSignedVersionBase64(
       unsignedContentBase64String: string
@@ -482,92 +698,67 @@ describe.skip("OrganizationController#sendDocuments()", () => {
     }
 
     beforeEach(() => {
-      const mockedContractPath = `documents/${mockedOrganizationModel.ipaCode}/contract.pdf`;
-      const mockedMandatePath = `documents/${
-        mockedOrganizationModel.ipaCode
-      }/mandate-${mockedLoggedDelegate.fiscalCode.toLocaleLowerCase()}.pdf`;
-      const mockedFsConfig = {
-        [mockedContractPath]: Buffer.from(contractContent),
-        [mockedMandatePath]: Buffer.from(mandateContent)
-      };
+      validRequestsToBeSubmitted = [
+        organizationRegistrationRequestModel,
+        userDelegationRequestModel
+      ];
+      const mockedFsConfig = validRequestsToBeSubmitted.reduce(
+        (items, request) => ({
+          ...items,
+          [`documents/unsigned/${request.id}.pdf`]: Buffer.from(
+            "request-content"
+          )
+        }),
+        {}
+      );
       mockFs(mockedFsConfig);
     });
-    afterEach(() => {
+    afterEach(async () => {
       mockFs.restore();
       mockSendEmail.mockReset();
-    });
-
-    it("should return a conflict error response if the organization is registered", async () => {
-      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        fromEither(
-          right(
-            [{
-              ...mockedOrganizationParams
-            } as OrganizationModel]
-          )
+      const requestsToReset = await RequestModel.findAll({
+        where: { id: { [Op.in]: validRequestsToBeSubmitted.map(_ => _.id) } }
+      });
+      await Promise.all(
+        requestsToReset.map(request =>
+          request.update({ status: RequestStatusEnum.CREATED })
         )
       );
-      const req = mockReq();
-      req.user = mockedLoggedDelegate;
-      req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
-      const organizationController = await getOrganizationController();
-      const result = await organizationController.sendDocuments(req);
-      expect(result).toEqual({
-        apply: expect.any(Function),
-        detail: expect.any(String),
-        kind: "IResponseErrorConflict"
-      });
     });
 
-    it("should return an internal error response if the registration status cannot be updated", async () => {
-      mockSignDocument.mockImplementation(contentBase64 => {
-        return Promise.resolve(right(getSignedVersionBase64(contentBase64)));
-      });
-      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        fromEither(
-          right(
-            [{
-              ...mockedOrganizationParams,
-              update: (params: { registrationStatus: string }) =>
-                Promise.reject(new Error("organization update failed"))
-            } as OrganizationModel]
-          )
-        )
+    it("should return an internal server error response if the documents signing fails", async () => {
+      mockSignDocument.mockReturnValue(
+        fromEither(left(new Error("document signing failed")))
       );
-      const req = mockReq();
-      req.user = mockedLoggedDelegate;
-      req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
-      const organizationController = await getOrganizationController();
-      const result = await organizationController.sendDocuments(req);
-      expect(result).toEqual({
-        apply: expect.any(Function),
-        detail: expect.any(String),
-        kind: "IResponseErrorInternal"
-      });
-    });
-
-    it("should send an email with signed attachments and return a no content response", async () => {
-      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        fromEither(
-          right(
-            [{
-              ...mockedOrganizationParams,
-              update: (params: { registrationStatus: string }) =>
-                Promise.resolve(mockedOrganizationModel)
-            } as OrganizationModel]
-          )
-        )
-      );
-      mockSignDocument.mockImplementation(contentBase64 => {
-        return Promise.resolve(right(getSignedVersionBase64(contentBase64)));
-      });
       mockSendEmail.mockReturnValue(Promise.resolve(none));
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+      req.body = { items: validRequestsToBeSubmitted.map(_ => _.id) };
       const organizationController = await getOrganizationController();
-      const result = await organizationController.sendDocuments(req);
-      expect(result).toEqual({
+      const result = await organizationController.sendDocuments(req).run();
+      expect(left(result)).toBeTruthy();
+      expect(result.value).toEqual({
+        apply: expect.any(Function),
+        detail: expect.any(String),
+        kind: "IResponseErrorInternal"
+      });
+      expect(mockSendEmail).not.toHaveBeenCalled();
+    });
+
+    it("should send an email with signed attachments and return a no content response", async () => {
+      mockSignDocument.mockImplementation(contentBase64 =>
+        fromEither(right(getSignedVersionBase64(contentBase64)))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+      req.body = { items: validRequestsToBeSubmitted.map(_ => _.id) };
+      const organizationController = await getOrganizationController();
+      const result = await organizationController.sendDocuments(req).run();
+      expect(isRight(result)).toBeTruthy();
+      expect(result.value).toEqual({
         apply: expect.any(Function),
         kind: "IResponseNoContent",
         value: {}
@@ -586,29 +777,30 @@ describe.skip("OrganizationController#sendDocuments()", () => {
         html: expect.any(String),
         subject: expect.any(String),
         text: expect.any(String),
-        to: mockedOrganizationModel.pec
+        to: validRequestsToBeSubmitted[0].organizationPec
       });
     });
 
-    it("should return an internal server error response if the documents signing fails", async () => {
-      mockGetOrganizationInstanceFromDelegateEmail.mockImplementation(() =>
-        fromEither(right([mockedOrganizationModel]))
-      );
-      mockSignDocument.mockImplementation(() =>
-        Promise.resolve(left(new Error("document signing failed")))
+    it("should return an internal error response if the request status cannot be updated", async () => {
+      mockSignDocument.mockImplementation(contentBase64 =>
+        fromEither(right(getSignedVersionBase64(contentBase64)))
       );
       mockSendEmail.mockReturnValue(Promise.resolve(none));
+      mockedRequestModelInstanceUpdate.mockRejectedValueOnce(
+        new Error("db error on update")
+      );
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.params = { ipaCode: mockedPreDraftOrganization.ipa_code };
+      req.body = { items: validRequestsToBeSubmitted.map(_ => _.id) };
       const organizationController = await getOrganizationController();
-      const result = await organizationController.sendDocuments(req);
-      expect(result).toEqual({
+      const result = await organizationController.sendDocuments(req).run();
+      expect(isLeft(result)).toBeTruthy();
+      expect(result.value).toEqual({
         apply: expect.any(Function),
         detail: expect.any(String),
         kind: "IResponseErrorInternal"
       });
-      expect(mockSendEmail).not.toHaveBeenCalled();
     });
   });
 });
