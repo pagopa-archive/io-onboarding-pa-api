@@ -38,7 +38,7 @@ import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
 import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
 import { getRequiredEnvVar } from "./utils/environment";
-import { toExpressHandler } from "./utils/express";
+import { patchContentTypeValidator, toExpressHandler } from "./utils/express";
 
 // Private key used in SAML authentication to a SPID IDP.
 const samlKey = () => {
@@ -175,9 +175,10 @@ function registerRoutes(
     toExpressHandler(profileController.getProfile, profileController)
   );
 
-  app.put(
+  app.patch(
     `/profile`,
     bearerTokenAuth,
+    patchContentTypeValidator,
     toExpressHandler(profileController.editProfile, profileController)
   );
 

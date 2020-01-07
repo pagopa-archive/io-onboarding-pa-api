@@ -243,7 +243,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
-    put:
+    patch:
       description: |-
         Updates the user profile.
       operationId: updateProfile
@@ -252,9 +252,9 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          application/merge-patch+json:
             schema:
-              $ref: "#/components/schemas/UpdateUserProfile"
+              $ref: "#/components/schemas/WorkEmailPatch"
       responses:
         <<: *common-responses
         "200":
@@ -265,6 +265,8 @@ paths:
                 $ref: "#/components/schemas/UserProfile"
         "404":
           $ref: "#/components/responses/404NotFound"
+        "415":
+          $ref: "#/components/responses/415UnsupportedMediaType"
   /public-administrations:
     get:
       description: |-
@@ -303,6 +305,9 @@ components:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/404NotFound
     409Conflict:
       description: Conflict
+      <<: *problem+json-content
+    415UnsupportedMediaType:
+      description: Unsupported Media Type
       <<: *problem+json-content
     429TooManyRequests:
       $ref: https://teamdigitale.github.io/openapi/0.0.5/definitions.yaml#/responses/429TooManyRequests
@@ -395,7 +400,7 @@ components:
           "email": "indirizzo00@email.pec.it",
           "role": "ORG_MANAGER"
         }
-    UpdateUserProfile:
+    WorkEmailPatch:
       type: object
       properties:
         work_email:

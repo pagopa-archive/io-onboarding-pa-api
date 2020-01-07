@@ -3,6 +3,7 @@ import {
   IResponse,
   ResponseErrorInternal
 } from "italia-ts-commons/lib/responses";
+import { ResponseErrorUnsupportedMediaType } from "./responses";
 
 /**
  * Convenience method that transforms a function (handler),
@@ -22,4 +23,17 @@ export function toExpressHandler<T, P>(
         res.locals.detail = response.detail;
         response.apply(res);
       });
+}
+
+export function patchContentTypeValidator(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+): void {
+  const expectedMediaType = "application/merge-patch+json";
+  req.get("Content-Type") === expectedMediaType
+    ? next()
+    : ResponseErrorUnsupportedMediaType(
+        `The expected media type is ${expectedMediaType}`
+      ).apply(res);
 }
