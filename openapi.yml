@@ -95,9 +95,8 @@ paths:
   /organizations:
     get:
       description: |-
-        Returns a list of all the organizations in a not pre-draft registration status,
-        according to the user role. That is:
-        - for an administrator, returns a list with all the organization in a not pre-draft registration status
+        Returns a list of all the organizations according to the user role. That is:
+        - for an administrator, returns a list with all the organizations
         - for a delegate, returns a list with the single organization by which the user has been delegated
         - for a legal representative, returns a list with the single organization which the user represents
         - for a developer returns a forbidden error
@@ -128,7 +127,7 @@ paths:
       responses:
         <<: *common-responses
         "201":
-          description: The registered organization
+          description: The request payload
           content:
             application/json:
               schema:
