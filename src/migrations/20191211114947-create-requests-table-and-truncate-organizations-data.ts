@@ -73,6 +73,7 @@ export function up(queryInterface: QueryInterface): Promise<unknown> {
             type: new DataTypes.DATE()
           },
           userEmail: {
+            allowNull: false,
             references: {
               key: "email",
               model: "Users"

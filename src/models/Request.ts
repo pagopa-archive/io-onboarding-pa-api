@@ -90,6 +90,7 @@ export function init(): void {
         type: new DataTypes.ENUM(...Object.values(RequestType))
       },
       userEmail: {
+        allowNull: false,
         references: {
           key: "email",
           model: User

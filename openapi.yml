@@ -789,6 +789,7 @@ components:
       required:
         - id
         - organization
+        - requester
         - status
         - type
       example:
@@ -808,6 +809,13 @@ components:
             "name": "Comune di Gioiosa Marea",
             "pec": "indirizzo00@email.pec.it",
             "scope": "NATIONAL"
+          },
+          requester: {
+            "email": "delegate@example.com",
+            "family_name": "Rossi",
+            "fiscal_code": "RSSMTT77S12A123D",
+            "given_name": "Matteo",
+            "role": "ORG_DELEGATE"
           },
           status: "SUBMITTED",
           type: "ORGANIZATION_REGISTRATION"
