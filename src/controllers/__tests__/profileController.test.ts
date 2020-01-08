@@ -66,16 +66,20 @@ jest.mock("../../services/emailService", () => ({
 }));
 
 const profileService = new ProfileService();
-const emailService = new EmailService({
-  auth: {
-    pass: "password",
-    user: "user"
+const emailService = new EmailService(
+  {
+    auth: {
+      pass: "password",
+      user: "user"
+    },
+    host: "smtp.host",
+    port: 1111,
+    secure: false
   },
-  from: "sender@email.com",
-  host: "smtp.host",
-  port: 1111,
-  secure: false
-});
+  {
+    from: "sender@email.com"
+  }
+);
 
 async function getProfileController(): Promise<ProfileController> {
   return new ProfileController(profileService, emailService);

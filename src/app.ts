@@ -82,6 +82,7 @@ const CLIENT_SPID_LOGIN_REDIRECTION_URL = getRequiredEnvVar(
 const TOKEN_DURATION_IN_SECONDS = Number(
   getRequiredEnvVar("TOKEN_DURATION_IN_SECONDS")
 );
+const BACKEND_PORT = getRequiredEnvVar("BACKEND_PORT");
 
 export default async function newApp(
   emailService: EmailService,
@@ -91,7 +92,7 @@ export default async function newApp(
   const app = express();
 
   // Express configuration
-  app.set("port", process.env.PORT || 3000);
+  app.set("port", +BACKEND_PORT);
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(

@@ -1,5 +1,9 @@
 import { SpidLevelEnum } from "io-spid-commons";
-import { EmailString, FiscalCode, NonEmptyString } from "italia-ts-commons/lib/strings";
+import {
+  EmailString,
+  FiscalCode,
+  NonEmptyString
+} from "italia-ts-commons/lib/strings";
 import mockReq from "../../__mocks__/mockRequest";
 
 import { UserRoleEnum } from "../../generated/UserRole";

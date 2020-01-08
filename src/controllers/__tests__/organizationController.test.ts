@@ -236,7 +236,7 @@ async function getOrganizationController(): Promise<OrganizationController> {
     new DocumentService(
       await soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL"))
     ),
-    new EmailService(transporterConfig)
+    new EmailService(transporterConfig, {})
   );
 }
 
