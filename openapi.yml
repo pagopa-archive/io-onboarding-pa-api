@@ -139,25 +139,18 @@ paths:
         "409":
           $ref: "#/components/responses/409Conflict"
 
-  /organizations/{ipaCode}/signed-documents:
+  /requests/actions:
     post:
-      description: Signs and sends via email the onboarding documents of the organization
-      operationId: sendDocuments
+      description: Performs an action to one or more requests
+      operationId: doActionOnRequests
       security:
         - bearerAuth: []
-      parameters:
-        - name: ipaCode
-          in: path
-          required: true
-          description: The IPA code of the organization the documents belong to
-          schema:
-            <<: *non-empty-string
       requestBody:
-        description: The list of requests whose documents are to be signed and sent via email
+        description: a payload specifying the action to be performed and the requests on which the action will be performed
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RequestIdCollection"
+              $ref: "#/components/schemas/ActionPayload"
       responses:
         <<: *common-responses
         "204":
@@ -464,19 +457,25 @@ components:
             $ref: '#/components/schemas/FoundAdministration'
       required:
         - administrations
-    RequestIdCollection:
+    ActionPayload:
       type: object
       properties:
-        items:
+        ids:
           type: array
           items:
             type: integer
           minItems: 1
+        type:
+          type: string
+          x-extensible-enum:
+            - "SEND-EMAIL"
       required:
-        - items
+        - ids
+        - type
       example:
         {
-          items: [ 1, 2 ]
+          items: [ 1, 2 ],
+          type: "SEND-EMAIL"
         }
     FoundAdministration:
       oneOf:

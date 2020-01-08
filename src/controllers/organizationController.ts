@@ -25,13 +25,13 @@ import {
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import accessControl, { Resource } from "../acl/acl";
+import { ActionPayload } from "../generated/ActionPayload";
 import { AdministrationSearchParam } from "../generated/AdministrationSearchParam";
 import { AdministrationSearchResult } from "../generated/AdministrationSearchResult";
 import { OrganizationCollection } from "../generated/OrganizationCollection";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationRequest } from "../generated/OrganizationRegistrationRequest";
 import { Request } from "../generated/Request";
-import { RequestIdCollection } from "../generated/RequestIdCollection";
 import { RequestStatusEnum } from "../generated/RequestStatus";
 import { UserDelegationRequest } from "../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../generated/UserRole";
@@ -298,10 +298,10 @@ export default class OrganizationController {
         )
       )
       .chain<Pick<ITaskResults, "user" | "requestIds">>(taskResults =>
-        withValidationOrError(RequestIdCollection.decode(req.body))
+        withValidationOrError(ActionPayload.decode(req.body))
           .chain(
             fromPredicate(
-              _ => _.items.length > 0,
+              _ => _.ids.length > 0,
               () =>
                 ResponseErrorValidation(
                   "Bad request",
@@ -311,7 +311,7 @@ export default class OrganizationController {
           )
 
           .map(requestIdCollection => ({
-            requestIds: requestIdCollection.items,
+            requestIds: requestIdCollection.ids,
             user: taskResults.user
           }))
       )

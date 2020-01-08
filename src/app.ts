@@ -215,7 +215,7 @@ function registerRoutes(
   );
 
   app.post(
-    "/organizations/:ipaCode/signed-documents",
+    "/requests/actions",
     bearerTokenAuth,
     toFunctionalExpressHandler(
       organizationController.sendDocuments,
