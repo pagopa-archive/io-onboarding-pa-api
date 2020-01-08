@@ -1,8 +1,8 @@
 import { Request as ExpressRequest } from "express";
 import { array } from "fp-ts/lib/Array";
-import { left } from "fp-ts/lib/Either";
 import {
   fromEither,
+  fromLeft,
   fromPredicate,
   taskEither,
   TaskEither,
@@ -506,7 +506,7 @@ export default class OrganizationController {
           documentPath
         );
       }
-      return fromEither(left(new Error("Wrong data")));
+      return fromLeft(new Error("Wrong data"));
     };
     return tryCatch(
       () => fs.promises.mkdir(outputFolder, { recursive: true }),
