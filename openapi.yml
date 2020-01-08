@@ -141,7 +141,7 @@ paths:
 
   /requests/actions:
     post:
-      description: Performs an action to one or more requests
+      description: Performs an action on one or more requests
       operationId: doActionOnRequests
       security:
         - bearerAuth: []
