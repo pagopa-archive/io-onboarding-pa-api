@@ -347,8 +347,7 @@ describe("OrganizationService", () => {
               ...newOrganizationParams.legal_representative,
               email: validPublicAdministration.get(
                 "mail" + newOrganizationParams.selected_pec_label
-              ),
-              role: UserRoleEnum.ORG_MANAGER
+              )
             },
             name: validPublicAdministration.des_amm,
             pec: validPublicAdministration.get(
@@ -360,8 +359,7 @@ describe("OrganizationService", () => {
             email: user.email,
             family_name: user.familyName,
             fiscal_code: user.fiscalCode,
-            given_name: user.givenName,
-            role: user.role
+            given_name: user.givenName
           },
           status: RequestStatusEnum.CREATED,
           type: newOrganizationParams.request_type

@@ -95,8 +95,7 @@ export function toOrganizationObject(
     family_name: organizationInstance.legalRepresentative.familyName,
     fiscal_code: organizationInstance.legalRepresentative.fiscalCode,
     given_name: organizationInstance.legalRepresentative.givenName,
-    phone_number: organizationInstance.legalRepresentative.phoneNumber,
-    role: organizationInstance.legalRepresentative.role
+    phone_number: organizationInstance.legalRepresentative.phoneNumber
   };
   const users =
     organizationInstance.users &&
@@ -107,7 +106,6 @@ export function toOrganizationObject(
         family_name: user.familyName,
         fiscal_code: user.fiscalCode,
         given_name: user.givenName,
-        role: user.role,
         work_email: user.workEmail || undefined
       }));
   return OrganizationResult.decode({

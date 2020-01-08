@@ -355,23 +355,19 @@ components:
           <<: *non-empty-string
         phone_number:
           <<: *non-empty-string
-        role:
-          $ref: "#/components/schemas/UserRole"
       required:
         - email
         - family_name
         - fiscal_code
         - given_name
         - phone_number
-        - role
       example:
         {
           "family_name": "Spano'",
           "fiscal_code": "BCDFGH12A21Z123D",
           "given_name": "Ignazio Alfonso",
           "phone_number": "5550000000",
-          "email": "indirizzo00@email.pec.it",
-          "role": "ORG_MANAGER"
+          "email": "indirizzo00@email.pec.it"
         }
     UpdateUserProfile:
       type: object
@@ -639,8 +635,7 @@ components:
             "given_name": "Ignazio Alfonso",
             "fiscal_code": "BCDFGH12A21Z123D",
             "phone_number": "5550000000",
-            "email": "indirizzo00@email.pec.it",
-            "role": "ORG_MANAGER"
+            "email": "indirizzo00@email.pec.it"
           },
           "name": "Comune di Gioiosa Marea",
           "pec": "indirizzo00@email.pec.it",
@@ -711,8 +706,6 @@ components:
           $ref: "#/components/schemas/FiscalCode"
         given_name:
           <<: *non-empty-string
-        role:
-          $ref: "#/components/schemas/UserRole"
         work_email:
           $ref: "#/components/schemas/EmailAddress"
       required:
@@ -720,7 +713,6 @@ components:
         - family_name
         - fiscal_code
         - given_name
-        - role
     UserDelegationRequest:
       type: object
       properties:
@@ -753,8 +745,7 @@ components:
               "given_name": "Ignazio Alfonso",
               "fiscal_code": "BCDFGH12A21Z123D",
               "phone_number": "5550000000",
-              "email": "indirizzo00@email.pec.it",
-              "role": "ORG_MANAGER"
+              "email": "indirizzo00@email.pec.it"
             },
             "name": "Comune di Gioiosa Marea",
             "pec": "indirizzo00@email.pec.it",
@@ -764,8 +755,7 @@ components:
             "email": "delegate@example.com",
             "family_name": "Rossi",
             "fiscal_code": "RSSMTT77S12A123D",
-            "given_name": "Matteo",
-            "role": "ORG_DELEGATE"
+            "given_name": "Matteo"
           },
           status: "SUBMITTED",
           type: "USER_DELEGATION"
@@ -802,8 +792,7 @@ components:
               "given_name": "Ignazio Alfonso",
               "fiscal_code": "BCDFGH12A21Z123D",
               "phone_number": "5550000000",
-              "email": "indirizzo00@email.pec.it",
-              "role": "ORG_MANAGER"
+              "email": "indirizzo00@email.pec.it"
             },
             "name": "Comune di Gioiosa Marea",
             "pec": "indirizzo00@email.pec.it",
@@ -813,8 +802,7 @@ components:
             "email": "delegate@example.com",
             "family_name": "Rossi",
             "fiscal_code": "RSSMTT77S12A123D",
-            "given_name": "Matteo",
-            "role": "ORG_DELEGATE"
+            "given_name": "Matteo"
           },
           status: "SUBMITTED",
           type: "ORGANIZATION_REGISTRATION"

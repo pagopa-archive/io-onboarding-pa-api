@@ -29,7 +29,6 @@ import { OrganizationRegistrationRequest } from "../generated/OrganizationRegist
 import { Request } from "../generated/Request";
 import { RequestStatusEnum } from "../generated/RequestStatus";
 import { UserDelegationRequest } from "../generated/UserDelegationRequest";
-import { UserRoleEnum } from "../generated/UserRole";
 import { IpaPublicAdministration as IpaPublicAdministrationModel } from "../models/IpaPublicAdministration";
 import { Organization as OrganizationModel } from "../models/Organization";
 import { Request as RequestModel, RequestScope } from "../models/Request";
@@ -330,8 +329,7 @@ export function createOnboardingRequest(
                   family_name: requestModel.legalRepresentativeFamilyName,
                   fiscal_code: requestModel.legalRepresentativeFiscalCode,
                   given_name: requestModel.legalRepresentativeGivenName,
-                  phone_number: requestModel.legalRepresentativePhoneNumber,
-                  role: UserRoleEnum.ORG_MANAGER
+                  phone_number: requestModel.legalRepresentativePhoneNumber
                 },
                 name: requestModel.organizationName,
                 pec: requestModel.organizationPec,
@@ -341,8 +339,7 @@ export function createOnboardingRequest(
                 email: requestModel.requester.email,
                 family_name: requestModel.requester.familyName,
                 fiscal_code: requestModel.requester.fiscalCode,
-                given_name: requestModel.requester.givenName,
-                role: UserRoleEnum.ORG_DELEGATE
+                given_name: requestModel.requester.givenName
               },
               status: requestModel.status,
               type: requestModel.type

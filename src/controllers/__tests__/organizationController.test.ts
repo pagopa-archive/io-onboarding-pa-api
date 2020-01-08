@@ -119,8 +119,7 @@ const onboardingOrganizationParams = {
     family_name: "Spano'",
     fiscal_code: "BCDFGH12A21Z123D",
     given_name: "Ignazio Alfonso",
-    phone_number: "5550000000",
-    role: "ORG_MANAGER"
+    phone_number: "5550000000"
   },
   name: "Comune di Gioiosa Marea",
   pec: "indirizzo00@email.pec.it",
@@ -131,8 +130,7 @@ const onboardingRequesterParams = {
   email: "user@email.net",
   family_name: "Rossi",
   fiscal_code: "RSSMRA66A11B123S",
-  given_name: "Mario",
-  role: UserRoleEnum.ORG_DELEGATE
+  given_name: "Mario"
 } as OrganizationDelegate;
 
 const mockedCreatedOrganizationRegistrationRequest = {
@@ -159,8 +157,7 @@ const mockedPreDraftOrganization: Organization = {
     family_name: "Spano'",
     fiscal_code: "BCDFGH12A21Z123D",
     given_name: "Ignazio Alfonso",
-    phone_number: "5550000000",
-    role: "ORG_MANAGER"
+    phone_number: "5550000000"
   } as LegalRepresentative,
   name: "Comune di Gioiosa Marea" as NonEmptyString,
   pec: "indirizzo00@email.pec.it" as EmailString,
@@ -174,8 +171,7 @@ const mockedRegisteredOrganization1: Organization = {
     family_name: "Rossi",
     fiscal_code: "BCDFGH12A21Z123D",
     given_name: "Ottavio",
-    phone_number: "6660000000",
-    role: "ORG_MANAGER"
+    phone_number: "6660000000"
   } as LegalRepresentative,
   name: "Organizzazione registrata numero 1" as NonEmptyString,
   pec: "mocked-registered-organization-1@example.com" as EmailString,
@@ -189,8 +185,7 @@ const mockedRegisteredOrganization2: Organization = {
     family_name: "Rossi",
     fiscal_code: "ZZZFGH12A21Z123D",
     given_name: "Egidio",
-    phone_number: "6660000000",
-    role: "ORG_MANAGER"
+    phone_number: "6660000000"
   } as LegalRepresentative,
   name: "Organizzazione registrata numero 2" as NonEmptyString,
   pec: "mocked-registered-organization-2@example.com" as EmailString,
@@ -201,7 +196,6 @@ const mockedDelegate1 = {
   family_name: "Rossi",
   fiscal_code: "DLGNNN53S15A012S",
   given_name: "Carlo",
-  role: UserRoleEnum.ORG_DELEGATE,
   work_email: "work1@example.com"
 } as OrganizationDelegate;
 const mockedDelegate2 = {
@@ -209,7 +203,6 @@ const mockedDelegate2 = {
   family_name: "Rossi",
   fiscal_code: "FSCNNN53S15A012S",
   given_name: "Teobaldo",
-  role: UserRoleEnum.ORG_DELEGATE,
   work_email: "work2@example.com"
 } as OrganizationDelegate;
 const mockGenerateDocument = jest.fn();
