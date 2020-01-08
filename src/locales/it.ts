@@ -6,7 +6,7 @@ export default {
       delegation:
         "Io sottoscritto %legalRepresentative%, in qualità di responsabile legale dell'ente %organizationName%, delego a %delegate% la gestione dell'attività dell'ente sulla piattaforma IO."
     },
-    sendDocuments: {
+    sendEmailWithDocumentsToOrganizationPec: {
       registrationEmail: {
         content:
           "In allegato la documentazione necessaria per la registrazione di questo ente presso la piattaforma IO.",

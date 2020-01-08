@@ -3,7 +3,7 @@ import { Errors } from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { FoundNotRegisteredAdministration } from "../generated/FoundNotRegisteredAdministration";
 import { FoundRegisteredAdministration } from "../generated/FoundRegisteredAdministration";
-import { Organization } from "../generated/Organization";
+import { Organization as OrganizationResult } from "../generated/Organization";
 import { UserRoleEnum } from "../generated/UserRole";
 import { Organization as OrganizationModel } from "../models/Organization";
 import { IIpaPublicAdministrationRaw } from "./PublicAdministration";
@@ -32,7 +32,6 @@ export function fromOrganizationModelToFoundAdministration(
     ],
     name: organizationModel.name,
     pecs: { "1": organizationModel.pec },
-    registration_status: organizationModel.registrationStatus,
     scope: organizationModel.scope,
     selected_pec_label: "1"
   }).fold(
@@ -90,14 +89,13 @@ export function fromPublicAdministrationToFoundAdministration(
 
 export function toOrganizationObject(
   organizationInstance: OrganizationModel
-): Either<Errors, Organization> {
+): Either<Errors, OrganizationResult> {
   const legalRepresentative = {
     email: organizationInstance.legalRepresentative.email,
     family_name: organizationInstance.legalRepresentative.familyName,
     fiscal_code: organizationInstance.legalRepresentative.fiscalCode,
     given_name: organizationInstance.legalRepresentative.givenName,
-    phone_number: organizationInstance.legalRepresentative.phoneNumber,
-    role: organizationInstance.legalRepresentative.role
+    phone_number: organizationInstance.legalRepresentative.phoneNumber
   };
   const users =
     organizationInstance.users &&
@@ -108,26 +106,14 @@ export function toOrganizationObject(
         family_name: user.familyName,
         fiscal_code: user.fiscalCode,
         given_name: user.givenName,
-        role: user.role,
         work_email: user.workEmail || undefined
       }));
-  return Organization.decode({
+  return OrganizationResult.decode({
     fiscal_code: organizationInstance.fiscalCode,
     ipa_code: organizationInstance.ipaCode,
     legal_representative: legalRepresentative,
-    links: [
-      {
-        href: `/organizations/${organizationInstance.ipaCode}`,
-        rel: "self"
-      },
-      {
-        href: `/organizations/${organizationInstance.ipaCode}`,
-        rel: "edit"
-      }
-    ],
     name: organizationInstance.name,
     pec: organizationInstance.pec,
-    registration_status: organizationInstance.registrationStatus,
     scope: organizationInstance.scope,
     users
   });

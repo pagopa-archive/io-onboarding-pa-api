@@ -19,6 +19,10 @@ import {
 } from "./models/Organization";
 import { init as initOrganizationUser } from "./models/OrganizationUser";
 import {
+  createAssociations as createRequestAssociations,
+  init as initRequest
+} from "./models/Request";
+import {
   createAssociations as createSessionAssociations,
   init as initSession
 } from "./models/Session";
@@ -38,7 +42,7 @@ import SessionStorage from "./services/sessionStorage";
 import TokenService from "./services/tokenService";
 import bearerTokenStrategy from "./strategies/bearerTokenStrategy";
 import { getRequiredEnvVar } from "./utils/environment";
-import { toExpressHandler } from "./utils/express";
+import { toExpressHandler, toFunctionalExpressHandler } from "./utils/express";
 
 // Private key used in SAML authentication to a SPID IDP.
 const samlKey = () => {
@@ -199,16 +203,10 @@ function registerRoutes(
   app.post(
     "/organizations",
     bearerTokenAuth,
-    toExpressHandler(
+    toFunctionalExpressHandler(
       organizationController.registerOrganization,
       organizationController
     )
-  );
-
-  app.post(
-    "/organizations/:ipaCode/delegates",
-    bearerTokenAuth,
-    toExpressHandler(organizationController.addDelegate, organizationController)
   );
 
   app.get(
@@ -218,10 +216,10 @@ function registerRoutes(
   );
 
   app.post(
-    "/organizations/:ipaCode/signed-documents",
+    "/requests/actions",
     bearerTokenAuth,
-    toExpressHandler(
-      organizationController.sendDocuments,
+    toFunctionalExpressHandler(
+      organizationController.sendEmailWithDocumentsToOrganizationPec,
       organizationController
     )
   );
@@ -293,11 +291,13 @@ function initModels(): void {
   initOrganization();
   initOrganizationUser();
   initUser();
+  initRequest();
   initSession();
 }
 
 function createModelAssociations(): void {
   createOrganizationAssociations();
   createUserAssociations();
+  createRequestAssociations();
   createSessionAssociations();
 }

@@ -2,20 +2,17 @@ import { isLeft, isRight, right } from "fp-ts/lib/Either";
 import { isNone, isSome, some } from "fp-ts/lib/Option";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Sequelize } from "sequelize";
-import { EmailAddress } from "../../generated/EmailAddress";
 import { FiscalCode } from "../../generated/FiscalCode";
-import { Organization } from "../../generated/Organization";
-import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
-import { OrganizationRegistrationStatusEnum } from "../../generated/OrganizationRegistrationStatus";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
+import { RequestStatusEnum } from "../../generated/RequestStatus";
+import { RequestTypeEnum } from "../../generated/RequestType";
 import { UserRoleEnum } from "../../generated/UserRole";
 import {
-  addDelegate,
+  createOnboardingRequest,
   getAllOrganizations,
   getOrganizationFromUserEmail,
-  getOrganizationInstanceFromDelegateEmail,
-  registerOrganization
+  getOrganizationInstanceFromDelegateEmail
 } from "../organizationService";
 
 jest.mock("../../database/db", () => ({
@@ -38,6 +35,11 @@ import {
   init as initOrganizationUser,
   OrganizationUser as OrganizationUserModel
 } from "../../models/OrganizationUser";
+import {
+  createAssociations as createRequestAssociations,
+  init as initRequest,
+  Request as RequestModel
+} from "../../models/Request";
 import {
   createAssociations as createSessionAssociations,
   init as initSession,
@@ -106,7 +108,6 @@ const mockRegisteredOrganizationParams = {
   legalRepresentative: registeredOrgLegalRepresentativeParams,
   name: "Organizzazione 1",
   pec: "org1@example.com",
-  registrationStatus: OrganizationRegistrationStatusEnum.REGISTERED,
   scope: OrganizationScopeEnum.LOCAL
 };
 
@@ -134,7 +135,6 @@ const mockPreDraftOrganizationParams = {
   legalRepresentative: preDraftOrgLegalRepresentativeParams,
   name: "Organizzazione 2",
   pec: "org2@example.com",
-  registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
   scope: OrganizationScopeEnum.LOCAL
 };
 // Delegate with no association associated
@@ -148,6 +148,26 @@ const noOrgDelegateParams = {
   workEmail: "no-work@example.com"
 };
 
+const validPublicAdministrationAttributes = {
+  Cf: "86000470830",
+  cf_validato: "S",
+  cod_amm: "generic_code",
+  cogn_resp: "Rossi",
+  des_amm: "Name of the Public Administration",
+  mail1: "pec1@email.net",
+  mail2: "pec2@email.net",
+  mail3: "simple@email.net",
+  mail4: "null",
+  mail5: "null",
+  nome_resp: "Mario",
+  tipo_mail1: "pec",
+  tipo_mail2: "pec",
+  tipo_mail3: "altro",
+  tipo_mail4: "null",
+  tipo_mail5: "null",
+  titolo_resp: "presidente"
+};
+
 // tslint:disable-next-line:no-let
 let user: LoggedUser;
 // tslint:disable-next-line:no-let
@@ -158,6 +178,10 @@ let registeredOrgDelegate1: UserModel;
 let registeredOrgDelegate2: UserModel;
 // tslint:disable-next-line:no-let
 let noOrgDelegate: UserModel;
+// tslint:disable-next-line:no-let
+let validPublicAdministration: IpaPublicAdministrationModel;
+// tslint:disable-next-line:no-let
+let invalidPublicAdministration: IpaPublicAdministrationModel;
 
 beforeAll(async () => {
   initIpaPublicAdministration();
@@ -165,15 +189,30 @@ beforeAll(async () => {
   initOrganizationUser();
   initUser();
   initSession();
+  initRequest();
   await IpaPublicAdministrationModel.sync({ force: true });
   await OrganizationUserModel.sync({ force: true });
   await OrganizationModel.sync({ force: true });
   await UserModel.sync({ force: true });
   await SessionModel.sync({ force: true });
+  await RequestModel.sync({ force: true });
 
   createOrganizationAssociations();
   createUserAssociations();
   createSessionAssociations();
+  createRequestAssociations();
+
+  [
+    validPublicAdministration,
+    invalidPublicAdministration
+  ] = await IpaPublicAdministrationModel.bulkCreate([
+    validPublicAdministrationAttributes,
+    {
+      ...validPublicAdministrationAttributes,
+      Cf: "not-compliant-fiscal-code",
+      cod_amm: "invalid-administration-code"
+    }
+  ]);
 
   userInstance = await UserModel.create(userInfo, {
     include: [
@@ -191,10 +230,12 @@ beforeAll(async () => {
 
   const [
     registeredOrgLegalRepresentative,
+    preDraftOrgLegalRepresentative,
     preDraftOrgDelegate,
     admin
   ] = await UserModel.bulkCreate([
     registeredOrgLegalRepresentativeParams,
+    preDraftOrgLegalRepresentativeParams,
     preDraftOrgDelegateParams,
     adminParams
   ]);
@@ -244,10 +285,21 @@ beforeAll(async () => {
       userRole: UserRoleEnum.ORG_DELEGATE
     }
   });
+  await mockPreDraftOrganization.setLegalRepresentative(
+    preDraftOrgLegalRepresentative
+  );
 });
 
 afterAll(async () => {
+  await IpaPublicAdministrationModel.destroy({
+    force: true,
+    truncate: true
+  });
   await OrganizationUserModel.destroy({
+    force: true,
+    truncate: true
+  });
+  await OrganizationModel.destroy({
     force: true,
     truncate: true
   });
@@ -255,39 +307,19 @@ afterAll(async () => {
     force: true,
     where: { userEmail: userInfo.email }
   });
+  await RequestModel.destroy({
+    force: true,
+    truncate: true
+  });
   await UserModel.destroy({
     force: true,
     where: { email: userInfo.email }
   });
-  await OrganizationModel.destroy({
-    force: true,
-    truncate: true
-  });
 });
 
 describe("OrganizationService", () => {
-  describe("#registerOrganization()", () => {
-    const validPublicAdministrationAttributes = {
-      Cf: "86000470830",
-      cf_validato: "S",
-      cod_amm: "generic_code",
-      cogn_resp: "Rossi",
-      des_amm: "Name of the Public Administration",
-      mail1: "pec1@email.net",
-      mail2: "pec2@email.net",
-      mail3: "simple@email.net",
-      mail4: "null",
-      mail5: "null",
-      nome_resp: "Mario",
-      tipo_mail1: "pec",
-      tipo_mail2: "pec",
-      tipo_mail3: "altro",
-      tipo_mail4: "null",
-      tipo_mail5: "null",
-      titolo_resp: "presidente"
-    };
-
-    const validNewOrganizationParams: OrganizationRegistrationParams = {
+  describe("#createOnboardingRequest()", () => {
+    const validNewOrganizationParams = {
       ipa_code: "generic_code" as NonEmptyString,
       legal_representative: {
         family_name: "Rossi" as NonEmptyString,
@@ -295,83 +327,66 @@ describe("OrganizationService", () => {
         given_name: "Alberto" as NonEmptyString,
         phone_number: "3330000000" as NonEmptyString
       },
+      request_type: RequestTypeEnum.ORGANIZATION_REGISTRATION,
       scope: OrganizationScopeEnum.LOCAL,
       selected_pec_label: "1" as NonEmptyString
     };
 
     describe("when the public administration is valid", () => {
-      const ipaCodeOfValidPublicAdministration = "valid_public_administration_code" as NonEmptyString;
-
-      beforeEach(async () =>
-        IpaPublicAdministrationModel.create({
-          ...validPublicAdministrationAttributes,
-          cod_amm: ipaCodeOfValidPublicAdministration
-        })
-      );
-
-      afterEach(async () => {
-        await IpaPublicAdministrationModel.destroy({
-          force: true,
-          where: { cod_amm: ipaCodeOfValidPublicAdministration }
-        });
-        await OrganizationUserModel.destroy({
-          force: true,
-          where: {
-            organizationIpaCode: ipaCodeOfValidPublicAdministration,
-            userEmail: userInfo.email
-          }
-        });
-      });
-
-      it("should return a right value with a success response containing the new organization", async () => {
-        const newOrganizationParams: OrganizationRegistrationParams = {
+      it("should return a right task with a success response containing the new request", async () => {
+        const newOrganizationParams = {
           ...validNewOrganizationParams,
-          ipa_code: ipaCodeOfValidPublicAdministration
-        };
-        const expectedResult: Organization = {
-          fiscal_code: validPublicAdministrationAttributes.Cf as OrganizationFiscalCode,
-          ipa_code: ipaCodeOfValidPublicAdministration,
-          legal_representative: {
-            ...newOrganizationParams.legal_representative,
-            email: validPublicAdministrationAttributes.mail1 as EmailAddress,
-            role: UserRoleEnum.ORG_MANAGER
-          },
-          links: [
-            {
-              href: `/organizations/${newOrganizationParams.ipa_code}`,
-              rel: "self"
+          ipa_code: validPublicAdministration.cod_amm
+        } as OrganizationRegistrationParams;
+        const expectedResult = {
+          id: expect.any(Number),
+          organization: {
+            fiscal_code: validPublicAdministration.Cf,
+            ipa_code: validPublicAdministration.cod_amm,
+            legal_representative: {
+              ...newOrganizationParams.legal_representative,
+              email: validPublicAdministration.get(
+                "mail" + newOrganizationParams.selected_pec_label
+              )
             },
-            {
-              href: `/organizations/${newOrganizationParams.ipa_code}`,
-              rel: "edit"
-            }
-          ],
-          name: validPublicAdministrationAttributes.des_amm as NonEmptyString,
-          pec: validPublicAdministrationAttributes.mail1 as EmailAddress,
-          registration_status: OrganizationRegistrationStatusEnum.PRE_DRAFT,
-          scope: newOrganizationParams.scope
+            name: validPublicAdministration.des_amm,
+            pec: validPublicAdministration.get(
+              "mail" + newOrganizationParams.selected_pec_label
+            ),
+            scope: newOrganizationParams.scope
+          },
+          requester: {
+            email: user.email,
+            family_name: user.familyName,
+            fiscal_code: user.fiscalCode,
+            given_name: user.givenName
+          },
+          status: RequestStatusEnum.CREATED,
+          type: newOrganizationParams.request_type
         };
-        const result = await registerOrganization(newOrganizationParams, user);
+        const result = await createOnboardingRequest(
+          newOrganizationParams,
+          user
+        ).run();
         expect(result).not.toBeNull();
         expect(isRight(result)).toBeTruthy();
-        expect(result.value).toHaveProperty(
-          "kind",
-          "IResponseSuccessRedirectToResource"
-        );
-        expect(result.value).toHaveProperty("payload", expectedResult);
-        expect(result.value).toHaveProperty("resource", expectedResult);
+        expect(result.value).toHaveProperty("kind", "IResponseSuccessCreation");
+        expect(result.value).toHaveProperty("value", expectedResult);
       });
     });
 
     describe("when the public administration does not exist", () => {
       const ipaCodeOfNotExistingPublicAdministration = "not_existing_public_administration" as NonEmptyString;
 
-      it("should return a left value with a not found error response", async () => {
+      it("should return a left task with a not found error response", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
           ipa_code: ipaCodeOfNotExistingPublicAdministration
         };
-        const result = await registerOrganization(newOrganizationParams, user);
+        const result = await createOnboardingRequest(
+          newOrganizationParams,
+          user
+        ).run();
         expect(result).not.toBeNull();
         expect(isLeft(result)).toBeTruthy();
         expect(result.value).toHaveProperty("kind", "IResponseErrorNotFound");
@@ -379,28 +394,15 @@ describe("OrganizationService", () => {
     });
 
     describe("when the public administration is invalid", () => {
-      const ipaCodeOfInvalidPublicAdministration = "invalid_public_administration_code" as NonEmptyString;
-
-      beforeEach(async () =>
-        IpaPublicAdministrationModel.create({
-          ...validPublicAdministrationAttributes,
-          Cf: "wrong_fiscal_code",
-          cod_amm: ipaCodeOfInvalidPublicAdministration
-        })
-      );
-
-      afterEach(async () =>
-        IpaPublicAdministrationModel.destroy({
-          force: true,
-          where: { cod_amm: ipaCodeOfInvalidPublicAdministration }
-        })
-      );
-      it("should return an internal error response", async () => {
+      it("should return a left task with an internal error response", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
-          ipa_code: ipaCodeOfInvalidPublicAdministration
+          ipa_code: invalidPublicAdministration.cod_amm as NonEmptyString
         };
-        const result = await registerOrganization(newOrganizationParams, user);
+        const result = await createOnboardingRequest(
+          newOrganizationParams,
+          user
+        ).run();
         expect(result).not.toBeNull();
         expect(isLeft(result)).toBeTruthy();
         expect(result.value).toHaveProperty("kind", "IResponseErrorInternal");
@@ -408,98 +410,45 @@ describe("OrganizationService", () => {
     });
 
     describe("when the public administration is already registered", () => {
-      const ipaCodeOfRegisteredPublicAdministration = "already_registered" as NonEmptyString;
-
       beforeEach(async () => {
-        await IpaPublicAdministrationModel.create({
-          ...validPublicAdministrationAttributes,
-          cod_amm: ipaCodeOfRegisteredPublicAdministration
-        });
-        await OrganizationModel.create({
-          fiscalCode: validPublicAdministrationAttributes.Cf,
-          ipaCode: ipaCodeOfRegisteredPublicAdministration,
-          name: validPublicAdministrationAttributes.des_amm,
-          pec: validPublicAdministrationAttributes.mail1,
-          registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
-          scope: OrganizationScopeEnum.LOCAL
+        await RequestModel.create({
+          legalRepresentativeEmail: validPublicAdministration.mail1,
+          legalRepresentativeFamilyName: "Spano'",
+          legalRepresentativeFiscalCode: "BCDFGH12A21Z123D",
+          legalRepresentativeGivenName: "Ignazio Alfonso",
+          legalRepresentativePhoneNumber: "5550000000",
+          organizationFiscalCode: validPublicAdministration.Cf,
+          organizationIpaCode: validPublicAdministration.cod_amm,
+          organizationName: validPublicAdministration.des_amm,
+          organizationPec: validPublicAdministration.mail1,
+          organizationScope: "NATIONAL" as OrganizationScopeEnum,
+          status: RequestStatusEnum.ACCEPTED,
+          type: RequestTypeEnum.ORGANIZATION_REGISTRATION,
+          userEmail: user.email
         });
       });
 
       afterEach(async () => {
-        await IpaPublicAdministrationModel.destroy({
+        await RequestModel.destroy({
           force: true,
-          where: { cod_amm: ipaCodeOfRegisteredPublicAdministration }
-        });
-        await OrganizationModel.destroy({
-          force: true,
-          where: { ipaCode: ipaCodeOfRegisteredPublicAdministration }
+          where: {
+            organizationIpaCode: validPublicAdministration.cod_amm,
+            status: RequestStatusEnum.ACCEPTED
+          }
         });
       });
-      it("should return an internal error response", async () => {
+      it("should return a left task with an internal error response", async () => {
         const newOrganizationParams: OrganizationRegistrationParams = {
           ...validNewOrganizationParams,
-          ipa_code: ipaCodeOfRegisteredPublicAdministration
+          ipa_code: validPublicAdministration.cod_amm as NonEmptyString
         };
-        const result = await registerOrganization(newOrganizationParams, user);
+        const result = await createOnboardingRequest(
+          newOrganizationParams,
+          user
+        ).run();
         expect(result).not.toBeNull();
         expect(isLeft(result)).toBeTruthy();
         expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");
-      });
-    });
-  });
-});
-
-describe("OrganizationService#addDelegate()", () => {
-  it("should return a left value with a not found error response if the ipa code doesn't match an existing organization", async () => {
-    const result = await addDelegate(
-      "not existing org",
-      "any-user@example.com"
-    ).run();
-    expect(isLeft(result)).toBeTruthy();
-    expect(result.value).toHaveProperty("kind", "IResponseErrorNotFound");
-  });
-
-  it("should return a left value with a conflict error response if the ipa code doesn't match a registered organization", async () => {
-    const result = await addDelegate(
-      mockPreDraftOrganizationParams.ipaCode,
-      "any-user@example.com"
-    ).run();
-    expect(isLeft(result)).toBeTruthy();
-    expect(result.value).toHaveProperty("kind", "IResponseErrorConflict");
-  });
-
-  describe("when no error occurs", () => {
-    afterEach(async () =>
-      OrganizationUserModel.destroy({
-        force: true,
-        where: { userEmail: noOrgDelegate.email }
-      })
-    );
-
-    it("should return a right value with a success response containing the whole organization", async () => {
-      const expectedResult = toOrganizationObject(({
-        ...mockRegisteredOrganizationParams,
-        legalRepresentative: registeredOrgLegalRepresentativeParams,
-        users: [
-          registeredOrgDelegate1,
-          registeredOrgDelegate2,
-          noOrgDelegate
-        ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      } as unknown) as OrganizationModel).fold(
-        () => {
-          fail("toOrganizationObject error");
-        },
-        value => value
-      );
-      const result = await addDelegate(
-        mockRegisteredOrganizationParams.ipaCode,
-        noOrgDelegateParams.email
-      ).run();
-      expect(isRight(result)).toBeTruthy();
-      expect(result.value).toEqual({
-        apply: expect.any(Function),
-        kind: "IResponseSuccessCreation",
-        value: expectedResult
       });
     });
   });
@@ -520,7 +469,6 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
     ipaCode: "org-code",
     name: "test organization",
     pec: organizationEmail,
-    registrationStatus: OrganizationRegistrationStatusEnum.PRE_DRAFT,
     scope: "NATIONAL"
   };
   beforeEach(async () => {
@@ -563,41 +511,41 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
     });
   });
 
-  it("should return a right value with some organization model if the user is the delegate of an organization", async () => {
-    const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
+  it("should return a right task with some organization model if the user is the delegate of an organization", async () => {
+    const errorOrOrganizationModels = await getOrganizationInstanceFromDelegateEmail(
       userInfo.email,
       organizationInfo.ipaCode
-    );
-    expect(maybeOrganizationModel).not.toBeNull();
-    expect(isRight(maybeOrganizationModel)).toBeTruthy();
-    maybeOrganizationModel.fold(
+    ).run();
+    expect(errorOrOrganizationModels).not.toBeNull();
+    expect(isRight(errorOrOrganizationModels)).toBeTruthy();
+    errorOrOrganizationModels.fold(
       () => fail(new Error("organizationModel was left instead of right")),
-      organizationModel => {
-        expect(isSome(organizationModel)).toBeTruthy();
-        expect(organizationModel.toNullable()).not.toBeNull();
+      organizationModels => {
+        expect(organizationModels).toEqual(expect.any(Array));
+        expect(organizationModels).not.toHaveLength(0);
       }
     );
   });
 
-  it("should return a right value with none if the user is not the delegate of an organization", async () => {
-    const maybeOrganizationModel = await getOrganizationInstanceFromDelegateEmail(
+  it("should return a right task with none if the user is not the delegate of an organization", async () => {
+    const errorOrOrganizationModels = await getOrganizationInstanceFromDelegateEmail(
       "not-delegate@email.net",
       organizationInfo.ipaCode
-    );
-    expect(maybeOrganizationModel).not.toBeNull();
-    expect(isRight(maybeOrganizationModel)).toBeTruthy();
-    maybeOrganizationModel.fold(
+    ).run();
+    expect(errorOrOrganizationModels).not.toBeNull();
+    expect(isRight(errorOrOrganizationModels)).toBeTruthy();
+    errorOrOrganizationModels.fold(
       () => fail(new Error("organizationModel was left instead of right")),
-      organizationModel => {
-        expect(isSome(organizationModel)).toBeFalsy();
-        expect(organizationModel.toNullable()).toBeNull();
+      organizationModels => {
+        expect(organizationModels).toEqual(expect.any(Array));
+        expect(organizationModels).toHaveLength(0);
       }
     );
   });
 });
 
 describe("OrganizationService#getOrganizationFromUserEmail()", () => {
-  it("should return a right value with none if the delegate has no association with any organization", async () => {
+  it("should resolve with a right value with none if the delegate has no association with any organization", async () => {
     // this is the case of a user logged it with SPID who never started any registration process
     const errorOrSomeOrganization = await getOrganizationFromUserEmail(
       noOrgDelegateParams.email
@@ -612,22 +560,7 @@ describe("OrganizationService#getOrganizationFromUserEmail()", () => {
     );
   });
 
-  it("should return a right value with none if the delegate is associated with an organization in a PRE_DRAFT registration status", async () => {
-    // this is the case of a user logged it with SPID who never started any registration process
-    const errorOrSomeOrganization = await getOrganizationFromUserEmail(
-      preDraftOrgDelegateParams.email
-    );
-    expect(errorOrSomeOrganization).not.toBeNull();
-    expect(isRight(errorOrSomeOrganization)).toBeTruthy();
-    errorOrSomeOrganization.fold(
-      () => fail(new Error("value was left instead of right")),
-      someOrganization => {
-        expect(isNone(someOrganization)).toBeTruthy();
-      }
-    );
-  });
-
-  it("should return a right value with some organization it the user is associated to an organization", async () => {
+  it("should resolve with a right value with some organization it the user is associated to an organization", async () => {
     const expectedValue = right(
       some(
         toOrganizationObject(({
@@ -658,11 +591,20 @@ describe("OrganizationService#getOrganizationFromUserEmail()", () => {
 });
 
 describe("OrganizationService#getOrganizationFromUserEmail()", () => {
-  it("should return a right value with organizations", async () => {
+  it("should resolve with a right value with organizations", async () => {
     const expectedValue = right([
       toOrganizationObject(({
         ...mockRegisteredOrganizationParams,
         legalRepresentative: registeredOrgLegalRepresentativeParams
+      } as unknown) as OrganizationModel).fold(
+        () => {
+          fail("toOrganizationObject error");
+        },
+        value => value
+      ),
+      toOrganizationObject(({
+        ...mockPreDraftOrganizationParams,
+        legalRepresentative: preDraftOrgLegalRepresentativeParams
       } as unknown) as OrganizationModel).fold(
         () => {
           fail("toOrganizationObject error");

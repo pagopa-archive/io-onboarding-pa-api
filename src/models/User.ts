@@ -3,6 +3,7 @@ import sequelize from "../database/db";
 import { UserRoleEnum } from "../generated/UserRole";
 import { Organization } from "./Organization";
 import { OrganizationUser } from "./OrganizationUser";
+import { Request, RequestScope } from "./Request";
 import { Session } from "./Session";
 
 export class User extends Model {
@@ -31,6 +32,13 @@ export class User extends Model {
   public readonly session?: Session;
 
   public createSession!: HasManyCreateAssociationMixin<Session>;
+
+  public readonly request?: Request;
+  public readonly requests?: ReadonlyArray<Request>;
+  public readonly delegationRequest?: Request;
+  public readonly delegationRequests?: ReadonlyArray<Request>;
+  public readonly organizationRegistrationRequest?: Request;
+  public readonly organizationRegistrationRequests?: ReadonlyArray<Request>;
 }
 
 export function init(): void {
@@ -89,6 +97,22 @@ export function createAssociations(): void {
   });
   User.hasOne(Session, {
     as: "session",
+    foreignKey: { name: "email", field: "userEmail" }
+  });
+  User.hasMany(Request.scope(RequestScope.ORGANIZATION_REGISTRATION), {
+    as: "organizationRegistrationRequests",
+    foreignKey: { name: "email", field: "userEmail" }
+  });
+  User.hasOne(Request.scope(RequestScope.ORGANIZATION_REGISTRATION), {
+    as: "organizationRegistrationRequest",
+    foreignKey: { name: "email", field: "userEmail" }
+  });
+  User.hasMany(Request.scope(RequestScope.USER_DELEGATION), {
+    as: "delegationRequests",
+    foreignKey: { name: "email", field: "userEmail" }
+  });
+  User.hasOne(Request.scope(RequestScope.USER_DELEGATION), {
+    as: "delegationRequest",
     foreignKey: { name: "email", field: "userEmail" }
   });
 }

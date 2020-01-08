@@ -1,5 +1,5 @@
-import { isLeft, isRight } from "fp-ts/lib/Either";
-import { isSome, none, some } from "fp-ts/lib/Option";
+import { isLeft, isRight, left } from "fp-ts/lib/Either";
+import { fromEither } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
 import * as soap from "soap";
 import { getRequiredEnvVar } from "../../utils/environment";
@@ -15,42 +15,38 @@ const validOutputPath = `${process.hrtime().join("")}.pdf`;
 
 describe("DocumentService", () => {
   describe("#generateDocument()", () => {
-    it("returns a promise of none if the document generation succeeds", done => {
+    it("should return a right task with undefined if the document generation succeeds", done => {
       getDocumentService()
         .then(documentService =>
           documentService
-            .generateDocument("IO contract", validOutputPath)
+            .generateDocument("request-id", "IO contract", validOutputPath)
+            .run()
             .then(result => {
-              expect(result).toEqual(none);
+              expect(isRight(result)).toBeTruthy();
               fs.access(validOutputPath, error => {
                 expect(error).toBeNull();
                 expect(error).toBeDefined();
                 fs.unlink(validOutputPath, done);
               });
-            })
-            .catch(() => {
-              done.fail(
-                new Error("Document generation promise rejected unexpectedly")
-              );
+              done();
             })
         )
         .catch(done.fail);
     });
 
-    it("returns a promise of some error if the document generation fails", async () => {
+    it("should return a left task with an error if the document generation fails", async () => {
       const mockConvertToPdfA = jest
         .spyOn(
           (DocumentService.prototype as unknown) as { convertToPdfA: () => {} },
           "convertToPdfA"
         )
-        .mockReturnValue(Promise.resolve(some(new Error("Error"))));
+        .mockReturnValue(fromEither(left(new Error("Error"))));
       const documentService = await getDocumentService();
-      const result = await documentService.generateDocument(
-        "IO contract",
-        validOutputPath
-      );
+      const result = await documentService
+        .generateDocument("request-id", "IO contract", validOutputPath)
+        .run();
       mockConvertToPdfA.mockRestore();
-      expect(isSome(result)).toBeTruthy();
+      expect(isLeft(result)).toBeTruthy();
       return fs.access(validOutputPath, error => {
         expect(error).not.toBeNull();
       });
@@ -59,19 +55,19 @@ describe("DocumentService", () => {
 });
 
 describe("DocumentService#signDocument()", () => {
-  it("should return a right string if the signing succeeds", async () => {
+  it("should resolve with a right string if the signing succeeds", async () => {
     const base64string = await fs.promises.readFile(
       "./src/__mocks__/mockUnsignedFile.pdf",
       "base64"
     );
     const documentService = await getDocumentService();
-    const result = await documentService.signDocument(base64string);
+    const result = await documentService.signDocument(base64string).run();
     expect(isRight(result)).toBeTruthy();
   });
 
-  it("should return a left error if the signing fails", async () => {
+  it("should reject with a left error if the signing fails", async () => {
     const documentService = await getDocumentService();
-    const result = await documentService.signDocument("");
+    const result = await documentService.signDocument("").run();
     expect(isLeft(result)).toBeTruthy();
   });
 });

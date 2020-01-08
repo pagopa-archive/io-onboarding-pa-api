@@ -95,9 +95,8 @@ paths:
   /organizations:
     get:
       description: |-
-        Returns a list of all the organizations in a not pre-draft registration status,
-        according to the user role. That is:
-        - for an administrator, returns a list with all the organization in a not pre-draft registration status
+        Returns a list of all the organizations according to the user role. That is:
+        - for an administrator, returns a list with all the organizations
         - for a delegate, returns a list with the single organization by which the user has been delegated
         - for a legal representative, returns a list with the single organization which the user represents
         - for a developer returns a forbidden error
@@ -116,8 +115,7 @@ paths:
           $ref: "#/components/responses/403Forbidden"
     post:
       description: |-
-        Creates a new organization associated with its legal responsible,
-        the user calling this endpoint is also associated to the organization as its delegate.
+        Creates a request for the onboarding of an administration and returns it in the payload of a successful response
       operationId: createOrganizations
       security:
         - bearerAuth: []
@@ -129,43 +127,11 @@ paths:
       responses:
         <<: *common-responses
         "201":
-          description: The registered organization
-          headers:
-            Location:
-              description: URI of the created organization
-              schema:
-                type: string
+          description: The request payload
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organization"
-        "403":
-          $ref: "#/components/responses/403Forbidden"
-        "404":
-          $ref: "#/components/responses/404NotFound"
-        "409":
-          $ref: "#/components/responses/409Conflict"
-  /organizations/{ipaCode}/delegates:
-    post:
-      description: Add a delegate to an organization
-      operationId: addDelegate
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: ipaCode
-          in: path
-          required: true
-          description: The IPA code of the organization the documents belong to
-          schema:
-            <<: *non-empty-string
-      responses:
-        <<: *common-responses
-        "201":
-          description: The registered organization, including all its delegates
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Organization"
+                $ref: "#/components/schemas/Request"
         "403":
           $ref: "#/components/responses/403Forbidden"
         "404":
@@ -173,19 +139,18 @@ paths:
         "409":
           $ref: "#/components/responses/409Conflict"
 
-  /organizations/{ipaCode}/signed-documents:
+  /requests/actions:
     post:
-      description: Send via email the registration documents of the organization
-      operationId: sendDocuments
+      description: Performs an action on one or more requests
+      operationId: doActionOnRequests
       security:
         - bearerAuth: []
-      parameters:
-        - name: ipaCode
-          in: path
-          required: true
-          description: The IPA code of the organization the documents belong to
-          schema:
-            <<: *non-empty-string
+      requestBody:
+        description: a payload specifying the action to be performed and the requests on which the action will be performed
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionPayload"
       responses:
         <<: *common-responses
         "204":
@@ -346,17 +311,30 @@ components:
       format: OrganizationFiscalCode
       x-import: italia-ts-commons/lib/strings
       example: 01234567890
-    OrganizationRegistrationStatus:
-      type: string
-      x-extensible-enum:
-        - "PRE_DRAFT"
-        - "DRAFT"
-        - "REGISTERED"
     OrganizationScope:
       type: string
       x-extensible-enum:
         - "LOCAL"
         - "NATIONAL"
+    RequestStatus:
+      description: |-
+        An enumerator of available statuses for a request.
+        Two different statuses of `CREATED` and `SUBMITTED` are available in order to map
+        the different steps for an organization registration and a user delegation, respectively:
+        1. the user creates the request with its related document
+        2. the user sends the document to the legal representative
+      type: string
+      x-extensible-enum:
+        - "CREATED" #document creation
+        - "SUBMITTED" #document send
+        - "ACCEPTED"
+        - "REJECTED"
+        - "FAILED"
+    RequestType:
+      type: string
+      x-extensible-enum:
+        - "ORGANIZATION_REGISTRATION"
+        - "USER_DELEGATION"
     UserRole:
       type: string
       x-extensible-enum:
@@ -377,23 +355,19 @@ components:
           <<: *non-empty-string
         phone_number:
           <<: *non-empty-string
-        role:
-          $ref: "#/components/schemas/UserRole"
       required:
         - email
         - family_name
         - fiscal_code
         - given_name
         - phone_number
-        - role
       example:
         {
           "family_name": "Spano'",
           "fiscal_code": "BCDFGH12A21Z123D",
           "given_name": "Ignazio Alfonso",
           "phone_number": "5550000000",
-          "email": "indirizzo00@email.pec.it",
-          "role": "ORG_MANAGER"
+          "email": "indirizzo00@email.pec.it"
         }
     UpdateUserProfile:
       type: object
@@ -479,6 +453,26 @@ components:
             $ref: '#/components/schemas/FoundAdministration'
       required:
         - administrations
+    ActionPayload:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+        type:
+          type: string
+          x-extensible-enum:
+            - "SEND-EMAIL"
+      required:
+        - ids
+        - type
+      example:
+        {
+          items: [ 1, 2 ],
+          type: "SEND-EMAIL"
+        }
     FoundAdministration:
       oneOf:
         - $ref: '#/components/schemas/FoundNotRegisteredAdministration'
@@ -569,8 +563,6 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/EmailAddress'
-        registration_status:
-          $ref: "#/components/schemas/OrganizationRegistrationStatus"
         scope:
           $ref: '#/components/schemas/OrganizationScope'
         selected_pec_label:
@@ -582,7 +574,6 @@ components:
         - legal_representative
         - links
         - pecs
-        - registration_status
         - scope
         - selected_pec_label
       example:
@@ -602,7 +593,6 @@ components:
             "3": "indirizzo12@email.pec.it",
             "4": "indirizzo13@email.pec.it",
           },
-          "registration_status": "DRAFT",
           "scope": "LOCAL",
           "selected_pec_label": "3",
           "links": [{
@@ -619,14 +609,10 @@ components:
           <<: *non-empty-string
         legal_representative:
           $ref: "#/components/schemas/LegalRepresentative"
-        links:
-          $ref: "#/components/schemas/Links"
         name:
           <<: *non-empty-string
         pec:
           $ref: "#/components/schemas/EmailAddress"
-        registration_status:
-          $ref: "#/components/schemas/OrganizationRegistrationStatus"
         scope:
           $ref: '#/components/schemas/OrganizationScope'
         users:
@@ -636,10 +622,9 @@ components:
       required:
         - fiscal_code
         - ipa_code
-        - links
+        - legal_representative
         - name
         - pec
-        - registration_status
         - scope
       example:
         {
@@ -650,12 +635,10 @@ components:
             "given_name": "Ignazio Alfonso",
             "fiscal_code": "BCDFGH12A21Z123D",
             "phone_number": "5550000000",
-            "email": "indirizzo00@email.pec.it",
-            "role": "ORG_MANAGER"
+            "email": "indirizzo00@email.pec.it"
           },
           "name": "Comune di Gioiosa Marea",
           "pec": "indirizzo00@email.pec.it",
-          "registration_status": "PRE_DRAFT",
           "scope": "NATIONAL"
         }
     OrganizationRegistrationParams:
@@ -679,6 +662,8 @@ components:
             - given_name
             - fiscal_code
             - phone_number
+        request_type:
+          $ref: "#/components/schemas/RequestType"
         scope:
           $ref: '#/components/schemas/OrganizationScope'
         selected_pec_label:
@@ -697,6 +682,7 @@ components:
             "fiscal_code": "BCDFGH12A21Z123D",
             "phone_number": "3331111111"
           },
+          "request_type": "ORGANIZATION_REGISTRATION",
           "scope": "NATIONAL",
           "selected_pec_label": "1"
         }
@@ -720,8 +706,6 @@ components:
           $ref: "#/components/schemas/FiscalCode"
         given_name:
           <<: *non-empty-string
-        role:
-          $ref: "#/components/schemas/UserRole"
         work_email:
           $ref: "#/components/schemas/EmailAddress"
       required:
@@ -729,7 +713,106 @@ components:
         - family_name
         - fiscal_code
         - given_name
-        - role
+    UserDelegationRequest:
+      type: object
+      properties:
+        organization:
+          $ref: "#/components/schemas/Organization"
+        id:
+          type: integer
+        requester:
+          $ref: "#/components/schemas/OrganizationDelegate"
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        type:
+          type: string
+          x-extensible-enum:
+            - "USER_DELEGATION"
+      required:
+        - id
+        - organization
+        - requester
+        - status
+        - type
+      example:
+        {
+          id: 12345,
+          organization: {
+            "fiscal_code": "86000470830",
+            "ipa_code": "c_e043",
+            "legal_representative": {
+              "family_name": "Spano'",
+              "given_name": "Ignazio Alfonso",
+              "fiscal_code": "BCDFGH12A21Z123D",
+              "phone_number": "5550000000",
+              "email": "indirizzo00@email.pec.it"
+            },
+            "name": "Comune di Gioiosa Marea",
+            "pec": "indirizzo00@email.pec.it",
+            "scope": "NATIONAL"
+          },
+          requester: {
+            "email": "delegate@example.com",
+            "family_name": "Rossi",
+            "fiscal_code": "RSSMTT77S12A123D",
+            "given_name": "Matteo"
+          },
+          status: "SUBMITTED",
+          type: "USER_DELEGATION"
+        }
+    OrganizationRegistrationRequest:
+      type: object
+      properties:
+        organization:
+          $ref: "#/components/schemas/Organization"
+        id:
+          type: integer
+        requester:
+          $ref: "#/components/schemas/OrganizationDelegate"
+        status:
+          $ref: '#/components/schemas/RequestStatus'
+        type:
+          type: string
+          x-extensible-enum:
+            - "ORGANIZATION_REGISTRATION"
+      required:
+        - id
+        - organization
+        - requester
+        - status
+        - type
+      example:
+        {
+          id: 12345,
+          organization: {
+            "fiscal_code": "86000470830",
+            "ipa_code": "c_e043",
+            "legal_representative": {
+              "family_name": "Spano'",
+              "given_name": "Ignazio Alfonso",
+              "fiscal_code": "BCDFGH12A21Z123D",
+              "phone_number": "5550000000",
+              "email": "indirizzo00@email.pec.it"
+            },
+            "name": "Comune di Gioiosa Marea",
+            "pec": "indirizzo00@email.pec.it",
+            "scope": "NATIONAL"
+          },
+          requester: {
+            "email": "delegate@example.com",
+            "family_name": "Rossi",
+            "fiscal_code": "RSSMTT77S12A123D",
+            "given_name": "Matteo"
+          },
+          status: "SUBMITTED",
+          type: "ORGANIZATION_REGISTRATION"
+        }
+    Request:
+      oneOf:
+        - $ref: "#/components/schemas/OrganizationRegistrationRequest"
+        - $ref: "#/components/schemas/UserDelegationRequest"
+      discriminator:
+        propertyName: type
   securitySchemes:
     bearerAuth:
       type: apiKey

@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { Either, isLeft } from "fp-ts/lib/Either";
+import { fromEither } from "fp-ts/lib/TaskEither";
 import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import {
@@ -102,6 +103,18 @@ export const withValidatedOrValidationError = <T, U>(
         errorsToReadableMessages(response.value).join(" / ")
       )
     : f(response.value);
+
+/**
+ * Calls the provided function with the valid response, or else returns an
+ * IResponseErrorValidation with the validation errors.
+ */
+export const withValidationOrError = <T>(response: t.Validation<T>) =>
+  fromEither(response).mapLeft(errors =>
+    ResponseErrorValidation(
+      "Bad request",
+      errorsToReadableMessages(errors).join(" / ")
+    )
+  );
 
 /**
  * Calls the provided function with the valid response, or else returns an
