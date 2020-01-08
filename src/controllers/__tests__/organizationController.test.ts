@@ -424,7 +424,7 @@ describe("OrganizationController", () => {
 });
 
 // TODO:
-//  add tests for OrganizationController#sendDocuments() method.
+//  add tests for OrganizationController#sendEmailWithDocumentsToOrganizationPec() method.
 //  @see https://www.pivotaltracker.com/story/show/170596020
 
 describe("OrganizationController#getOrganizations()", () => {

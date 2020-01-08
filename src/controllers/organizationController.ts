@@ -258,7 +258,7 @@ export default class OrganizationController {
    * If any error occurs during any step of the process, a proper error response is sent to the client; otherwise, a response with no content is sent.
    * @param req The client request
    */
-  public sendDocuments(
+  public sendEmailWithDocumentsToOrganizationPec(
     req: ExpressRequest
   ): TaskEither<IResponseError, IResponseNoContent> {
     interface ITaskResults {
@@ -273,7 +273,7 @@ export default class OrganizationController {
     const internalUnknownErrorHandler = (error: unknown, message: string) =>
       genericInternalUnknownErrorHandler(
         error,
-        `organizationController#sendDocuments | ${message}`,
+        `organizationController#sendEmailWithDocumentsToOrganizationPec | ${message}`,
         message
       );
     return fromEither<Errors, Pick<ITaskResults, "user">>(
@@ -284,7 +284,7 @@ export default class OrganizationController {
       .mapLeft<IResponseError>((errors: Errors) =>
         genericInternalValidationErrorsHandler(
           errors,
-          "organizationController#sendDocuments | Invalid internal data.",
+          "organizationController#sendEmailWithDocumentsToOrganizationPec | Invalid internal data.",
           "Invalid internal data."
         )
       )
@@ -374,6 +374,7 @@ export default class OrganizationController {
               )
           )
           .chain(
+            // Check that all the requests are to be sent to the same email address or return an error
             fromPredicate(
               _ =>
                 _.every((request, index, requests) =>
@@ -421,13 +422,16 @@ export default class OrganizationController {
             this.emailService.send({
               attachments: taskResults.attachments,
               html:
-                localeIt.organizationController.sendDocuments.registrationEmail
+                localeIt.organizationController
+                  .sendEmailWithDocumentsToOrganizationPec.registrationEmail
                   .content,
               subject:
-                localeIt.organizationController.sendDocuments.registrationEmail
+                localeIt.organizationController
+                  .sendEmailWithDocumentsToOrganizationPec.registrationEmail
                   .subject,
               text:
-                localeIt.organizationController.sendDocuments.registrationEmail
+                localeIt.organizationController
+                  .sendEmailWithDocumentsToOrganizationPec.registrationEmail
                   .content,
               to: taskResults.requestModels[0].organizationPec
             }),
