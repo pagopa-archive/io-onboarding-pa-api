@@ -103,10 +103,6 @@ export function createAssociations(): void {
     as: "organizationRegistrationRequests",
     foreignKey: { name: "email", field: "userEmail" }
   });
-  User.hasOne(Request.scope(RequestScope.ORGANIZATION_REGISTRATION), {
-    as: "organizationRegistrationRequest",
-    foreignKey: { name: "email", field: "userEmail" }
-  });
   User.hasMany(Request.scope(RequestScope.USER_DELEGATION), {
     as: "delegationRequests",
     foreignKey: { name: "email", field: "userEmail" }
