@@ -251,8 +251,7 @@ beforeAll(async () => {
       createdAt: Date.now(),
       organizationIpaCode: mockRegisteredOrganization.ipaCode,
       updatedAt: Date.now(),
-      userEmail: registeredOrgDelegate1.email,
-      userRole: UserRoleEnum.ORG_DELEGATE
+      userEmail: registeredOrgDelegate1.email
     }
   });
   await mockRegisteredOrganization.addUser(registeredOrgDelegate2, {
@@ -260,8 +259,7 @@ beforeAll(async () => {
       createdAt: Date.now(),
       organizationIpaCode: mockRegisteredOrganization.ipaCode,
       updatedAt: Date.now(),
-      userEmail: registeredOrgDelegate2.email,
-      userRole: UserRoleEnum.ORG_DELEGATE
+      userEmail: registeredOrgDelegate2.email
     }
   });
   await mockRegisteredOrganization.addUser(registeredOrgLegalRepresentative, {
@@ -269,8 +267,7 @@ beforeAll(async () => {
       createdAt: Date.now(),
       organizationIpaCode: mockRegisteredOrganization.ipaCode,
       updatedAt: Date.now(),
-      userEmail: registeredOrgLegalRepresentative.email,
-      userRole: UserRoleEnum.ORG_DELEGATE
+      userEmail: registeredOrgLegalRepresentative.email
     }
   });
   await mockRegisteredOrganization.setLegalRepresentative(
@@ -281,8 +278,7 @@ beforeAll(async () => {
       createdAt: Date.now(),
       organizationIpaCode: mockPreDraftOrganization.ipaCode,
       updatedAt: Date.now(),
-      userEmail: preDraftOrgDelegate.email,
-      userRole: UserRoleEnum.ORG_DELEGATE
+      userEmail: preDraftOrgDelegate.email
     }
   });
   await mockPreDraftOrganization.setLegalRepresentative(
@@ -483,8 +479,7 @@ describe("OrganizationService#getOrganizationInstanceFromDelegateEmail()", () =>
         createdAt: Date.now(),
         organizationIpaCode: organizationInstance.ipaCode,
         updatedAt: Date.now(),
-        userEmail: user.email,
-        userRole: UserRoleEnum.ORG_DELEGATE
+        userEmail: user.email
       }
     });
     await organizationInstance.setLegalRepresentative(
