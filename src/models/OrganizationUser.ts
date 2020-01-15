@@ -1,10 +1,7 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../database/db";
-import { UserRoleEnum } from "../generated/UserRole";
 
-export class OrganizationUser extends Model {
-  public userRole!: UserRoleEnum;
-}
+export class OrganizationUser extends Model {}
 
 export function init(): void {
   OrganizationUser.init(
@@ -30,10 +27,6 @@ export function init(): void {
         allowNull: false,
         primaryKey: true,
         type: new DataTypes.STRING()
-      },
-      userRole: {
-        allowNull: false,
-        type: new DataTypes.ENUM(...Object.values(UserRoleEnum))
       }
     },
     {
