@@ -323,10 +323,7 @@ export default class OrganizationController {
       .chain<Pick<ITaskResults, "requestModels">>(taskResults =>
         array
           .traverse(taskEither)([...taskResults.requestIds], requestId =>
-            this.getSubmittableResourceOrErrorResponse(
-              requestId,
-              taskResults.user.email
-            )
+            this.getValidRequest(requestId, taskResults.user.email)
           )
           .chain(
             // Check that all the requests are to be sent to the same email address or return an error
@@ -416,7 +413,7 @@ export default class OrganizationController {
       );
   }
 
-  private getSubmittableResourceOrErrorResponse(
+  private getValidRequest(
     requestId: number,
     userEmail: string
   ): TaskEither<IResponseError, RequestModel> {
