@@ -291,9 +291,14 @@ export default class OrganizationController {
       .chain(
         fromPredicate(
           taskResults =>
-            accessControl
-              .can(taskResults.user.role)
-              .createOwn(Resource.SIGNED_DOCUMENT).granted,
+            [
+              Resource.ORGANIZATION_REGISTRATION_REQUEST,
+              Resource.USER_DELEGATION_REQUEST
+            ].every(
+              resource =>
+                accessControl.can(taskResults.user.role).updateOwn(resource)
+                  .granted
+            ),
           () => ResponseErrorForbiddenNotAuthorized
         )
       )
@@ -318,60 +323,7 @@ export default class OrganizationController {
       .chain<Pick<ITaskResults, "requestModels">>(taskResults =>
         array
           .traverse(taskEither)([...taskResults.requestIds], requestId =>
-            tryCatch<IResponseError, RequestModel>(
-              () =>
-                RequestModel.scope(RequestScope.INCLUDE_REQUESTER).findOne({
-                  where: { id: requestId }
-                }),
-              error =>
-                internalUnknownErrorHandler(
-                  error,
-                  "An error occurred while reading from the database."
-                )
-            )
-              .chain(
-                fromPredicate(
-                  _ => _ !== null,
-                  () =>
-                    ResponseErrorNotFound(
-                      "Request not found",
-                      `The request ${requestId} does not exist`
-                    )
-                )
-              )
-              .chain(
-                fromPredicate(
-                  _ =>
-                    _.type === RequestType.USER_DELEGATION ||
-                    _.type === RequestType.ORGANIZATION_REGISTRATION,
-                  () =>
-                    ResponseErrorValidation(
-                      "Bad request",
-                      `The type of request ${requestId} is invalid`
-                    )
-                )
-              )
-              .chain(
-                fromPredicate(
-                  _ => _.requester !== null,
-                  () => ResponseErrorInternal("Invalid internal data")
-                )
-              )
-              .chain(
-                fromPredicate(
-                  _ => _.requester!.email === taskResults.user.email,
-                  () => ResponseErrorForbiddenNotAuthorized
-                )
-              )
-              .chain(
-                fromPredicate(
-                  _ => _.status === RequestStatusEnum.CREATED,
-                  () =>
-                    ResponseErrorConflict(
-                      `The document for the request ${requestId} has already been sent.`
-                    )
-                )
-              )
+            this.getValidRequest(requestId, taskResults.user.email)
           )
           .chain(
             // Check that all the requests are to be sent to the same email address or return an error
@@ -458,6 +410,68 @@ export default class OrganizationController {
             )
           )
           .map(_ => ResponseNoContent())
+      );
+  }
+
+  private getValidRequest(
+    requestId: number,
+    userEmail: string
+  ): TaskEither<IResponseError, RequestModel> {
+    const dbError = "An error occurred while reading from the database";
+    return tryCatch<IResponseError, RequestModel>(
+      () =>
+        RequestModel.scope(RequestScope.INCLUDE_REQUESTER).findOne({
+          where: { id: requestId }
+        }),
+      error =>
+        genericInternalUnknownErrorHandler(
+          error,
+          `organizationController#getSubmittableResourceOrErrorResponse | ${dbError}`,
+          dbError
+        )
+    )
+      .chain(
+        fromPredicate(
+          _ => _ !== null,
+          () =>
+            ResponseErrorNotFound(
+              "Request not found",
+              `The request ${requestId} does not exist`
+            )
+        )
+      )
+      .chain(
+        fromPredicate(
+          _ =>
+            _.type === RequestType.USER_DELEGATION ||
+            _.type === RequestType.ORGANIZATION_REGISTRATION,
+          () =>
+            ResponseErrorValidation(
+              "Bad request",
+              `The type of request ${requestId} is invalid`
+            )
+        )
+      )
+      .chain(
+        fromPredicate(
+          _ => _.requester !== null,
+          () => ResponseErrorInternal("Invalid internal data")
+        )
+      )
+      .chain(
+        fromPredicate(
+          _ => _.requester!.email === userEmail,
+          () => ResponseErrorForbiddenNotAuthorized
+        )
+      )
+      .chain(
+        fromPredicate(
+          _ => _.status === RequestStatusEnum.CREATED,
+          () =>
+            ResponseErrorConflict(
+              `The document for the request ${requestId} has already been sent.`
+            )
+        )
       );
   }
 
