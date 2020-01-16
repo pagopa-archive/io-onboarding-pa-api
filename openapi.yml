@@ -464,14 +464,14 @@ components:
         type:
           type: string
           x-extensible-enum:
-            - "SEND-EMAIL"
+            - "SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG"
       required:
         - ids
         - type
       example:
         {
           items: [ 1, 2 ],
-          type: "SEND-EMAIL"
+          type: "SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG"
         }
     FoundAdministration:
       oneOf:
