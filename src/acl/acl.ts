@@ -5,8 +5,9 @@ export enum Resource {
   ADMINISTRATION = "administration",
   DELEGATE = "delegate",
   ORGANIZATION = "organization",
+  ORGANIZATION_REGISTRATION_REQUEST = "organization-registration-request",
   PROFILE = "profile",
-  SIGNED_DOCUMENT = "signed-document",
+  USER_DELEGATION_REQUEST = "user-delegation-request",
   UNSIGNED_DOCUMENT = "unsigned-document"
 }
 
@@ -14,6 +15,7 @@ export enum Resource {
 export const EMAIL_ATTRIBUTE = "email";
 export const PASSWORD_ATTRIBUTE = "password";
 export const PHONE_NUMBER_ATTRIBUTE = "phoneNumber";
+export const TYPE_ATTRIBUTE = "phoneNumber";
 export const USER_ATTRIBUTE = "user";
 export const WORK_EMAIL_ATTRIBUTE = "workEmail";
 
@@ -51,12 +53,17 @@ const grants = {
       [Action.CREATE_OWN]: [ALL_ATTRIBUTES],
       [Action.READ_OWN]: [ALL_ATTRIBUTES]
     },
+    [Resource.ORGANIZATION_REGISTRATION_REQUEST]: {
+      [Action.CREATE_OWN]: [ALL_ATTRIBUTES],
+      [Action.UPDATE_OWN]: [TYPE_ATTRIBUTE]
+    },
     [Resource.UNSIGNED_DOCUMENT]: {
       [Action.CREATE_OWN]: [ALL_ATTRIBUTES],
       [Action.READ_OWN]: [ALL_ATTRIBUTES]
     },
-    [Resource.SIGNED_DOCUMENT]: {
-      [Action.CREATE_OWN]: [ALL_ATTRIBUTES]
+    [Resource.USER_DELEGATION_REQUEST]: {
+      [Action.CREATE_OWN]: [ALL_ATTRIBUTES],
+      [Action.UPDATE_OWN]: [TYPE_ATTRIBUTE]
     }
   },
   [UserRoleEnum.DEVELOPER]: {
@@ -113,9 +120,6 @@ const grants = {
     [Resource.ORGANIZATION]: {
       [Action.READ_ANY]: [ALL_ATTRIBUTES],
       [Action.DELETE_ANY]: [ALL_ATTRIBUTES]
-    },
-    [Resource.SIGNED_DOCUMENT]: {
-      [Action.READ_ANY]: [ALL_ATTRIBUTES]
     }
   }
 };

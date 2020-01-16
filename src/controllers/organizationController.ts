@@ -291,9 +291,14 @@ export default class OrganizationController {
       .chain(
         fromPredicate(
           taskResults =>
-            accessControl
-              .can(taskResults.user.role)
-              .createOwn(Resource.SIGNED_DOCUMENT).granted,
+            [
+              Resource.ORGANIZATION_REGISTRATION_REQUEST,
+              Resource.USER_DELEGATION_REQUEST
+            ].every(
+              resource =>
+                accessControl.can(taskResults.user.role).updateOwn(resource)
+                  .granted
+            ),
           () => ResponseErrorForbiddenNotAuthorized
         )
       )
