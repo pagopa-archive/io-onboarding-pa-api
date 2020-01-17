@@ -32,6 +32,7 @@ import { OrganizationCollection } from "../generated/OrganizationCollection";
 import { OrganizationRegistrationParams } from "../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationRequest } from "../generated/OrganizationRegistrationRequest";
 import { Request } from "../generated/Request";
+import { RequestActionEnum } from "../generated/RequestAction";
 import { RequestStatusEnum } from "../generated/RequestStatus";
 import { UserDelegationRequest } from "../generated/UserDelegationRequest";
 import { UserRoleEnum } from "../generated/UserRole";
@@ -245,37 +246,16 @@ export default class OrganizationController {
   }
 
   /**
-   * Submits an onboarding request by sending to the related administration an email containing the requested signed documents.
-   * In order to achieve the result, this method performs several steps:
-   * 1. Fetches the user from the request
-   * 2. Checks the user permissions
-   * 3. Validates the body request
-   * 4. Fetches and validates the requests to be submitted
-   * 5. Creates the requested signed documents
-   * 6. Sends the documents via email
-   * 7. Updates the status of the requests
-   *
-   * If any error occurs during any step of the process, a proper error response is sent to the client; otherwise, a response with no content is sent.
+   * Performs an action on a bulk of requests, after fetching the user from the request and validating the payload.
    * @param req The client request
    */
-  public sendEmailWithDocumentsToOrganizationPec(
+  public handleAction(
     req: ExpressRequest
   ): TaskEither<IResponseError, IResponseNoContent> {
     interface ITaskResults {
-      attachments: ReadonlyArray<{
-        filename: string;
-        path: string;
-      }>;
       requestIds: ReadonlyArray<number>;
-      requestModels: ReadonlyArray<RequestModel>;
       user: LoggedUser;
     }
-    const internalUnknownErrorHandler = (error: unknown, message: string) =>
-      genericInternalUnknownErrorHandler(
-        error,
-        `organizationController#sendEmailWithDocumentsToOrganizationPec | ${message}`,
-        message
-      );
     return fromEither<Errors, Pick<ITaskResults, "user">>(
       LoggedUser.decode(req.user).map(user => ({
         user
@@ -284,25 +264,11 @@ export default class OrganizationController {
       .mapLeft<IResponseError>((errors: Errors) =>
         genericInternalValidationErrorsHandler(
           errors,
-          "organizationController#sendEmailWithDocumentsToOrganizationPec | Invalid internal data.",
+          "organizationController#handleAction | Invalid internal data.",
           "Invalid internal data."
         )
       )
-      .chain(
-        fromPredicate(
-          taskResults =>
-            [
-              Resource.ORGANIZATION_REGISTRATION_REQUEST,
-              Resource.USER_DELEGATION_REQUEST
-            ].every(
-              resource =>
-                accessControl.can(taskResults.user.role).updateOwn(resource)
-                  .granted
-            ),
-          () => ResponseErrorForbiddenNotAuthorized
-        )
-      )
-      .chain<Pick<ITaskResults, "user" | "requestIds">>(taskResults =>
+      .chain(taskResults =>
         withValidationOrError(ActionPayload.decode(req.body))
           .chain(
             fromPredicate(
@@ -314,16 +280,61 @@ export default class OrganizationController {
                 )
             )
           )
-
-          .map(requestIdCollection => ({
-            requestIds: requestIdCollection.ids,
-            user: taskResults.user
-          }))
+          .map(actionPayload => ({ actionPayload, user: taskResults.user }))
       )
-      .chain<Pick<ITaskResults, "requestModels">>(taskResults =>
-        array
-          .traverse(taskEither)([...taskResults.requestIds], requestId =>
-            this.getValidRequest(requestId, taskResults.user.email)
+      .chain(taskResults => {
+        if (
+          taskResults.actionPayload.type ===
+          RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+        ) {
+          return this.sendEmailWithDocumentsToOrganizationPec(
+            taskResults.user,
+            taskResults.actionPayload.ids
+          );
+        }
+        const unhandledActionMessage = "Unhandled action.";
+        log.error(
+          `organizationController#handleAction | ${unhandledActionMessage}`
+        );
+        return fromLeft<IResponseErrorInternal, IResponseNoContent>(
+          ResponseErrorInternal(unhandledActionMessage)
+        );
+      });
+  }
+
+  /**
+   * Submits an onboarding request by sending to the related administration an email containing the requested signed documents.
+   * In order to achieve the result, this method performs several steps:
+   * 1. Checks the user permissions
+   * 2. Fetches and validates the requests to be submitted
+   * 3. Creates the requested signed documents
+   * 4. Sends the documents via email
+   * 5. Updates the status of the requests
+   *
+   * If any error occurs during any step of the process, a proper error response is sent to the client; otherwise, a response with no content is sent.
+   * @param loggedUser The user performing the action
+   * @param requestIds The requests performing the action
+   */
+  private sendEmailWithDocumentsToOrganizationPec(
+    loggedUser: LoggedUser,
+    requestIds: ReadonlyArray<number>
+  ): TaskEither<IResponseError, IResponseNoContent> {
+    const internalUnknownErrorHandler = (error: unknown, message: string) =>
+      genericInternalUnknownErrorHandler(
+        error,
+        `organizationController#sendEmailWithDocumentsToOrganizationPec | ${message}`,
+        message
+      );
+    return ![
+      Resource.ORGANIZATION_REGISTRATION_REQUEST,
+      Resource.USER_DELEGATION_REQUEST
+    ].every(
+      resource => accessControl.can(loggedUser.role).updateOwn(resource).granted
+    )
+      ? fromLeft(ResponseErrorForbiddenNotAuthorized)
+      : array
+          .traverse(taskEither)([...requestIds], requestId =>
+            this.getValidRequest(requestId, loggedUser.email)
           )
           .chain(
             // Check that all the requests are to be sent to the same email address or return an error
@@ -342,77 +353,83 @@ export default class OrganizationController {
             )
           )
           .map(requestModels => ({ requestModels }))
-      )
-      .chain(taskResults =>
-        array
-          .traverse(taskEither)(
-            [...taskResults.requestModels],
-            requestModel => {
-              // TODO:
-              //  the documents must be stored on cloud (Azure Blob Storage).
-              //  @see https://www.pivotaltracker.com/story/show/169644958
-              const documentName = `${requestModel.id}.pdf`;
-              const unsignedDocumentPath = `./documents/unsigned/${documentName}`;
-              const signedDocumentPath = `./documents/signed/${documentName}`;
-              return this.createSignedDocument(
-                unsignedDocumentPath,
-                signedDocumentPath
-              ).map(() => ({
-                filename: `documento-${requestModel.id}.pdf`,
-                path: signedDocumentPath
-              }));
-            }
+          .chain(taskResults =>
+            array
+              .traverse(taskEither)(
+                [...taskResults.requestModels],
+                requestModel => {
+                  // TODO:
+                  //  the documents must be stored on cloud (Azure Blob Storage).
+                  //  @see https://www.pivotaltracker.com/story/show/169644958
+                  const documentName = `${requestModel.id}.pdf`;
+                  const unsignedDocumentPath = `./documents/unsigned/${documentName}`;
+                  const signedDocumentPath = `./documents/signed/${documentName}`;
+                  return this.createSignedDocument(
+                    unsignedDocumentPath,
+                    signedDocumentPath
+                  ).map(() => ({
+                    filename: `documento-${requestModel.id}.pdf`,
+                    path: signedDocumentPath
+                  }));
+                }
+              )
+              .map(attachments => ({
+                attachments,
+                requestModels: taskResults.requestModels
+              }))
           )
-          .map(attachments => ({
-            attachments,
-            requestModels: taskResults.requestModels
-          }))
-      )
-      .chain(taskResults =>
-        tryCatch(
-          () =>
-            this.emailService.send({
-              attachments: taskResults.attachments,
-              html:
-                localeIt.organizationController
-                  .sendEmailWithDocumentsToOrganizationPec.registrationEmail
-                  .content,
-              subject:
-                localeIt.organizationController
-                  .sendEmailWithDocumentsToOrganizationPec.registrationEmail
-                  .subject,
-              text:
-                localeIt.organizationController
-                  .sendEmailWithDocumentsToOrganizationPec.registrationEmail
-                  .content,
-              to: taskResults.requestModels[0].organizationPec
-            }),
-          error =>
-            internalUnknownErrorHandler(
-              error,
-              "An error occurred while sending email."
-            )
-        ).map(() => taskResults)
-      )
-      .chain(taskResults =>
-        array
-          .traverse(taskEither)([...taskResults.requestModels], requestModel =>
+          .chain(taskResults =>
             tryCatch(
               () =>
-                requestModel.update({
-                  status: RequestStatusEnum.SUBMITTED
+                this.emailService.send({
+                  attachments: taskResults.attachments,
+                  html:
+                    localeIt.organizationController
+                      .sendEmailWithDocumentsToOrganizationPec.registrationEmail
+                      .content,
+                  subject:
+                    localeIt.organizationController
+                      .sendEmailWithDocumentsToOrganizationPec.registrationEmail
+                      .subject,
+                  text:
+                    localeIt.organizationController
+                      .sendEmailWithDocumentsToOrganizationPec.registrationEmail
+                      .content,
+                  to: taskResults.requestModels[0].organizationPec
                 }),
               error =>
                 internalUnknownErrorHandler(
                   error,
-                  "An error occurred while updating request status."
+                  "An error occurred while sending email."
                 )
-            )
+            ).map(() => taskResults)
           )
-          .map(_ => ResponseNoContent())
-      );
+          .chain(taskResults =>
+            array
+              .traverse(taskEither)(
+                [...taskResults.requestModels],
+                requestModel =>
+                  tryCatch(
+                    () =>
+                      requestModel.update({
+                        status: RequestStatusEnum.SUBMITTED
+                      }),
+                    error =>
+                      internalUnknownErrorHandler(
+                        error,
+                        "An error occurred while updating request status."
+                      )
+                  )
+              )
+              .map(_ => ResponseNoContent())
+          );
   }
 
+  /**
+   * Returns the request if it can be submitted by the user or an error response
+   * @param requestId The id of the required request
+   * @param userEmail The email of the user
+   */
   private getValidRequest(
     requestId: number,
     userEmail: string

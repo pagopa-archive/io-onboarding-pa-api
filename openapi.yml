@@ -462,9 +462,7 @@ components:
             type: integer
           minItems: 1
         type:
-          type: string
-          x-extensible-enum:
-            - "SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG"
+          $ref: '#/components/schemas/RequestAction'
       required:
         - ids
         - type
@@ -713,6 +711,10 @@ components:
         - family_name
         - fiscal_code
         - given_name
+    RequestAction:
+      type: string
+      x-extensible-enum:
+        - "SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG"
     UserDelegationRequest:
       type: object
       properties:
