@@ -30,7 +30,7 @@ import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
 import { getRequiredEnvVar } from "../../utils/environment";
 import { ResponseSuccessCreation } from "../../utils/responses";
-import OrganizationController from "../organizationController";
+import RequestController from "../requestController";
 
 jest.mock("../../database/db", () => ({
   default: new Sequelize({
@@ -220,7 +220,7 @@ jest.mock("../../services/emailService", () => ({
   }))
 }));
 
-async function getOrganizationController(): Promise<OrganizationController> {
+async function getRequestController(): Promise<RequestController> {
   const testEmailAccount = await nodemailer.createTestAccount();
   const transporterConfig = {
     auth: {
@@ -232,7 +232,7 @@ async function getOrganizationController(): Promise<OrganizationController> {
     port: testEmailAccount.smtp.port,
     secure: testEmailAccount.smtp.secure
   };
-  return new OrganizationController(
+  return new RequestController(
     new DocumentService(
       await soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL"))
     ),
@@ -240,7 +240,7 @@ async function getOrganizationController(): Promise<OrganizationController> {
   );
 }
 
-describe("OrganizationController", () => {
+describe("RequestController", () => {
   describe("#registerOrganization()", () => {
     it("should return a forbidden error response if the user is not a delegate", async () => {
       const mockedLoggedUser: LoggedUser = {
@@ -250,10 +250,8 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedUser;
       req.body = mockedOrganizationRegistrationParams;
-      const organizationController = await getOrganizationController();
-      const result = await organizationController
-        .registerOrganization(req)
-        .run();
+      const requestController = await getRequestController();
+      const result = await requestController.registerOrganization(req).run();
       expect(isLeft(result)).toBeTruthy();
       expect(result.value).toEqual({
         apply: expect.any(Function),
@@ -269,10 +267,8 @@ describe("OrganizationController", () => {
         ...mockedOrganizationRegistrationParams,
         scope: "INTERNATIONAL"
       };
-      const organizationController = await getOrganizationController();
-      const result = await organizationController
-        .registerOrganization(req)
-        .run();
+      const requestController = await getRequestController();
+      const result = await requestController.registerOrganization(req).run();
       expect(isLeft(result)).toBeTruthy();
       expect(result.value).toEqual({
         apply: expect.any(Function),
@@ -298,10 +294,8 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
-      const organizationController = await getOrganizationController();
-      const result = await organizationController
-        .registerOrganization(req)
-        .run();
+      const requestController = await getRequestController();
+      const result = await requestController.registerOrganization(req).run();
       expect(isLeft(result)).toBeTruthy();
       expect(result.value).toEqual({
         apply: expect.any(Function),
@@ -320,10 +314,8 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
-      const organizationController = await getOrganizationController();
-      const result = await organizationController
-        .registerOrganization(req)
-        .run();
+      const requestController = await getRequestController();
+      const result = await requestController.registerOrganization(req).run();
       expect(isLeft(result)).toBeTruthy();
       expect(result.value).toEqual({
         apply: expect.any(Function),
@@ -345,10 +337,8 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedDelegate;
       req.body = mockedOrganizationRegistrationParams;
-      const organizationController = await getOrganizationController();
-      const result = await organizationController
-        .registerOrganization(req)
-        .run();
+      const requestController = await getRequestController();
+      const result = await requestController.registerOrganization(req).run();
       expect(isRight(result)).toBeTruthy();
       expect(result.value).toEqual({
         apply: expect.any(Function),
@@ -374,8 +364,8 @@ describe("OrganizationController", () => {
       const req = mockReq();
       req.user = mockedLoggedUser;
       req.params = reqParams;
-      const organizationController = await getOrganizationController();
-      const result = await organizationController.getDocument(req);
+      const requestController = await getRequestController();
+      const result = await requestController.getDocument(req);
       expect(result).toEqual({
         apply: expect.any(Function),
         detail: expect.any(String),
@@ -390,8 +380,8 @@ describe("OrganizationController", () => {
         ...reqParams,
         fileName: "not-existing-file"
       };
-      const organizationController = await getOrganizationController();
-      const result = await organizationController.getDocument(req);
+      const requestController = await getRequestController();
+      const result = await requestController.getDocument(req);
       expect(result).toEqual({
         apply: expect.any(Function),
         detail: expect.any(String),
@@ -415,8 +405,8 @@ describe("OrganizationController", () => {
         const req = mockReq();
         req.user = mockedLoggedDelegate;
         req.params = reqParams;
-        const organizationController = await getOrganizationController();
-        const result = await organizationController.getDocument(req);
+        const requestController = await getRequestController();
+        const result = await requestController.getDocument(req);
         expect(result).toHaveProperty("kind", "IResponseDownload");
       });
     });
@@ -424,10 +414,10 @@ describe("OrganizationController", () => {
 });
 
 // TODO:
-//  add tests for OrganizationController#sendEmailWithDocumentsToOrganizationPec() method.
+//  add tests for RequestController#sendEmailWithDocumentsToOrganizationPec() method.
 //  @see https://www.pivotaltracker.com/story/show/170596020
 
-describe("OrganizationController#getOrganizations()", () => {
+describe("RequestController#getOrganizations()", () => {
   afterEach(() => {
     jest.resetAllMocks();
     jest.clearAllMocks();
@@ -439,8 +429,8 @@ describe("OrganizationController#getOrganizations()", () => {
     };
     const req = mockReq();
     req.user = mockedLoggedUser;
-    const organizationController = await getOrganizationController();
-    const result = await organizationController.getOrganizations(req);
+    const requestController = await getRequestController();
+    const result = await requestController.getOrganizations(req);
     expect(result).toEqual({
       apply: expect.any(Function),
       detail: expect.any(String),
@@ -462,8 +452,8 @@ describe("OrganizationController#getOrganizations()", () => {
     };
     const req = mockReq();
     req.user = mockedLoggedUser;
-    const organizationController = await getOrganizationController();
-    const result = await organizationController.getOrganizations(req);
+    const requestController = await getRequestController();
+    const result = await requestController.getOrganizations(req);
     expect(mockGetAllOrganizations).toHaveBeenCalled();
     expect(mockGetOrganizationFromUserEmail).not.toHaveBeenCalled();
     expect(result).toEqual({
@@ -482,7 +472,7 @@ describe("OrganizationController#getOrganizations()", () => {
     mockGetOrganizationFromUserEmail.mockImplementation(() => {
       return Promise.resolve(right(some(registeredOrganization)));
     });
-    const organizationController = await getOrganizationController();
+    const requestController = await getRequestController();
 
     const loggedDelegate: LoggedUser = {
       ...mockedLoggedDelegate,
@@ -491,7 +481,7 @@ describe("OrganizationController#getOrganizations()", () => {
     };
     const reqFromDelegate = mockReq();
     reqFromDelegate.user = loggedDelegate;
-    const resultForDelegate = await organizationController.getOrganizations(
+    const resultForDelegate = await requestController.getOrganizations(
       reqFromDelegate
     );
     expect(mockGetAllOrganizations).not.toHaveBeenCalled();
@@ -515,7 +505,7 @@ describe("OrganizationController#getOrganizations()", () => {
     mockGetOrganizationFromUserEmail.mockImplementation(() => {
       return Promise.resolve(right(some(registeredOrganization)));
     });
-    const organizationController = await getOrganizationController();
+    const requestController = await getRequestController();
 
     const loggedLegalRepresentative: LoggedUser = {
       ...mockedLoggedDelegate,
@@ -524,7 +514,7 @@ describe("OrganizationController#getOrganizations()", () => {
     };
     const reqFromLegalRepresentative = mockReq();
     reqFromLegalRepresentative.user = loggedLegalRepresentative;
-    const resultForLegalRepresentative = await organizationController.getOrganizations(
+    const resultForLegalRepresentative = await requestController.getOrganizations(
       reqFromLegalRepresentative
     );
     expect(mockGetAllOrganizations).not.toHaveBeenCalled();

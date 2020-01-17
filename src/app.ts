@@ -33,8 +33,8 @@ import {
 import { log } from "./utils/logger";
 
 import AuthenticationController from "./controllers/authenticationController";
-import OrganizationController from "./controllers/organizationController";
 import ProfileController from "./controllers/profileController";
+import RequestController from "./controllers/requestController";
 import DocumentService from "./services/documentService";
 import EmailService from "./services/emailService";
 import ProfileService from "./services/profileService";
@@ -186,7 +186,7 @@ function registerRoutes(
   );
 
   const documentService = new DocumentService(arssClient);
-  const organizationController = new OrganizationController(
+  const requestController = new RequestController(
     documentService,
     emailServiceInstance
   );
@@ -194,41 +194,38 @@ function registerRoutes(
   app.get(
     "/organizations",
     bearerTokenAuth,
-    toExpressHandler(
-      organizationController.getOrganizations,
-      organizationController
-    )
+    toExpressHandler(requestController.getOrganizations, requestController)
   );
 
   app.post(
     "/organizations",
     bearerTokenAuth,
     toFunctionalExpressHandler(
-      organizationController.registerOrganization,
-      organizationController
+      requestController.registerOrganization,
+      requestController
     )
   );
 
   app.get(
     "/organizations/:ipaCode/documents/:fileName",
     bearerTokenAuth,
-    toExpressHandler(organizationController.getDocument, organizationController)
+    toExpressHandler(requestController.getDocument, requestController)
   );
 
   app.post(
     "/requests/actions",
     bearerTokenAuth,
     toFunctionalExpressHandler(
-      organizationController.handleAction,
-      organizationController
+      requestController.handleAction,
+      requestController
     )
   );
 
   app.get(
     "/public-administrations",
     toExpressHandler(
-      organizationController.findPublicAdministration,
-      organizationController
+      requestController.findPublicAdministration,
+      requestController
     )
   );
 }
