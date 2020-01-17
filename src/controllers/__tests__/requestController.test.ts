@@ -19,7 +19,7 @@ import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationRequest } from "../../generated/OrganizationRegistrationRequest";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
-import { RequestActionsEnum } from "../../generated/RequestActions";
+import { RequestActionEnum } from "../../generated/RequestAction";
 import { RequestStatusEnum } from "../../generated/RequestStatus";
 import { RequestTypeEnum } from "../../generated/RequestType";
 import { UserDelegationRequest } from "../../generated/UserDelegationRequest";
@@ -497,7 +497,7 @@ describe("RequestController#handleAction()", () => {
     req.user = mockedLoggedUser;
     req.body = {
       ids: [1, 2],
-      type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
     };
     const requestController = await getRequestController();
     const result = await requestController.handleAction(req).run();
@@ -514,7 +514,7 @@ describe("RequestController#handleAction()", () => {
     req.user = mockedLoggedDelegate;
     req.body = {
       ids: 1,
-      type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
     };
     const requestController = await getRequestController();
     const result = await requestController.handleAction(req).run();
@@ -534,7 +534,7 @@ describe("RequestController#handleAction()", () => {
     req.user = mockedLoggedDelegate;
     req.body = {
       ids: [1, 2],
-      type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
     };
     const requestController = await getRequestController();
     const result = await requestController.handleAction(req).run();
@@ -554,7 +554,7 @@ describe("RequestController#handleAction()", () => {
     req.user = mockedLoggedDelegate;
     req.body = {
       ids: [Date.now()],
-      type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
     };
     const requestController = await getRequestController();
     const result = await requestController.handleAction(req).run();
@@ -574,7 +574,7 @@ describe("RequestController#handleAction()", () => {
     req.user = mockedLoggedDelegate;
     req.body = {
       ids: [requestModelFromOtherUser.id],
-      type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
     };
     const requestController = await getRequestController();
     const result = await requestController.handleAction(req).run();
@@ -597,7 +597,7 @@ describe("RequestController#handleAction()", () => {
         organizationRegistrationRequestModel.id,
         requestModelAlreadySubmitted.id
       ],
-      type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
     };
     const requestController = await getRequestController();
     const result = await requestController.handleAction(req).run();
@@ -620,7 +620,7 @@ describe("RequestController#handleAction()", () => {
         organizationRegistrationRequestModel.id,
         requestModelForAnotherAdministration.id
       ],
-      type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
     };
     const requestController = await getRequestController();
     const result = await requestController.handleAction(req).run();
@@ -679,7 +679,7 @@ describe("RequestController#handleAction()", () => {
       req.user = mockedLoggedDelegate;
       req.body = {
         ids: validRequestsToBeSubmitted.map(_ => _.id),
-        type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+        type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
       };
       const requestController = await getRequestController();
       const result = await requestController.handleAction(req).run();
@@ -702,7 +702,7 @@ describe("RequestController#handleAction()", () => {
       req.user = mockedLoggedDelegate;
       req.body = {
         ids: validRequestsToBeSubmitted.map(_ => _.id),
-        type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+        type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
       };
       const requestController = await getRequestController();
       const result = await requestController.handleAction(req).run();
@@ -750,7 +750,7 @@ describe("RequestController#handleAction()", () => {
       req.user = mockedLoggedDelegate;
       req.body = {
         ids: [requestModelFailingToUpdate.id],
-        type: RequestActionsEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+        type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
       };
       const requestController = await getRequestController();
       const result = await requestController.handleAction(req).run();
