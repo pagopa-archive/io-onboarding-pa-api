@@ -219,7 +219,7 @@ function registerRoutes(
     "/requests/actions",
     bearerTokenAuth,
     toFunctionalExpressHandler(
-      organizationController.sendEmailWithDocumentsToOrganizationPec,
+      organizationController.handleAction,
       organizationController
     )
   );
