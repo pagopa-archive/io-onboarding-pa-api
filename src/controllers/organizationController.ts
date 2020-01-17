@@ -296,8 +296,8 @@ export default class OrganizationController {
         log.error(
           `organizationController#handleAction | ${unhandledActionMessage}`
         );
-        return fromLeft<IResponseErrorInternal, IResponseNoContent>(
-          ResponseErrorInternal(unhandledActionMessage)
+        return fromLeft<IResponseErrorNotFound, IResponseNoContent>(
+          ResponseErrorNotFound("Not found", unhandledActionMessage)
         );
       });
   }
