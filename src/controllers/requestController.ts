@@ -469,13 +469,13 @@ export default class RequestController {
       )
       .chain(
         fromPredicate(
-          _ => _.requester !== null,
+          _ => _.get("requester") !== null, // direct access to the property does not work in tests
           () => ResponseErrorInternal("Invalid internal data")
         )
       )
       .chain(
         fromPredicate(
-          _ => _.requester!.email === userEmail,
+          _ => _.get("requester")!.email === userEmail, // direct access to the property does not work in tests
           () => ResponseErrorForbiddenNotAuthorized
         )
       )
