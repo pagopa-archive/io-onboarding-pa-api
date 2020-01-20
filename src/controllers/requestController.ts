@@ -75,7 +75,7 @@ type IResponseError =
   | IResponseErrorNotFound
   | IResponseErrorValidation;
 
-export default class OrganizationController {
+export default class RequestController {
   constructor(
     private readonly documentService: DocumentService,
     private readonly emailService: EmailService
@@ -124,7 +124,7 @@ export default class OrganizationController {
       .mapLeft<IResponseError>((errors: Errors) =>
         genericInternalValidationErrorsHandler(
           errors,
-          "organizationController#registerOrganization | Invalid internal data.",
+          "requestController#registerOrganization | Invalid internal data.",
           "Invalid internal data."
         )
       )
@@ -264,7 +264,7 @@ export default class OrganizationController {
       .mapLeft<IResponseError>((errors: Errors) =>
         genericInternalValidationErrorsHandler(
           errors,
-          "organizationController#handleAction | Invalid internal data.",
+          "requestController#handleAction | Invalid internal data.",
           "Invalid internal data."
         )
       )
@@ -293,9 +293,7 @@ export default class OrganizationController {
           );
         }
         const unhandledActionMessage = "Unhandled action.";
-        log.error(
-          `organizationController#handleAction | ${unhandledActionMessage}`
-        );
+        log.error(`requestController#handleAction | ${unhandledActionMessage}`);
         return fromLeft<IResponseErrorNotFound, IResponseNoContent>(
           ResponseErrorNotFound("Not found", unhandledActionMessage)
         );
@@ -322,7 +320,7 @@ export default class OrganizationController {
     const internalUnknownErrorHandler = (error: unknown, message: string) =>
       genericInternalUnknownErrorHandler(
         error,
-        `organizationController#sendEmailWithDocumentsToOrganizationPec | ${message}`,
+        `requestController#sendEmailWithDocumentsToOrganizationPec | ${message}`,
         message
       );
     return ![
@@ -384,15 +382,15 @@ export default class OrganizationController {
                 this.emailService.send({
                   attachments: taskResults.attachments,
                   html:
-                    localeIt.organizationController
+                    localeIt.requestController
                       .sendEmailWithDocumentsToOrganizationPec.registrationEmail
                       .content,
                   subject:
-                    localeIt.organizationController
+                    localeIt.requestController
                       .sendEmailWithDocumentsToOrganizationPec.registrationEmail
                       .subject,
                   text:
-                    localeIt.organizationController
+                    localeIt.requestController
                       .sendEmailWithDocumentsToOrganizationPec.registrationEmail
                       .content,
                   to: taskResults.requestModels[0].organizationPec
@@ -443,7 +441,7 @@ export default class OrganizationController {
       error =>
         genericInternalUnknownErrorHandler(
           error,
-          `organizationController#getSubmittableResourceOrErrorResponse | ${dbError}`,
+          `requestController#getSubmittableResourceOrErrorResponse | ${dbError}`,
           dbError
         )
     )
@@ -511,7 +509,7 @@ export default class OrganizationController {
       if (OrganizationRegistrationRequest.is(request)) {
         return this.documentService.generateDocument(
           request.id.toString(),
-          localeIt.organizationController.registerOrganization.contract.replace(
+          localeIt.requestController.registerOrganization.contract.replace(
             "%s",
             `${request.organization.ipa_code} ${request.organization.fiscal_code}`
           ),
@@ -524,7 +522,7 @@ export default class OrganizationController {
           // TODO:
           //  refactor this operation using an internationalization framework allowing params interpolation in strings.
           //  @see https://www.pivotaltracker.com/story/show/169644146
-          localeIt.organizationController.registerOrganization.delegation
+          localeIt.requestController.registerOrganization.delegation
             .replace(
               "%legalRepresentative%",
               `${request.organization.legal_representative.given_name} ${request.organization.legal_representative.family_name}`
@@ -544,7 +542,7 @@ export default class OrganizationController {
       (error: unknown) =>
         genericInternalUnknownErrorHandler(
           error,
-          "organizationController#createOnboardingDocument | An error occurred creating documents folder.",
+          "requestController#createOnboardingDocument | An error occurred creating documents folder.",
           "An error occurred creating documents folder."
         )
     )
@@ -553,7 +551,7 @@ export default class OrganizationController {
           error =>
             genericInternalUnknownErrorHandler(
               error,
-              "organizationController#createOnboardingDocument | An error occurred during document generation.",
+              "requestController#createOnboardingDocument | An error occurred during document generation.",
               "An error occurred during document generation."
             )
         )
@@ -570,7 +568,7 @@ export default class OrganizationController {
       (error: unknown) =>
         genericInternalUnknownErrorHandler(
           error,
-          "organizationController#createOnboardingDocument | An error occurred creating documents folder.",
+          "requestController#createOnboardingDocument | An error occurred creating documents folder.",
           "An error occurred creating documents folder."
         )
     )
@@ -583,7 +581,7 @@ export default class OrganizationController {
           error =>
             genericInternalUnknownErrorHandler(
               error,
-              "OrganizationController#createSignedDocument | An error occurred while reading unsigned document file.",
+              "RequestController#createSignedDocument | An error occurred while reading unsigned document file.",
               "An error occurred while reading unsigned document file"
             )
         )
@@ -594,7 +592,7 @@ export default class OrganizationController {
           .mapLeft(error =>
             genericInternalUnknownErrorHandler(
               error,
-              "OrganizationController#createSignedDocument | An error occurred while signing the document.",
+              "RequestController#createSignedDocument | An error occurred while signing the document.",
               "An error occurred while signing the document."
             )
           )
@@ -608,7 +606,7 @@ export default class OrganizationController {
           error =>
             genericInternalUnknownErrorHandler(
               error,
-              "OrganizationController#createSignedDocument | An error occurred while saving signed document file.",
+              "RequestController#createSignedDocument | An error occurred while saving signed document file.",
               "An error occurred while saving signed document file"
             )
         )
