@@ -4,13 +4,14 @@ import { fromEither } from "fp-ts/lib/TaskEither";
 import { ResponseErrorNotFound } from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import * as mockFs from "mock-fs";
-import * as nodemailer from "nodemailer";
+import * as nock from "nock";
 import {
   NonNullFindOptions,
   Promise as SequelizePromise,
   WhereAttributeHash
 } from "sequelize";
 import * as soap from "soap";
+import { WSDL, XSD } from "../../__mocks__/arss";
 import mockReq from "../../__mocks__/mockRequest";
 import { LegalRepresentative } from "../../generated/LegalRepresentative";
 import { Organization } from "../../generated/Organization";
@@ -28,7 +29,6 @@ import DocumentService from "../../services/documentService";
 import EmailService from "../../services/emailService";
 import * as organizationService from "../../services/organizationService";
 import { LoggedUser } from "../../types/user";
-import { getRequiredEnvVar } from "../../utils/environment";
 import { ResponseSuccessCreation } from "../../utils/responses";
 import RequestController from "../requestController";
 
@@ -218,21 +218,32 @@ jest.mock("../../services/emailService", () => ({
   }))
 }));
 
+const MOCK_ARSS_WSDL_HOST = "https://arss.demo.firma-automatica.it";
+const MOCK_ARSS_WSDL_PATH = "/ArubaSignService/ArubaSignService?wsdl";
+const MOCK_ARSS_XSD_PATH = "/ArubaSignService/ArubaSignService?xsd=1";
+
+nock(MOCK_ARSS_WSDL_HOST)
+  .get(MOCK_ARSS_WSDL_PATH)
+  .reply(200, WSDL)
+  .persist(true)
+  .get(MOCK_ARSS_XSD_PATH)
+  .reply(200, XSD)
+  .persist(true);
+
 async function getRequestController(): Promise<RequestController> {
-  const testEmailAccount = await nodemailer.createTestAccount();
   const transporterConfig = {
     auth: {
-      pass: testEmailAccount.pass,
-      user: testEmailAccount.user
+      pass: "password",
+      user: "user"
     },
-    from: "sender@email.com",
-    host: testEmailAccount.smtp.host,
-    port: testEmailAccount.smtp.port,
-    secure: testEmailAccount.smtp.secure
+    from: "sender@example.com",
+    host: "host",
+    port: 12345,
+    secure: true
   };
   return new RequestController(
     new DocumentService(
-      await soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL"))
+      await soap.createClientAsync(MOCK_ARSS_WSDL_HOST + MOCK_ARSS_WSDL_PATH)
     ),
     new EmailService(transporterConfig, {})
   );
