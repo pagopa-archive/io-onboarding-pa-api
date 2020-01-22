@@ -469,13 +469,14 @@ export default class RequestController {
       )
       .chain(
         fromPredicate(
-          _ => _.requester !== null,
+          _ => _.get("requester") !== null, // direct access to the property does not work in test execution
           () => ResponseErrorInternal("Invalid internal data")
         )
       )
       .chain(
         fromPredicate(
-          _ => _.requester!.email === userEmail,
+          // tslint:disable-next-line:no-useless-cast
+          _ => _.get("requester")!.email === userEmail, // direct access to the property does not work in test execution
           () => ResponseErrorForbiddenNotAuthorized
         )
       )

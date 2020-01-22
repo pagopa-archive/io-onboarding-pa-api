@@ -6,9 +6,8 @@ import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import * as mockFs from "mock-fs";
 import * as nodemailer from "nodemailer";
 import {
-  Op,
+  NonNullFindOptions,
   Promise as SequelizePromise,
-  Sequelize,
   WhereAttributeHash
 } from "sequelize";
 import * as soap from "soap";
@@ -20,6 +19,7 @@ import { OrganizationFiscalCode } from "../../generated/OrganizationFiscalCode";
 import { OrganizationRegistrationParams } from "../../generated/OrganizationRegistrationParams";
 import { OrganizationRegistrationRequest } from "../../generated/OrganizationRegistrationRequest";
 import { OrganizationScopeEnum } from "../../generated/OrganizationScope";
+import { RequestActionEnum } from "../../generated/RequestAction";
 import { RequestStatusEnum } from "../../generated/RequestStatus";
 import { RequestTypeEnum } from "../../generated/RequestType";
 import { UserDelegationRequest } from "../../generated/UserDelegationRequest";
@@ -32,14 +32,12 @@ import { getRequiredEnvVar } from "../../utils/environment";
 import { ResponseSuccessCreation } from "../../utils/responses";
 import RequestController from "../requestController";
 
-jest.mock("../../database/db", () => ({
-  default: new Sequelize({
-    dialect: "sqlite",
-    logging: false
-  })
-}));
-
-import { Request as RequestModel } from "../../models/Request";
+import {
+  createAssociations as createRequestModelAssociations,
+  init as initRequestModel,
+  Request as RequestModel
+} from "../../models/Request";
+import { init as initUserModel, User as UserModel } from "../../models/User";
 
 const mockedLoggedDelegate: LoggedUser = {
   createdAt: new Date(1518010929530),
@@ -413,9 +411,361 @@ describe("RequestController", () => {
   });
 });
 
-// TODO:
-//  add tests for RequestController#sendEmailWithDocumentsToOrganizationPec() method.
-//  @see https://www.pivotaltracker.com/story/show/170596020
+describe("RequestController#handleAction()", () => {
+  mockedRequestModelInstanceUpdate.mockResolvedValue(
+    (undefined as unknown) as RequestModel
+  );
+  initUserModel();
+  initRequestModel();
+  createRequestModelAssociations();
+  const loggedDelegateModel = UserModel.build(mockedLoggedDelegate);
+  const otherUserModel = UserModel.build({
+    ...mockedLoggedDelegate,
+    email: "other-user@example.com"
+  });
+  const organizationRegistrationRequestModel = RequestModel.build({
+    id: Number(process.hrtime().join("")),
+    ...requestCommonProperties,
+    type: RequestTypeEnum.ORGANIZATION_REGISTRATION
+  });
+  organizationRegistrationRequestModel.setDataValue(
+    "requester",
+    loggedDelegateModel
+  );
+  const userDelegationRequestModel = RequestModel.build({
+    id: Number(process.hrtime().join("")),
+    ...requestCommonProperties,
+    type: RequestTypeEnum.USER_DELEGATION
+  });
+  userDelegationRequestModel.setDataValue("requester", loggedDelegateModel);
+  const requestModelFromOtherUser = RequestModel.build({
+    id: Number(process.hrtime().join("")),
+    ...requestCommonProperties
+  });
+  requestModelFromOtherUser.setDataValue("requester", otherUserModel);
+  const requestModelForAnotherAdministration = RequestModel.build({
+    id: Number(process.hrtime().join("")),
+    ...requestCommonProperties,
+    organizationPec: "other-administration@example.com"
+  });
+  requestModelForAnotherAdministration.setDataValue(
+    "requester",
+    loggedDelegateModel
+  );
+  const requestModelAlreadySubmitted = RequestModel.build({
+    id: Number(process.hrtime().join("")),
+    ...requestCommonProperties,
+    status: RequestStatusEnum.SUBMITTED,
+    type: RequestTypeEnum.USER_DELEGATION
+  });
+  requestModelAlreadySubmitted.setDataValue("requester", loggedDelegateModel);
+  const requestModelFailingToUpdate = RequestModel.build({
+    id: Number(process.hrtime().join("")),
+    ...requestCommonProperties,
+    status: RequestStatusEnum.SUBMITTED,
+    type: RequestTypeEnum.USER_DELEGATION
+  });
+  requestModelFailingToUpdate.setDataValue("requester", loggedDelegateModel);
+  const requestModels: ReadonlyArray<RequestModel> = [
+    organizationRegistrationRequestModel,
+    userDelegationRequestModel,
+    requestModelFromOtherUser,
+    requestModelForAnotherAdministration,
+    requestModelAlreadySubmitted,
+    requestModelFailingToUpdate
+  ];
+  const mockFindOneImplementationDefault = (options: NonNullFindOptions) => {
+    if (!options || !options.where || !options.where.hasOwnProperty("id")) {
+      return fail("wrong invocation of Model.findOne() method");
+    }
+    return SequelizePromise.resolve(
+      requestModels.find(
+        request => request.id === (options.where as WhereAttributeHash).id
+      ) || ((null as unknown) as RequestModel)
+    );
+  };
+  afterEach(() => {
+    mockedRequestModelInstanceUpdate.mockClear();
+  });
+
+  it("should return a forbidden error response if the user is not a delegate", async () => {
+    const mockedLoggedUser: LoggedUser = {
+      ...mockedLoggedDelegate,
+      role: UserRoleEnum.DEVELOPER
+    };
+    const req = mockReq();
+    req.user = mockedLoggedUser;
+    req.body = {
+      ids: [1, 2],
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+    };
+    const requestController = await getRequestController();
+    const result = await requestController.handleAction(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorForbiddenNotAuthorized"
+    });
+  });
+
+  it("should return an error validation response when the request is invalid", async () => {
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.body = {
+      ids: 1,
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+    };
+    const requestController = await getRequestController();
+    const result = await requestController.handleAction(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorValidation"
+    });
+  });
+
+  it("should return an internal error if the reading of a request from the db fails", async () => {
+    mockedRequestModelFindOne.mockImplementation(() =>
+      SequelizePromise.reject(new Error("db error"))
+    );
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.body = {
+      ids: [1, 2],
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+    };
+    const requestController = await getRequestController();
+    const result = await requestController.handleAction(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorInternal"
+    });
+  });
+
+  it("should return a not found error if any of the provided id refers to a not existing request", async () => {
+    mockedRequestModelFindOne.mockImplementation(
+      mockFindOneImplementationDefault
+    );
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.body = {
+      ids: [Date.now()],
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+    };
+    const requestController = await getRequestController();
+    const result = await requestController.handleAction(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorNotFound"
+    });
+  });
+
+  it("should return a forbidden error response if any of the provided ids refers to a request created by a different user", async () => {
+    mockedRequestModelFindOne.mockImplementation(
+      mockFindOneImplementationDefault
+    );
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.body = {
+      ids: [requestModelFromOtherUser.id],
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+    };
+    const requestController = await getRequestController();
+    const result = await requestController.handleAction(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorForbiddenNotAuthorized"
+    });
+  });
+
+  it("should return a conflict error response if any of the provided ids refers to request whose status is not CREATED", async () => {
+    mockedRequestModelFindOne.mockImplementation(
+      mockFindOneImplementationDefault
+    );
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.body = {
+      ids: [
+        organizationRegistrationRequestModel.id,
+        requestModelAlreadySubmitted.id
+      ],
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+    };
+    const requestController = await getRequestController();
+    const result = await requestController.handleAction(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorConflict"
+    });
+  });
+
+  it("should return a conflict error response if the provided ids refer to requests to be sent to different email addresses", async () => {
+    mockedRequestModelFindOne.mockImplementation(
+      mockFindOneImplementationDefault
+    );
+    const req = mockReq();
+    req.user = mockedLoggedDelegate;
+    req.body = {
+      ids: [
+        organizationRegistrationRequestModel.id,
+        requestModelForAnotherAdministration.id
+      ],
+      type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+    };
+    const requestController = await getRequestController();
+    const result = await requestController.handleAction(req).run();
+    expect(isLeft(result)).toBeTruthy();
+    expect(result.value).toEqual({
+      apply: expect.any(Function),
+      detail: expect.any(String),
+      kind: "IResponseErrorConflict"
+    });
+  });
+
+  describe("when the request is valid and the provided id refer to valid requests", () => {
+    // tslint:disable-next-line:no-let
+    let validRequestsToBeSubmitted: ReadonlyArray<RequestModel>;
+
+    function getSignedVersionBase64(
+      unsignedContentBase64String: string
+    ): string {
+      const decodedString = Buffer.from(unsignedContentBase64String, "base64");
+      return Buffer.from(`signed-${decodedString}`).toString("base64");
+    }
+
+    beforeEach(() => {
+      validRequestsToBeSubmitted = [
+        organizationRegistrationRequestModel,
+        userDelegationRequestModel
+      ];
+
+      const mockedFsConfig = validRequestsToBeSubmitted
+        .concat(requestModelFailingToUpdate)
+        .reduce(
+          (items, request) => ({
+            ...items,
+            [`documents/unsigned/${request.id}.pdf`]: Buffer.from(
+              "request-content"
+            )
+          }),
+          {}
+        );
+      mockFs(mockedFsConfig);
+    });
+    afterEach(() => {
+      mockFs.restore();
+      mockSendEmail.mockReset();
+      requestModels.forEach(
+        requestModel => (requestModel.status = RequestStatusEnum.CREATED)
+      );
+    });
+
+    it("should return an internal server error response if the documents signing fails", async () => {
+      mockSignDocument.mockReturnValue(
+        fromEither(left(new Error("document signing failed")))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      req.body = {
+        ids: validRequestsToBeSubmitted.map(_ => _.id),
+        type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      };
+      const requestController = await getRequestController();
+      const result = await requestController.handleAction(req).run();
+      expect(left(result)).toBeTruthy();
+      expect(result.value).toEqual({
+        apply: expect.any(Function),
+        detail: expect.any(String),
+        kind: "IResponseErrorInternal"
+      });
+      expect(mockSendEmail).not.toHaveBeenCalled();
+      expect(mockedRequestModelInstanceUpdate).not.toHaveBeenCalled();
+    });
+
+    it("should send an email with signed attachments and return a no content response", async () => {
+      mockSignDocument.mockImplementation(contentBase64 =>
+        fromEither(right(getSignedVersionBase64(contentBase64)))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      req.body = {
+        ids: validRequestsToBeSubmitted.map(_ => _.id),
+        type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      };
+      const requestController = await getRequestController();
+      const result = await requestController.handleAction(req).run();
+      expect(isRight(result)).toBeTruthy();
+      expect(result.value).toEqual({
+        apply: expect.any(Function),
+        kind: "IResponseNoContent",
+        value: {}
+      });
+      expect(mockSendEmail).toHaveBeenCalledWith({
+        attachments: [
+          {
+            filename: expect.any(String),
+            path: expect.any(String)
+          },
+          {
+            filename: expect.any(String),
+            path: expect.any(String)
+          }
+        ],
+        html: expect.any(String),
+        subject: expect.any(String),
+        text: expect.any(String),
+        to: validRequestsToBeSubmitted[0].organizationPec
+      });
+      validRequestsToBeSubmitted.forEach((_, index) =>
+        expect(mockedRequestModelInstanceUpdate).toHaveBeenNthCalledWith(
+          index + 1,
+          {
+            status: RequestStatusEnum.SUBMITTED
+          }
+        )
+      );
+    });
+
+    it("should return an internal error response if the request status cannot be updated", async () => {
+      mockSignDocument.mockImplementation(contentBase64 =>
+        fromEither(right(getSignedVersionBase64(contentBase64)))
+      );
+      mockSendEmail.mockReturnValue(Promise.resolve(none));
+      mockedRequestModelInstanceUpdate.mockRejectedValueOnce(
+        "error on request update"
+      );
+      const req = mockReq();
+      req.user = mockedLoggedDelegate;
+      req.body = {
+        ids: [requestModelFailingToUpdate.id],
+        type: RequestActionEnum.SEND_REGISTRATION_REQUEST_EMAIL_TO_ORG
+      };
+      const requestController = await getRequestController();
+      const result = await requestController.handleAction(req).run();
+      expect(isLeft(result)).toBeTruthy();
+      expect(result.value).toEqual({
+        apply: expect.any(Function),
+        detail: expect.any(String),
+        kind: "IResponseErrorInternal"
+      });
+      expect(mockedRequestModelInstanceUpdate).toHaveBeenCalledWith({
+        status: RequestStatusEnum.SUBMITTED
+      });
+    });
+  });
+});
 
 describe("RequestController#getOrganizations()", () => {
   afterEach(() => {
