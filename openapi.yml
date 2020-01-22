@@ -9,13 +9,14 @@ info:
     The website for the project is [io-website].
     Privacy Policy is [privacy].
 
-    Development happens on github.
+    Development happens on github [source-code].
 
 
     [//]:  # (Riferimenti e url)
     [io-website]: https://io.italia.it
     [tos]: https://io.italia.it/note-legali/
     [privacy]: https://io.italia.it/privacy-policy/
+    [source-code]: https://github.com/pagopa/io-onboarding-pa-api
 
   version: "0.0.1"
   x-project: io
