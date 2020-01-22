@@ -116,7 +116,7 @@ paths:
           $ref: "#/components/responses/403Forbidden"
     post:
       description: |-
-        Creates a request for the onboarding of an administration and returns it in the payload of a successful response
+        Creates an onboarding-request for an administration and returns it in the payload of a successful response
       operationId: createOrganizations
       security:
         - bearerAuth: []
@@ -128,7 +128,7 @@ paths:
       responses:
         <<: *common-responses
         "201":
-          description: The request payload
+          description: The onboarding-request has been created, and the response represents it.
           content:
             application/json:
               schema:
