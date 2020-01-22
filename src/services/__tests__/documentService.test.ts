@@ -1,13 +1,32 @@
 import { isLeft, isRight, left } from "fp-ts/lib/Either";
 import { fromEither } from "fp-ts/lib/TaskEither";
 import * as fs from "fs";
+import * as nock from "nock";
 import * as soap from "soap";
-import { getRequiredEnvVar } from "../../utils/environment";
+import {
+  FAILURE_RESPONSE,
+  SUCCESS_RESPONSE,
+  WSDL,
+  XSD
+} from "../../__mocks__/arss";
 import DocumentService from "../documentService";
+
+const MOCK_ARSS_HOST = "https://arss.demo.firma-automatica.it";
+const MOCK_ARSS_WSDL_PATH = "/ArubaSignService/ArubaSignService?wsdl";
+const MOCK_ARSS_XSD_PATH = "/ArubaSignService/ArubaSignService?xsd=1";
+const MOCK_ARSS_PATH = "/ArubaSignService/ArubaSignService";
+
+nock(MOCK_ARSS_HOST)
+  .get(MOCK_ARSS_WSDL_PATH)
+  .reply(200, WSDL)
+  .persist(true)
+  .get(MOCK_ARSS_XSD_PATH)
+  .reply(200, XSD)
+  .persist(true);
 
 async function getDocumentService(): Promise<DocumentService> {
   return new DocumentService(
-    await soap.createClientAsync(getRequiredEnvVar("ARSS_WSDL_URL"))
+    await soap.createClientAsync(MOCK_ARSS_HOST + MOCK_ARSS_WSDL_PATH)
   );
 }
 
@@ -56,6 +75,9 @@ describe("DocumentService", () => {
 
 describe("DocumentService#signDocument()", () => {
   it("should resolve with a right string if the signing succeeds", async () => {
+    nock(MOCK_ARSS_HOST)
+      .post(MOCK_ARSS_PATH)
+      .reply(200, SUCCESS_RESPONSE);
     const base64string = await fs.promises.readFile(
       "./src/__mocks__/mockUnsignedFile.pdf",
       "base64"
@@ -66,6 +88,9 @@ describe("DocumentService#signDocument()", () => {
   });
 
   it("should reject with a left error if the signing fails", async () => {
+    nock(MOCK_ARSS_HOST)
+      .post(MOCK_ARSS_PATH)
+      .reply(200, FAILURE_RESPONSE);
     const documentService = await getDocumentService();
     const result = await documentService.signDocument("").run();
     expect(isLeft(result)).toBeTruthy();
