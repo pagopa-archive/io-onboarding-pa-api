@@ -52,16 +52,15 @@ describe("Email service", () => {
           verify: mockedVerify
         } as unknown) as nodemailer.Transporter;
       });
-      const testEmailAccount = await nodemailer.createTestAccount();
       const transporterConfig = {
         auth: {
-          pass: testEmailAccount.pass,
-          user: testEmailAccount.user
+          pass: "password",
+          user: "user"
         },
-        from: "sender@email.com",
-        host: testEmailAccount.smtp.host,
-        port: testEmailAccount.smtp.port,
-        secure: testEmailAccount.smtp.secure
+        from: "sender@example.com",
+        host: "host",
+        port: 12345,
+        secure: true
       };
       const emailService = new EmailService(transporterConfig, {});
       mockedVerify

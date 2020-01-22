@@ -4,7 +4,6 @@ import { fromEither } from "fp-ts/lib/TaskEither";
 import { ResponseErrorNotFound } from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import * as mockFs from "mock-fs";
-import * as nodemailer from "nodemailer";
 import {
   NonNullFindOptions,
   Promise as SequelizePromise,
@@ -219,16 +218,15 @@ jest.mock("../../services/emailService", () => ({
 }));
 
 async function getRequestController(): Promise<RequestController> {
-  const testEmailAccount = await nodemailer.createTestAccount();
   const transporterConfig = {
     auth: {
-      pass: testEmailAccount.pass,
-      user: testEmailAccount.user
+      pass: "password",
+      user: "user"
     },
-    from: "sender@email.com",
-    host: testEmailAccount.smtp.host,
-    port: testEmailAccount.smtp.port,
-    secure: testEmailAccount.smtp.secure
+    from: "sender@example.com",
+    host: "host",
+    port: 12345,
+    secure: true
   };
   return new RequestController(
     new DocumentService(
