@@ -3715,10 +3715,10 @@ italia-tslint-rules@*:
     tslint-sonarts "^1.9.0"
     typestrict "^1.0.2"
 
-italia-utils@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/italia-utils/-/italia-utils-4.1.0.tgz#1f610776cfbdc56651b6e7c2b36bcb3a6666e5de"
-  integrity sha512-Qg3ydl2DnGwRp+4JahflkyfPD35oXtUh3y/R54qjNV7xQ2FJEwDnXyG743F71KTG1LF8Gw2hTSqo6yAf336iwA==
+italia-utils@4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/italia-utils/-/italia-utils-4.1.1.tgz#aff499d380f8de04e04c85affad654baa7416bda"
+  integrity sha512-BElPtWi/wvqx5i2ZiaLD6dYRGewPcbhtQvKCG3Zxbekw+QHVDOKMECewdehFwU4Iz6ycztTwWBxxQanHhkW+Zw==
   dependencies:
     fs-extra "^6.0.0"
     italia-ts-commons "^5.0.1"
@@ -3727,9 +3727,10 @@ italia-utils@^4.1.0:
     swagger-parser "^7.0.0"
     yargs "^11.1.0"
 
-italia-utils@teamdigitale/io-utils-build-oas3#4.1.1-beta.3:
-  version "4.1.1-beta.3"
-  resolved "https://codeload.github.com/teamdigitale/io-utils-build-oas3/tar.gz/8a586fc36c2abde905eeffa95455d147774b8885"
+italia-utils@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/italia-utils/-/italia-utils-4.1.0.tgz#1f610776cfbdc56651b6e7c2b36bcb3a6666e5de"
+  integrity sha512-Qg3ydl2DnGwRp+4JahflkyfPD35oXtUh3y/R54qjNV7xQ2FJEwDnXyG743F71KTG1LF8Gw2hTSqo6yAf336iwA==
   dependencies:
     fs-extra "^6.0.0"
     italia-ts-commons "^5.0.1"
